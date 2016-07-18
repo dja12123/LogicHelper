@@ -12,6 +12,9 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
 import java.util.*;
 
@@ -29,8 +32,7 @@ import kr.dja.UI.UnderBar;
 
 public class Grid
 {
-	List<GridMember> member = new ArrayList<GridMember>();
-	HashMap<Integer, HashMap<Integer, LogicBlock>> logicMember = new HashMap<Integer, HashMap<Integer, LogicBlock>>();
+
 	private Size UI_Size;
 	private JScrollPane gridScrollPane;
 	private UnderBar underBar;
@@ -58,7 +60,6 @@ public class Grid
 		gridScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		gridScrollPane.getVerticalScrollBar().setUnitIncrement((int)(this.UI_Size.getWidth() / 2.5));
 		gridScrollPane.getHorizontalScrollBar().setUnitIncrement((int)(this.UI_Size.getWidth() / 2.5));
-		
 		
 		horizonRulerScrollPane = new RulerPanel()
 		{
@@ -328,7 +329,6 @@ public class Grid
 			{
 				southExpansionPane.setLocation(southExpansionPane.getLocation().x , southExpansionPane.getLocation().y + (this.getSize().height - gridPanel.getSize().height));
 			}
-			System.out.println();
 		}
 		void reSize()
 		{
@@ -415,12 +415,47 @@ public class Grid
 	}
 	private class GridPanel extends JPanel
 	{
+		List<GridMember> member = new ArrayList<GridMember>();
+		HashMap<Integer, HashMap<Integer, LogicBlock>> logicMember = new HashMap<Integer, HashMap<Integer, LogicBlock>>();
 		private static final long serialVersionUID = 1L;
 		GridPanel()
 		{
 			this.setLayout(null);
 			this.setBackground(new Color(200, 200, 200));
 			this.resizeUI();
+			this.addMouseListener(new MouseListener()
+			{
+				@Override
+				public void mouseClicked(MouseEvent arg0)
+				{
+					System.out.println("gridCheck");
+					
+				}
+				@Override
+				public void mouseEntered(MouseEvent arg0){}
+				@Override
+				public void mouseExited(MouseEvent arg0){}
+				@Override
+				public void mousePressed(MouseEvent arg0){}
+				@Override
+				public void mouseReleased(MouseEvent arg0){}
+			});
+		}
+		void addMember(GridMember member)
+		{
+			
+		}
+		void addMember(List<GridMember> members)
+		{
+			
+		}
+		void removeMember(GridMember member)
+		{
+			
+		}
+		void removeMember(List<GridMember> members)
+		{
+			
 		}
 		@Override
 		public void paintComponent(Graphics g)
@@ -476,101 +511,72 @@ abstract class GridMember
 {
 	protected int UIlocationX;
 	protected int UIlocationY;
+	protected int UISizeX;
+	protected int UISizeY;
 	
-	protected GridMember(int x, int y)
+	protected GridMember()
 	{
 		//member.add(this);
 	}
-	abstract GridMember createInstance(int x, int y);
-	abstract void getLocationX();
-	abstract void getLocationY();
+	int getUILocationX()
+	{
+		return UIlocationX;
+	}
+	int getUILocationY()
+	{
+		return UIlocationY;
+	}
+	int getSizeX()
+	{
+		return UISizeX;
+	}
+	int getSizeY()
+	{
+		return UISizeY;
+	}
 	final void sizeUpdate()
+	{
+		
+	}
+	void put(int x, int y)
 	{
 		
 	}
 }
 class Partition extends GridMember
 {
-	private Partition(int x, int y)
+	Partition()
 	{
-		super(x, y);
-	}
-	@Override
-	GridMember createInstance(int x, int y)
-	{
-		return new Partition(x, y);
-	}
-	@Override
-	void getLocationX() {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	void getLocationY() {
-		// TODO Auto-generated method stub
 		
 	}
 }
 class Tag extends GridMember
 {
-	private Tag(int x, int y)
+	Tag()
 	{
-		super(x, y);
-	}
-	@Override
-	GridMember createInstance(int x, int y)
-	{
-		return new Tag(x, y);
-	}
-	@Override
-	void getLocationX() {
-		// TODO Auto-generated method stub
-	}
-	@Override
-	void getLocationY() {
-		// TODO Auto-generated method stub
-		
 	}
 }
 abstract class LogicBlock extends GridMember
 {
 	protected int blocklocationX;
 	protected int blocklocationY;
-	protected LogicBlock(int x, int y)
+	protected LogicBlock()
 	{
-		super(x, y);
-		this.blocklocationX = x;
-		this.blocklocationY = y;
+
 	}
 	abstract void updateState();
 	@Override
-	GridMember createInstance(int x, int y)
+	void put(int x, int y)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		//ÁÂÇ¥ Ãß»óÈ­
+		//this.blocklocationX = x;
+		//this.blocklocationY = y;
 	}
-	@Override
-	void getLocationX() {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	void getLocationY() {
-		// TODO Auto-generated method stub
-		
-	}
-	
 }
 class AND extends LogicBlock
 {
-	private AND(int x, int y)
+	AND()
 	{
-		super(x, y);
-	}
-	@Override
-	GridMember createInstance(int x, int y)
-	{
-		return new AND(x, y);
 	}
 	@Override
 	void updateState() {
@@ -580,14 +586,8 @@ class AND extends LogicBlock
 }
 class OR extends LogicBlock
 {
-	private OR(int x, int y)
+	OR()
 	{
-		super(x, y);
-	}
-	@Override
-	GridMember createInstance(int x, int y)
-	{
-		return new OR(x, y);
 	}
 	@Override
 	void updateState()

@@ -9,7 +9,10 @@ import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
@@ -52,6 +55,7 @@ public class UI
 	private Grid grid;
 	private TaskManager taskManager;
 	private TaskOperator taskOperator;
+	private JLayeredPane mainLayeredPane;
 	final Color innerUIObjectColor = new Color(220, 220, 220);
 	UI()
 	{
@@ -61,7 +65,8 @@ public class UI
 		this.mainFrame.setMinimumSize(new Dimension(1131, 800));
 		this.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		
+		this.mainLayeredPane = this.mainFrame.getLayeredPane();
+
 		this.toolBar = new ToolBar();
 		this.underBar = new UnderBar();
 		//layerPane = mainFrame.getLayeredPane();
@@ -90,10 +95,12 @@ public class UI
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		this.mainFrame.setLocation(screenSize.width/2-mainFrame.getSize().width/2, screenSize.height/2-mainFrame.getSize().height/2);
 		
+		JPanel p = new JPanel();
+		p.setBackground(Color.black);
+		p.setBounds(100, 100, 30, 30);
 		
-
-		
-		mainFrame.setVisible(true);
+		this.mainLayeredPane.add(p, new Integer(1));
+		this.mainFrame.setVisible(true);
 	}
 	TaskManager getTaskManager()
 	{
@@ -225,7 +232,7 @@ public class UI
 				this.setBorder(new PanelBorder("ÆÈ·¹Æ®"));
 				
 				//this.add(new Palette_AND_Gate().getPalettePanel());
-				paletteMember.add(new JButton());
+				paletteMember.add(new PaletteMember(new AND()));
 				paletteMember.add(new JButton());
 				paletteMember.add(new JButton());
 				paletteMember.add(new JButton());
@@ -247,6 +254,25 @@ public class UI
 				{
 					this.add(itr.next());
 				}
+			}
+			class PaletteMember extends JButton
+			{
+				GridMember putMember;
+				PaletteMember(GridMember member)
+				{
+					this.putMember = member;
+					System.out.println("check");
+					this.addActionListener(new ActionListener()
+					{
+						@Override
+						public void actionPerformed(ActionEvent e)
+						{
+							System.out.println("check");
+							
+						}
+					});
+				}
+
 			}
 		}
 		private class TaskOperatorPanel extends JPanel
@@ -544,54 +570,7 @@ class PanelBorder extends TitledBorder
 		super.setTitleFont(LogicCore.RES.NORMAL_FONT.deriveFont(Font.BOLD, 16.0f));
 	}
 }
-abstract class PaletteMember
-{
-	private JPanel palettePanel;
-	PaletteMember()
-	{
-		palettePanel = new JPanel();
-		palettePanel.setBackground(Color.black);
-		palettePanel.addMouseListener(new MouseListener()
-		{
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				Action();
-			}
 
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				System.out.println("mouseEntered");
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				System.out.println("mouseExited");
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				System.out.println("mousePressed");
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				System.out.println("mouseReleased");
-			}
-			
-		});
-		
-	}
-	final JPanel getPalettePanel()
-	{
-		return this.palettePanel;
-	}
-	abstract void Action();
-}
 
 /*class Palette_AND_Gate extends PaletteMember
 {
@@ -604,8 +583,28 @@ abstract class PaletteMember
 	
 }*/
 
-class MouseAttendant extends JPanel
+class TrackedPane extends JPanel
 {
 	private static final long serialVersionUID = 1L;
+	
+	JPanel trackedPanel;
+	TrackedPane(GridMember member)
+	{
+		
+	}
+	TrackedPane(List<GridMember> members)
+	{
+		int minX = members.get(0).getUILocationX();
+		int minY = members.get(0).getUILocationY();
+		int maxX = members.get(0).getUILocationX() + members.get(0).getSizeX();
+		int maxY = members.get(0).getUILocationY() + members.get(0).getSizeY();
+		for(GridMember member : members)
+		{
+			minX = member.getUILocationX() < minX ? member.getUILocationX() : minX;
+			minY = member.getUILocationY() < minY ? member.getUILocationY() : minY;
+			maxX = member.getUILocationX() + members.get(0).getSizeX() > maxX ? member.getUILocationX() + members.get(0).getSizeX() : maxX;
+			maxY = member.getUILocationY() + members.get(0).getSizeY() > maxY ? member.getUILocationY() + members.get(0).getSizeY() : maxY;
+		}
+	}
 	
 }
