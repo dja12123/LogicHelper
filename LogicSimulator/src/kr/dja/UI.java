@@ -46,6 +46,7 @@ public class UI
 	private JFrame mainFrame;
 	//JLayeredPane layerPane;
 	private ToolBar toolBar;
+	private UnderBar underBar;
 	private ControlPane controlPane;
 	private JScrollPane gridScrollPane;
 	private Grid grid;
@@ -62,11 +63,12 @@ public class UI
 		
 		
 		this.toolBar = new ToolBar();
+		this.underBar = new UnderBar();
 		//layerPane = mainFrame.getLayeredPane();
 		
 		this.gridScrollPane = new JScrollPane();
 		
-		this.grid = new Grid(gridScrollPane);
+		this.grid = new Grid(gridScrollPane, this.underBar);
 		
 		this.taskManager = new TaskManager();
 		
@@ -83,6 +85,7 @@ public class UI
 		//mainFrame.addComponentListener(new ResizeListener());
 		this.mainFrame.add(this.gridScrollPane, BorderLayout.CENTER);
 		this.mainFrame.add(this.toolBar, BorderLayout.NORTH);
+		this.mainFrame.add(this.underBar, BorderLayout.SOUTH);
 		this.mainFrame.add(this.controlPane, BorderLayout.EAST);
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		this.mainFrame.setLocation(screenSize.width/2-mainFrame.getSize().width/2, screenSize.height/2-mainFrame.getSize().height/2);
@@ -387,26 +390,6 @@ public class UI
 			
 		}
 	}
-	class UIButton extends JButton
-	{
-		private static final long serialVersionUID = 1L;
-		UIButton(int locationX, int locationY,int sizeX, int sizeY, Image basicImage, Image SelectedIcon)
-		{
-			super();
-			this.setBounds(locationX, locationY, sizeX, sizeY);
-			//TODO
-			//this.setIcon(new ImageIcon(basicImage));
-			//this.setSelectedIcon(new ImageIcon(SelectedIcon));
-		}
-		UIButton(int sizeX, int sizeY, Image basicImage, Image SelectedIcon)
-		{
-			super();
-			this.setPreferredSize(new Dimension(sizeX, sizeY));
-			//TODO
-			//this.setIcon(new ImageIcon(basicImage));
-			//this.setSelectedIcon(new ImageIcon(SelectedIcon));
-		}
-	}
 	class ToolBar extends JToolBar
 	{
 		private static final long serialVersionUID = 1L;
@@ -485,6 +468,71 @@ public class UI
 			this.add(toolBarPanel);
 		}
 	}
+	class UnderBar extends JToolBar
+	{
+		private static final long serialVersionUID = 1L;
+		private JPanel leftSidePanel;
+		private JPanel centerSidePanel;
+		private JPanel rightSidePanel;
+		private JLabel sizeLabel;
+		
+		UnderBar()
+		{
+			super();
+			this.setPreferredSize(new Dimension(0, 25));
+			this.setFloatable(false);
+			this.setLayout(new BorderLayout());
+			
+			this.leftSidePanel = new JPanel();
+			this.leftSidePanel.setPreferredSize(new Dimension(300, 0));
+			this.leftSidePanel.setBackground(new Color(255, 0, 0, 0));
+			this.leftSidePanel.setLayout(null);
+			
+			this.centerSidePanel = new JPanel();
+			this.centerSidePanel.setBackground(new Color(255, 0, 0, 0));
+			
+			this.rightSidePanel = new JPanel();
+			this.rightSidePanel.setPreferredSize(new Dimension(300, 0));
+			this.rightSidePanel.setBackground(new Color(255, 0, 0, 0));
+			this.rightSidePanel.setLayout(null);
+			
+			this.sizeLabel = new JLabel();
+			this.sizeLabel.setBounds(5, 0, 120, 22);
+			this.sizeLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(14f));
+			
+			this.leftSidePanel.add(this.sizeLabel);
+			
+			this.add(centerSidePanel, BorderLayout.CENTER);
+			this.add(leftSidePanel, BorderLayout.WEST);
+			this.add(rightSidePanel, BorderLayout.EAST);
+		}
+		void setGridSizeInfo(int x, int y)
+		{
+			this.sizeLabel.setText("X: " + x + "  Y: " + y);
+			this.repaint();
+		}
+	}
+}
+class UIButton extends JButton
+{
+	private static final long serialVersionUID = 1L;
+	UIButton(int locationX, int locationY,int sizeX, int sizeY, Image basicImage, Image SelectedIcon)
+	{
+		super();
+		this.setBounds(locationX, locationY, sizeX, sizeY);
+		//TODO
+		//this.setIcon(new ImageIcon(basicImage));
+		//this.setSelectedIcon(new ImageIcon(SelectedIcon));
+	}
+	UIButton(int sizeX, int sizeY, Image basicImage, Image SelectedIcon)
+	{
+		super();
+		this.setPreferredSize(new Dimension(sizeX, sizeY));
+		this.setSize(sizeX, sizeY);
+		//TODO
+		//this.setIcon(new ImageIcon(basicImage));
+		//this.setSelectedIcon(new ImageIcon(SelectedIcon));
+	}
 }
 class PanelBorder extends TitledBorder
 {
@@ -505,7 +553,6 @@ abstract class PaletteMember
 		palettePanel.setBackground(Color.black);
 		palettePanel.addMouseListener(new MouseListener()
 		{
-
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
 				// TODO Auto-generated method stub
