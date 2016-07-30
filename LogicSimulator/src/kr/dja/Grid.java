@@ -16,6 +16,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.util.*;
 
 import javax.swing.JButton;
@@ -32,10 +33,9 @@ import kr.dja.UI.UnderBar;
 
 public class Grid
 {
-
+	private UI ui;
 	private Size UI_Size;
 	private JScrollPane gridScrollPane;
-	private UnderBar underBar;
 	private ViewPort viewPort;
 	private GridPanel gridPanel;
 	private int gridSizeX = 30;
@@ -49,13 +49,13 @@ public class Grid
 	private RulerPanel verticalRulerScrollPane;
 	private JPanel side;
 	
-	Grid(JScrollPane gridScrollPane, UnderBar underBar)
+	Grid(UI ui, JScrollPane gridScrollPane)
  	{
+		this.ui = ui;
 		this.gridScrollPane = gridScrollPane;
-		this.underBar = underBar;
 		this.UI_Size = Size.middle;
 		
-		underBar.setGridSizeInfo(gridSizeX, gridSizeY);
+		ui.getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
 		gridScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		gridScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		gridScrollPane.getVerticalScrollBar().setUnitIncrement((int)(this.UI_Size.getWidth() / 2.5));
@@ -239,7 +239,7 @@ public class Grid
 		}
 		reSize(this.UI_Size);
 		viewPort.reSize();
-		underBar.setGridSizeInfo(gridSizeX, gridSizeY);
+		ui.getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
 	}
 	void reSize(Size size)
 	{
@@ -487,7 +487,6 @@ class SizeExt
 }
 class Size
 {
-
 	public static final int REGULAR_SIZE = 10;
 	public static final int MARGIN = 50;
 	public static final Size small = new Size(3);
@@ -513,11 +512,13 @@ abstract class GridMember
 	protected int UIlocationY;
 	protected int UISizeX;
 	protected int UISizeY;
+	protected JPanel gridView;
 	
 	protected GridMember()
 	{
-		//member.add(this);
+		
 	}
+	protected abstract GridMember clone();
 	int getUILocationX()
 	{
 		return UIlocationX;
@@ -542,6 +543,12 @@ abstract class GridMember
 	{
 		
 	}
+	BufferedImage getView()
+	{
+		BufferedImage img = new BufferedImage(gridView.getSize().width, gridView.getSize().height,BufferedImage.TYPE_INT_RGB);
+		gridView.paint(img.getGraphics());
+		return img;
+	}
 }
 class Partition extends GridMember
 {
@@ -549,11 +556,29 @@ class Partition extends GridMember
 	{
 		
 	}
+	Partition(Partition org)
+	{
+		//TODO 복사 구현
+	}
+	@Override
+	public Partition clone()
+	{
+		return new Partition(this);
+	}
 }
 class Tag extends GridMember
 {
 	Tag()
 	{
+	}
+	Tag(Tag org)
+	{
+		//TODO 복사 구현
+	}
+	@Override
+	public Tag clone()
+	{
+		return new Tag(this);
 	}
 }
 abstract class LogicBlock extends GridMember
@@ -568,7 +593,7 @@ abstract class LogicBlock extends GridMember
 	@Override
 	void put(int x, int y)
 	{
-		//좌표 추상화
+		//TODO 좌표 추상화
 		//this.blocklocationX = x;
 		//this.blocklocationY = y;
 	}
@@ -578,10 +603,19 @@ class AND extends LogicBlock
 	AND()
 	{
 	}
+	AND(AND org)
+	{
+		//TODO 복사 구현
+	}
 	@Override
-	void updateState() {
-		// TODO Auto-generated method stub
+	void updateState()
+	{
 		
+	}
+	@Override
+	public AND clone()
+	{
+		return new AND(this);
 	}
 }
 class OR extends LogicBlock
@@ -589,10 +623,19 @@ class OR extends LogicBlock
 	OR()
 	{
 	}
+	OR(OR org)
+	{
+		//TODO 복사 구현
+	}
 	@Override
 	void updateState()
 	{
 		// TODO Auto-generated method stub
 		
+	}
+	@Override
+	public OR clone()
+	{
+		return new OR(this);
 	}
 }

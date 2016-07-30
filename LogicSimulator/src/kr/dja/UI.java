@@ -7,6 +7,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
+import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Point;
@@ -17,6 +18,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -73,7 +75,7 @@ public class UI
 		
 		this.gridScrollPane = new JScrollPane();
 		
-		this.grid = new Grid(gridScrollPane, this.underBar);
+		this.grid = new Grid(this, gridScrollPane);
 		
 		this.taskManager = new TaskManager();
 		
@@ -105,6 +107,10 @@ public class UI
 	TaskManager getTaskManager()
 	{
 		return this.taskManager;
+	}
+	UnderBar getUnderBar()
+	{
+		return underBar;
 	}
 	/*class ResizeListener extends ComponentAdapter
 	{
@@ -575,7 +581,7 @@ class PanelBorder extends TitledBorder
 /*class Palette_AND_Gate extends PaletteMember
 {
 
-	@Override
+	@Overridere
 	void Action()
 	{
 		System.out.println("Action");
@@ -586,25 +592,45 @@ class PanelBorder extends TitledBorder
 class TrackedPane extends JPanel
 {
 	private static final long serialVersionUID = 1L;
-	
-	JPanel trackedPanel;
+	private JPanel trackedPanel;
+	private List<GridMember> members;
+	private int maxX, maxY, minX, minY;
 	TrackedPane(GridMember member)
 	{
-		
+		members = new ArrayList<GridMember>();
+		members.add(member);
 	}
 	TrackedPane(List<GridMember> members)
 	{
-		int minX = members.get(0).getUILocationX();
-		int minY = members.get(0).getUILocationY();
-		int maxX = members.get(0).getUILocationX() + members.get(0).getSizeX();
-		int maxY = members.get(0).getUILocationY() + members.get(0).getSizeY();
+		this.members = members;
+		this.minX = members.get(0).getUILocationX();
+		this.minY = members.get(0).getUILocationY();
+		this.maxX = members.get(0).getUILocationX() + members.get(0).getSizeX();
+		this.maxY = members.get(0).getUILocationY() + members.get(0).getSizeY();
 		for(GridMember member : members)
 		{
-			minX = member.getUILocationX() < minX ? member.getUILocationX() : minX;
-			minY = member.getUILocationY() < minY ? member.getUILocationY() : minY;
-			maxX = member.getUILocationX() + members.get(0).getSizeX() > maxX ? member.getUILocationX() + members.get(0).getSizeX() : maxX;
-			maxY = member.getUILocationY() + members.get(0).getSizeY() > maxY ? member.getUILocationY() + members.get(0).getSizeY() : maxY;
+			this.minX = member.getUILocationX() < minX ? member.getUILocationX() : minX;
+			this.minY = member.getUILocationY() < minY ? member.getUILocationY() : minY;
+			this.maxX = member.getUILocationX() + members.get(0).getSizeX() > maxX ? member.getUILocationX() + members.get(0).getSizeX() : maxX;
+			this.maxY = member.getUILocationY() + members.get(0).getSizeY() > maxY ? member.getUILocationY() + members.get(0).getSizeY() : maxY;
 		}
+		this.setSize(this.maxX - this.minX, this.maxY - this.minY);
+
 	}
+	@Override
+	public void paint(Graphics g)
+	{
+		BufferedImage img;
+		for(GridMember member : members)
+		{
+			img = member.getView();
+			//g.drawImage(img, , 0, img.getWidth(), img.getHeight(), this);
+		}
 	
+	}
+	void sizeUpdate()
+	{
+		this.repaint();
+		//TODO 변경 구현
+	}
 }
