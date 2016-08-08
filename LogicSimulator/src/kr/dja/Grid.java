@@ -38,21 +38,21 @@ public class Grid
 	private JScrollPane gridScrollPane;
 	private ViewPort viewPort;
 	private GridPanel gridPanel;
-	private int gridSizeX = 30;
-	private int gridSizeY = 30;
+	private int gridSizeX = 10;
+	private int gridSizeY = 10;
 	private int negativeExtendX = 0;
 	private int negativeExtendY = 0;
-	private final int MAX_SIZE = 2000;
-	private final int MAX_NEGATIVE = 2000;
+	private final int MAX_SIZE = 15;
+	private final int MAX_ABSOLUTE = 10;
 	 
 	private RulerPanel horizonRulerScrollPane;
 	private RulerPanel verticalRulerScrollPane;
 	private JPanel side;
 	
-	Grid(UI ui, JScrollPane gridScrollPane)
+	Grid(UI ui)
  	{
 		this.ui = ui;
-		this.gridScrollPane = gridScrollPane;
+		this.gridScrollPane = new JScrollPane();;
 		this.UI_Size = Size.middle;
 		
 		ui.getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
@@ -83,9 +83,9 @@ public class Grid
 				}
 			}
 			@Override
-			void resizeUI()
+			public void sizeUpdate()
 			{
-				this.removeAll();
+				this.removeAll();//수정 필요
 				this.setPreferredSize(new Dimension(UI_Size.getWidth() / 2, (gridSizeY * UI_Size.getWidth()) + (Size.MARGIN * 2)));
 				for(int i = 0; i < gridSizeY; i++)
 				{
@@ -106,6 +106,7 @@ public class Grid
 					this.add(label);
 					this.repaint();
 				}
+				
 			}
 		};
 		verticalRulerScrollPane = new RulerPanel()
@@ -130,9 +131,9 @@ public class Grid
 				}
 			}
 			@Override
-			void resizeUI()
+			public void sizeUpdate()
 			{
-				this.removeAll();
+				this.removeAll();//수정 필요
 				this.setPreferredSize(new Dimension((gridSizeX * UI_Size.getWidth()) + (Size.MARGIN * 2), UI_Size.getWidth() / 2));
 				for(int i = 0; i < gridSizeX; i++)
 				{
@@ -142,6 +143,7 @@ public class Grid
 					this.add(label);
 					this.repaint();
 				}
+				
 			}
 		};
 		this.side = new JPanel();
@@ -169,86 +171,118 @@ public class Grid
 		
 		
 	}
-	void gridExtend(SizeExt ext, int size)
+	Size getUISize()
+	{//이름 변경 필요
+		return this.UI_Size;
+	}
+	int getNegativeExtendX()
 	{
+		return this.negativeExtendX;
+	}
+	int getNegativeExtendY()
+	{
+		return this.negativeExtendY;
+	}
+	int getgridSizeX()
+	{
+		return this.gridSizeX;
+	}
+	int getgridSizeY()
+	{
+		return this.gridSizeX;
+	}
+	void gridExtend(SizeExt ext, int size)
+	{//그리드 넓이 확장
 		if(ext == SizeExt.EAST)
 		{
 			if(gridSizeX + size < 1)
-			{
-				gridSizeX = 1;
+			{//사이즈 최저치 예외
+				size -= gridSizeX + size - 1;
 			}
-			else if(gridSizeX + size > MAX_SIZE)
-			{
-				gridSizeX = MAX_SIZE;
+			if(Math.abs(gridSizeX + size - negativeExtendX) > MAX_ABSOLUTE + 1)
+			{//사이즈 최대 설정 한계 예외
+				size -= Math.abs(gridSizeX + size - negativeExtendX) - MAX_ABSOLUTE - 1;
 			}
-			else
-			{
-				gridSizeX += size;
+			if(gridSizeX + size > MAX_SIZE)
+			{//사이즈 최대 크기 한계 예외
+				size -= gridSizeX + size - MAX_SIZE;
 			}
-			viewPort.setViewPosition(new Point(gridPanel.getWidth(), viewPort.getViewPosition().y));
+			gridSizeX += size;
+			viewPort.setViewPosition(new Point(gridPanel.getWidth(), viewPort.getViewPosition().x));
 		}
 		else if(ext == SizeExt.WEST)
 		{
 			if(gridSizeX + size < 1)
-			{
-				gridSizeX = 1;
+			{//사이즈 최저치 예외
+				size -= gridSizeX + size - 1;
 			}
-			else if(gridSizeX + size > MAX_SIZE)
-			{
-				gridSizeX = MAX_SIZE;
+			if(Math.abs(size + negativeExtendX) > MAX_ABSOLUTE)
+			{//사이즈 최대 설정 한계 예외
+				size -= Math.abs(size + negativeExtendX) - MAX_ABSOLUTE;
 			}
-			else
+			if(gridSizeX + size > MAX_SIZE)
 			{
-				gridSizeX += size;
-				negativeExtendX += size;
-			}
-			viewPort.setViewPosition(new Point(0, viewPort.getViewPosition().y));
+				size -= gridSizeX + size - MAX_SIZE;
+			}//사이즈 최대 크기 한계 예외
+			gridSizeX += size;
+			negativeExtendX += size;
+			viewPort.setViewPosition(new Point(0, viewPort.getViewPosition().x));
 		}
 		else if(ext == SizeExt.SOUTH)
 		{
 			if(gridSizeY + size < 1)
-			{
-				gridSizeY = 1;
+			{//사이즈 최저치 예외
+				size -= gridSizeY + size - 1;
 			}
-			else if(gridSizeY + size > MAX_SIZE)
-			{
-				gridSizeY = MAX_SIZE;
+			if(Math.abs(gridSizeY + size - negativeExtendY) > MAX_ABSOLUTE + 1)
+			{//사이즈 최대 설정 한계 예외
+				size -= Math.abs(gridSizeY + size - negativeExtendY) - MAX_ABSOLUTE - 1;
 			}
-			else
-			{
-				gridSizeY += size;
+			if(gridSizeY + size > MAX_SIZE)
+			{//사이즈 최대 크기 한계 예외
+				size -= gridSizeY + size - MAX_SIZE;
 			}
-			viewPort.setViewPosition(new Point(viewPort.getViewPosition().x, gridPanel.getHeight()));
+			gridSizeY += size;
+			viewPort.setViewPosition(new Point(viewPort.getViewPosition().y, gridPanel.getHeight()));
 		}
 		else if(ext == SizeExt.NORTH)
 		{
 			if(gridSizeY + size < 1)
-			{
-				gridSizeY = 1;
+			{//사이즈 최저치 예외
+				size -= gridSizeY + size - 1;
 			}
-			else if(gridSizeY + size > MAX_SIZE)
-			{
-				gridSizeY = MAX_SIZE;
+			if(Math.abs(size + negativeExtendY) > MAX_ABSOLUTE)
+			{//사이즈 최대 설정 한계 예외
+				size -= Math.abs(size + negativeExtendY) - MAX_ABSOLUTE;
 			}
-			else
+			if(gridSizeY + size > MAX_SIZE)
 			{
-				gridSizeY += size;
-				negativeExtendY += size;
-			}
-			viewPort.setViewPosition(new Point(viewPort.getViewPosition().x, 0));
+				size -= gridSizeY + size - MAX_SIZE;
+			}//사이즈 최대 크기 한계 예외
+			gridSizeY += size;
+			negativeExtendY += size;
+			viewPort.setViewPosition(new Point(viewPort.getViewPosition().y, 0));
 		}
 		reSize(this.UI_Size);
-		viewPort.reSize();
+		viewPort.sizeUpdate();
 		ui.getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
 	}
 	void reSize(Size size)
 	{
-		this.horizonRulerScrollPane.resizeUI();
-		this.verticalRulerScrollPane.resizeUI();
-		this.gridPanel.resizeUI();
+		this.horizonRulerScrollPane.sizeUpdate();
+		this.verticalRulerScrollPane.sizeUpdate();
+		this.gridPanel.sizeUpdate();
 		this.UI_Size = size;
 	}
-	private class ViewPort extends JViewport
+	JScrollPane getGridScrollPanel()
+	{
+		return this.gridScrollPane;
+	}
+	GridPanel getGridPanel()
+	{
+		return this.gridPanel;
+	}
+	private class ViewPort extends JViewport implements SizeUpdate
 	{
 		private static final long serialVersionUID = 1L;
 		
@@ -330,7 +364,8 @@ public class Grid
 				southExpansionPane.setLocation(southExpansionPane.getLocation().x , southExpansionPane.getLocation().y + (this.getSize().height - gridPanel.getSize().height));
 			}
 		}
-		void reSize()
+		@Override
+		public void sizeUpdate()
 		{
 			this.layeredPane.setPreferredSize(new Dimension(this.dftComponent.getWidth(), this.dftComponent.getHeight()));
 		}
@@ -396,7 +431,7 @@ public class Grid
 			}
 		}
 	}
-	private class RulerPanel extends JPanel
+	private abstract class RulerPanel extends JPanel implements SizeUpdate
 	{
 		private static final long serialVersionUID = 1L;
 		RulerPanel()
@@ -409,20 +444,17 @@ public class Grid
 		{
 			super.paintComponent(g);
 		}
-		void resizeUI()
-		{
-		}
 	}
-	private class GridPanel extends JPanel
+	class GridPanel extends JPanel implements SizeUpdate
 	{
-		List<GridMember> member = new ArrayList<GridMember>();
+		List<GridMember> members = new ArrayList<GridMember>();
 		HashMap<Integer, HashMap<Integer, LogicBlock>> logicMember = new HashMap<Integer, HashMap<Integer, LogicBlock>>();
 		private static final long serialVersionUID = 1L;
 		GridPanel()
 		{
 			this.setLayout(null);
 			this.setBackground(new Color(200, 200, 200));
-			this.resizeUI();
+			this.sizeUpdate();
 			this.addMouseListener(new MouseListener()
 			{
 				@Override
@@ -443,17 +475,23 @@ public class Grid
 		}
 		void addMember(GridMember member)
 		{
-			
-		}
-		void addMember(List<GridMember> members)
-		{
-			
+			if(member instanceof LogicBlock)
+			{
+				LogicBlock block = ((LogicBlock) member);
+				if(!logicMember.containsKey(new Integer(block.getBlockLocationX())))
+				{
+					logicMember.put(new Integer(block.getBlockLocationX()), new HashMap<Integer, LogicBlock>());
+				}
+				else if(logicMember.get(new Integer(block.getBlockLocationX())).containsKey(block.getBlockLocationY()))
+				{
+					this.removeMember(logicMember.get(new Integer(block.getBlockLocationX())).get(block.getBlockLocationY()));
+				}
+				logicMember.get(new Integer(block.getBlockLocationX())).put(new Integer(block.getBlockLocationY()), block);
+			}
+			this.members.add(member);
+			this.add(member.getGridViewPane());
 		}
 		void removeMember(GridMember member)
-		{
-			
-		}
-		void removeMember(List<GridMember> members)
 		{
 			
 		}
@@ -471,15 +509,204 @@ public class Grid
 				g.drawLine(Size.MARGIN, (y * UI_Size.getWidth()) + Size.MARGIN, (gridSizeX * UI_Size.getWidth()) + Size.MARGIN, (y * UI_Size.getWidth()) + Size.MARGIN);
 			}
 		}
-		void resizeUI()
+		@Override
+		public void sizeUpdate()
 		{
 			this.setSize((gridSizeX * UI_Size.getWidth()) + (Size.MARGIN * 2), (gridSizeY * UI_Size.getWidth()) + (Size.MARGIN * 2));
+			for(GridMember member : members)
+			{
+				member.getGridViewPane().sizeUpdate();
+			}
 			this.repaint();
+		}
+	}
+	abstract class GridMember implements SizeUpdate
+	{
+		protected int UIabslocationX = 0;
+		protected int UIabslocationY = 0;
+		protected int UIabsSizeX = 1;
+		protected int UIabsSizeY = 1;
+		protected GridViewPane gridViewPane;
+		
+		protected GridMember()
+		{
+			this.gridViewPane = new GridViewPane();
+			this.gridViewPane.setBackground(Color.red);
+			this.gridViewPane.setLayout(null);
+			this.sizeUpdate();
+		}
+		protected abstract GridMember clone();
+		int getUIabsLocationX()
+		{//실제 위치는 절대 위치에 배수를 곱해서 사용
+			return UIabslocationX;
+		}
+		int getUIabsLocationY()
+		{
+			return UIabslocationY;
+		}
+		int getUIabsSizeX()
+		{
+			return UIabsSizeX;
+		}
+		int getUIabsSizeY()
+		{
+			return UIabsSizeY;
+		}
+		@Override
+		public void sizeUpdate()
+		{
+			this.gridViewPane.sizeUpdate();
+		}
+		void put(int absX, int absY)
+		{
+			if(absX >= (0 - (negativeExtendX * Size.REGULAR_SIZE)) && absX <= (gridSizeX - negativeExtendX) * Size.REGULAR_SIZE && absY >= (0 - (negativeExtendY * Size.REGULAR_SIZE)) && absY <= (gridSizeY - negativeExtendY) * Size.REGULAR_SIZE)
+			{
+
+				this.UIabslocationX = absX;
+				this.UIabslocationY = absY;
+				System.out.println("PUT: " + UIabslocationX + " " + UIabslocationY);
+				this.sizeUpdate();
+				gridPanel.addMember(this);
+			}
+		}
+		BufferedImage getSnapShot()
+		{
+			BufferedImage img = new BufferedImage(this.gridViewPane.getWidth(), this.gridViewPane.getHeight(), BufferedImage.TYPE_INT_ARGB);
+			this.gridViewPane.printAll(img.getGraphics());
+			return img;
+		}
+		GridViewPane getGridViewPane()
+		{
+			return this.gridViewPane;
+		}
+		class GridViewPane extends JPanel implements SizeUpdate
+		{
+			private static final long serialVersionUID = 1L;
+			GridViewPane()
+			{
+				sizeUpdate();
+			}
+			@Override
+			public void paint(Graphics g)
+			{
+				super.paint(g);
+			}
+			@Override
+			public void sizeUpdate()
+			{
+				this.setBounds(((UIabslocationX + (negativeExtendX * Size.REGULAR_SIZE)) * UI_Size.getmultiple()) + Size.MARGIN, ((UIabslocationY + (negativeExtendY * Size.REGULAR_SIZE)) * UI_Size.getmultiple()) + Size.MARGIN, UIabsSizeX * UI_Size.getmultiple(), UIabsSizeY * UI_Size.getmultiple());
+			}
+		}
+	}
+	public class Partition extends GridMember
+	{
+		Partition()
+		{
+			
+		}
+		Partition(Partition org)
+		{
+			//TODO 복사 구현
+		}
+		@Override
+		public Partition clone()
+		{
+			return new Partition(this);
+		}
+	}
+	public class Tag extends GridMember
+	{
+		Tag()
+		{
+		}
+		Tag(Tag org)
+		{
+			//TODO 복사 구현
+		}
+		@Override
+		public Tag clone()
+		{
+			return new Tag(this);
+		}
+	}
+	abstract class LogicBlock extends GridMember
+	{
+		protected int blocklocationX = 0;
+		protected int blocklocationY = 0;
+		protected LogicBlock()
+		{
+			super.UIabsSizeX = 30;
+			super.UIabsSizeY = 30;
+			super.sizeUpdate();
+		}
+		abstract void updateState();
+		@Override
+		void put(int absX, int absY)
+		{
+			System.out.println("mouseABS: " + absX + " " + absY);
+			absX = absX < 0 ? absX - (Size.REGULAR_SIZE) : absX;
+			absY = absY < 0 ? absY - (Size.REGULAR_SIZE) : absY;
+			absX = absX / Size.REGULAR_SIZE;
+			absY = absY / Size.REGULAR_SIZE;
+			this.blocklocationX = absX;
+			this.blocklocationY = absY;
+			System.out.println("BLOCK: " + blocklocationX + " " + blocklocationY);
+			super.put((this.blocklocationX * Size.REGULAR_SIZE), (this.blocklocationY * Size.REGULAR_SIZE));
+		}
+		int getBlockLocationX()
+		{
+			return this.blocklocationX;
+		}
+		int getBlockLocationY()
+		{
+			return this.blocklocationY;
+		}
+	}
+	public class AND extends LogicBlock
+	{
+		AND()
+		{
+			
+		}
+		AND(AND org)
+		{
+			//TODO 복사 구현
+		}
+		@Override
+		void updateState()
+		{
+			
+		}
+		@Override
+		public AND clone()
+		{
+			return new AND(this);
+		}
+	}
+	class OR extends LogicBlock
+	{
+		OR()
+		{
+		}
+		OR(OR org)
+		{
+			//TODO 복사 구현
+		}
+		@Override
+		void updateState()
+		{
+			// TODO Auto-generated method stub
+			
+		}
+		@Override
+		public OR clone()
+		{
+			return new OR(this);
 		}
 	}
 }
 class SizeExt
-{
+{//그리드 넓이 확장 방향을 결정하는 상수 클래스
 	public static final SizeExt EAST = new SizeExt();
 	public static final SizeExt NORTH = new SizeExt();
 	public static final SizeExt WEST = new SizeExt();
@@ -487,155 +714,22 @@ class SizeExt
 }
 class Size
 {
-	public static final int REGULAR_SIZE = 10;
+	public static final int REGULAR_SIZE = 30;
 	public static final int MARGIN = 50;
-	public static final Size small = new Size(3);
-	public static final Size middle = new Size(6);
-	public static final Size big = new Size(12);
-	private double multiple;
+	public static final Size small = new Size(1);
+	public static final Size middle = new Size(2);
+	public static final Size big = new Size(4);
+	private int multiple;
 	private Size(int multiple)
 	{
 		this.multiple = multiple;
 	}
-	public double getmultiple()
+	public int getmultiple()
 	{
 		return multiple;
 	}
 	public int getWidth()
 	{
-		return (int)(REGULAR_SIZE * multiple);
-	}
-}
-abstract class GridMember
-{
-	protected int UIlocationX;
-	protected int UIlocationY;
-	protected int UISizeX;
-	protected int UISizeY;
-	protected JPanel gridView;
-	
-	protected GridMember()
-	{
-		
-	}
-	protected abstract GridMember clone();
-	int getUILocationX()
-	{
-		return UIlocationX;
-	}
-	int getUILocationY()
-	{
-		return UIlocationY;
-	}
-	int getSizeX()
-	{
-		return UISizeX;
-	}
-	int getSizeY()
-	{
-		return UISizeY;
-	}
-	final void sizeUpdate()
-	{
-		
-	}
-	void put(int x, int y)
-	{
-		
-	}
-	BufferedImage getView()
-	{
-		BufferedImage img = new BufferedImage(gridView.getSize().width, gridView.getSize().height,BufferedImage.TYPE_INT_RGB);
-		gridView.paint(img.getGraphics());
-		return img;
-	}
-}
-class Partition extends GridMember
-{
-	Partition()
-	{
-		
-	}
-	Partition(Partition org)
-	{
-		//TODO 복사 구현
-	}
-	@Override
-	public Partition clone()
-	{
-		return new Partition(this);
-	}
-}
-class Tag extends GridMember
-{
-	Tag()
-	{
-	}
-	Tag(Tag org)
-	{
-		//TODO 복사 구현
-	}
-	@Override
-	public Tag clone()
-	{
-		return new Tag(this);
-	}
-}
-abstract class LogicBlock extends GridMember
-{
-	protected int blocklocationX;
-	protected int blocklocationY;
-	protected LogicBlock()
-	{
-
-	}
-	abstract void updateState();
-	@Override
-	void put(int x, int y)
-	{
-		//TODO 좌표 추상화
-		//this.blocklocationX = x;
-		//this.blocklocationY = y;
-	}
-}
-class AND extends LogicBlock
-{
-	AND()
-	{
-	}
-	AND(AND org)
-	{
-		//TODO 복사 구현
-	}
-	@Override
-	void updateState()
-	{
-		
-	}
-	@Override
-	public AND clone()
-	{
-		return new AND(this);
-	}
-}
-class OR extends LogicBlock
-{
-	OR()
-	{
-	}
-	OR(OR org)
-	{
-		//TODO 복사 구현
-	}
-	@Override
-	void updateState()
-	{
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public OR clone()
-	{
-		return new OR(this);
+		return REGULAR_SIZE * multiple;
 	}
 }

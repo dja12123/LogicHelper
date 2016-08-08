@@ -2,11 +2,10 @@ package kr.dja;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Image;
@@ -14,10 +13,9 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -26,25 +24,19 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.JToolBar;
-import javax.swing.SpringLayout;
-import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
+
+import kr.dja.Grid.AND;
+import kr.dja.Grid.GridMember;
 
 public class UI
 {
@@ -53,29 +45,90 @@ public class UI
 	private ToolBar toolBar;
 	private UnderBar underBar;
 	private ControlPane controlPane;
-	private JScrollPane gridScrollPane;
 	private Grid grid;
 	private TaskManager taskManager;
 	private TaskOperator taskOperator;
 	private JLayeredPane mainLayeredPane;
+	private TrackedPane trackedPane;
+	private JPanel glassPane;
 	final Color innerUIObjectColor = new Color(220, 220, 220);
 	UI()
 	{
-		
 		this.mainFrame = new JFrame("논리회로 시뮬레이터");
 		this.mainFrame.setSize(1600, 900);
 		this.mainFrame.setMinimumSize(new Dimension(1131, 800));
 		this.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		this.mainLayeredPane = this.mainFrame.getLayeredPane();
-
+		
+		this.glassPane = (JPanel)this.mainFrame.getGlassPane();
+		this.glassPane.addMouseMotionListener(new MouseMotionListener()
+		{
+			@Override
+			public void mouseDragged(MouseEvent e)
+			{
+			}
+			@Override
+			public void mouseMoved(MouseEvent e)
+			{
+				trackedPane.setLocation(e.getX() - (trackedPane.getWidth() / 2), e.getY() - (trackedPane.getHeight() / 2));
+			}
+		});
+		this.glassPane.addMouseListener(new MouseListener()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				if(e.getButton() == 3)
+				{
+					removeTrackedPane(trackedPane);
+				}
+				else if(e.getButton() == 1)
+				{ 
+					Component pointComp = mainFrame.getContentPane().getComponentAt(e.getX(), e.getY());
+					Component pointComp1 = pointComp.getComponentAt((int)(e.getX() - pointComp.getLocation().getX()), (int)(e.getY() - pointComp.getLocation().getY()));
+					int compX = (int)(e.getX() - pointComp.getLocation().getX() - pointComp1.getLocation().getX());
+					int compY = (int)(e.getY() - pointComp.getLocation().getY() - pointComp1.getLocation().getY());
+					Component pointComp2 = pointComp1.getComponentAt(compX, compY);
+					Component panelComp = pointComp2.getComponentAt(compX, compY);
+					if(panelComp == grid.getGridPanel())
+					{
+						Point loc = grid.getGridScrollPanel().getViewport().getViewPosition().getLocation();
+						if(compX + loc.getX() <= grid.getGridPanel().getWidth() - Size.MARGIN && compY + loc.getY() <= grid.getGridPanel().getHeight() - Size.MARGIN && compX + loc.getX() >= Size.MARGIN && compY + loc.getY() >= Size.MARGIN)
+						{
+							//System.out.println(((int)(() / grid.getUISize().getWidth()) - grid.getNegativeExtendX()) + " " +  ((int)(() / grid.getUISize().getWidth()) - grid.getNegativeExtendY()));
+							trackedPane.addMemberOnGrid((int)((compX + loc.getX()) - Size.MARGIN) / grid.getUISize().getmultiple(), (int)((compY + loc.getY()) - Size.MARGIN) / grid.getUISize().getmultiple());
+							removeTrackedPane(trackedPane);
+						}
+					}
+				}
+			}
+			@Override
+			public void mouseEntered(MouseEvent e)
+			{
+			}
+			@Override
+			public void mouseExited(MouseEvent e)
+			{
+			}
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+			}
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+			}
+			
+		});
+		
 		this.toolBar = new ToolBar();
 		this.underBar = new UnderBar();
 		//layerPane = mainFrame.getLayeredPane();
 		
-		this.gridScrollPane = new JScrollPane();
+
 		
-		this.grid = new Grid(this, gridScrollPane);
+		this.grid = new Grid(this);
 		
 		this.taskManager = new TaskManager();
 		
@@ -90,19 +143,45 @@ public class UI
 		
 		
 		//mainFrame.addComponentListener(new ResizeListener());
-		this.mainFrame.add(this.gridScrollPane, BorderLayout.CENTER);
+		this.mainFrame.add(this.grid.getGridScrollPanel(), BorderLayout.CENTER);
 		this.mainFrame.add(this.toolBar, BorderLayout.NORTH);
 		this.mainFrame.add(this.underBar, BorderLayout.SOUTH);
 		this.mainFrame.add(this.controlPane, BorderLayout.EAST);
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		this.mainFrame.setLocation(screenSize.width/2-mainFrame.getSize().width/2, screenSize.height/2-mainFrame.getSize().height/2);
-		
-		JPanel p = new JPanel();
-		p.setBackground(Color.black);
-		p.setBounds(100, 100, 30, 30);
-		
-		this.mainLayeredPane.add(p, new Integer(1));
+		/*this.mainFrame.getRootPane().addMouseMotionListener(new MouseMotionListener()
+		{
+			@Override
+			public void mouseDragged(MouseEvent arg0)
+			{
+				
+			}
+			@Override
+			public void mouseMoved(MouseEvent arg0)
+			{
+				System.out.println("asd");
+				if(trackedPane != null)
+					trackedPane.setLocation(arg0.getX() - (trackedPane.getWidth() / 2), arg0.getY() - (trackedPane.getHeight() / 2));
+				
+			}
+		});*/
 		this.mainFrame.setVisible(true);
+		/*long eventMask = AWTEvent.MOUSE_MOTION_EVENT_MASK + AWTEvent.MOUSE_EVENT_MASK;
+		Toolkit.getDefaultToolkit().addAWTEventListener( new AWTEventListener()
+		{
+		    public void eventDispatched(AWTEvent e)
+		    {
+		    	
+		    	if(e.paramString().contains("MOUSE_MOVED"))
+		    	{
+		    		//System.out.print(Integer.parseInt(e.paramString().split(",")[1].replace("(", "")));
+		    		//System.out.println(Integer.parseInt(e.paramString().split(",")[2].replace(")", "")));
+		    		System.out.println(e);
+		    	}
+		    }
+		}, eventMask);*/
+
+
 	}
 	TaskManager getTaskManager()
 	{
@@ -112,16 +191,20 @@ public class UI
 	{
 		return underBar;
 	}
-	/*class ResizeListener extends ComponentAdapter
+	void addTrackedPane(TrackedPane trackedPane)
 	{
-		@Override
-		public void componentResized(ComponentEvent e)
-		{
-			gridScrollPane.updateUI();
-			gridScrollPane.setBounds(0, 0, (int)mainFrame.getSize().getWidth() - 15, (int)mainFrame.getSize().getHeight() - 38);
-			controlPane.setBounds((int)mainFrame.getSize().getWidth() - 340, 10, 300, 550);
-		}
-	}*/
+		this.glassPane.setVisible(true);
+		this.trackedPane = trackedPane;
+		
+		this.trackedPane.setLocation((int)this.glassPane.getMousePosition().getX() - (trackedPane.getWidth() / 2), (int)this.glassPane.getMousePosition().getY() - (trackedPane.getHeight() / 2));
+		
+		this.mainLayeredPane.add(trackedPane, new Integer(100));
+	}
+	void removeTrackedPane(TrackedPane trackedPane)
+	{
+		mainLayeredPane.remove(trackedPane);
+		glassPane.setVisible(false);
+	}
 	class ControlPane extends JPanel
 	{
 		private static final long serialVersionUID = 1L;
@@ -238,7 +321,7 @@ public class UI
 				this.setBorder(new PanelBorder("팔레트"));
 				
 				//this.add(new Palette_AND_Gate().getPalettePanel());
-				paletteMember.add(new PaletteMember(new AND()));
+				paletteMember.add(new PaletteMember(grid.new AND()));
 				paletteMember.add(new JButton());
 				paletteMember.add(new JButton());
 				paletteMember.add(new JButton());
@@ -267,14 +350,15 @@ public class UI
 				PaletteMember(GridMember member)
 				{
 					this.putMember = member;
-					System.out.println("check");
 					this.addActionListener(new ActionListener()
 					{
 						@Override
 						public void actionPerformed(ActionEvent e)
 						{
-							System.out.println("check");
-							
+							AND and = grid.new AND();
+							ArrayList<GridMember> list = new ArrayList<GridMember>();
+							list.add(and);
+							addTrackedPane(new TrackedPane(list));
 						}
 					});
 				}
@@ -544,6 +628,61 @@ public class UI
 			this.repaint();
 		}
 	}
+	class TrackedPane extends JPanel implements SizeUpdate
+	{
+		private static final long serialVersionUID = 1L;
+		private List<GridMember> members;
+		private int maxX, maxY, minX, minY;
+		TrackedPane(List<GridMember> members)
+		{
+			this.members = members;
+			this.setBackground(new Color(0, 255, 0, 0));
+			this.sizeUpdate();
+		}
+		@Override
+		public void paint(Graphics g)
+		{
+			BufferedImage img;
+			for(GridMember member : members)
+			{
+				img = member.getSnapShot();
+				g.drawImage(img, (member.getUIabsLocationX() - minX) * grid.getUISize().getmultiple(), (member.getUIabsLocationY() - minY) * grid.getUISize().getmultiple(), this);
+			}
+			super.paint(g);
+		}
+		@Override
+		public void sizeUpdate()
+		{
+			this.minX = members.get(0).getUIabsLocationX();
+			this.minY = members.get(0).getUIabsLocationY();
+			this.maxX = members.get(0).getUIabsLocationX() + members.get(0).getUIabsSizeX();
+			this.maxY = members.get(0).getUIabsLocationY() + members.get(0).getUIabsSizeY();
+			for(GridMember member : members)
+			{
+				this.minX = member.getUIabsLocationX() < minX ? member.getUIabsLocationX() : minX;
+				this.minY = member.getUIabsLocationY() < minY ? member.getUIabsLocationY() : minY;
+				this.maxX = member.getUIabsLocationX() + member.getUIabsSizeX() > maxX ? member.getUIabsLocationX() + member.getUIabsSizeX() : maxX;
+				this.maxY = member.getUIabsLocationY() + member.getUIabsSizeY() > maxY ? member.getUIabsLocationY() + member.getUIabsSizeY() : maxY;
+				System.out.println("설정 최대값: " + minX + " " + minY + " " + maxX + " " + maxY);
+				System.out.println("멤버: " + member.getUIabsLocationX() + " " + member.getUIabsLocationY());
+			}
+			this.setSize((this.maxX - this.minX) * grid.getUISize().getmultiple(), (this.maxY - this.minY) * grid.getUISize().getmultiple());
+			this.repaint();
+
+		}
+		void addMemberOnGrid(int absX, int absY)
+		{
+			int stdX = absX - ((this.getWidth() / 2) / grid.getUISize().getmultiple()) - (grid.getNegativeExtendX() * Size.REGULAR_SIZE);
+			int stdY = absY - ((this.getHeight() / 2) / grid.getUISize().getmultiple()) - (grid.getNegativeExtendY() * Size.REGULAR_SIZE);
+			System.out.println("nSize" + grid.getNegativeExtendX() + " " + grid.getNegativeExtendY());
+			
+			for(GridMember member : members)
+			{
+				member.put(stdX - this.minX + member.getUIabsLocationX(), stdY - this.minY + member.getUIabsLocationY());
+			}
+			this.removeAll();
+		}
+	}
 }
 class UIButton extends JButton
 {
@@ -589,48 +728,8 @@ class PanelBorder extends TitledBorder
 	
 }*/
 
-class TrackedPane extends JPanel
-{
-	private static final long serialVersionUID = 1L;
-	private JPanel trackedPanel;
-	private List<GridMember> members;
-	private int maxX, maxY, minX, minY;
-	TrackedPane(GridMember member)
-	{
-		members = new ArrayList<GridMember>();
-		members.add(member);
-	}
-	TrackedPane(List<GridMember> members)
-	{
-		this.members = members;
-		this.minX = members.get(0).getUILocationX();
-		this.minY = members.get(0).getUILocationY();
-		this.maxX = members.get(0).getUILocationX() + members.get(0).getSizeX();
-		this.maxY = members.get(0).getUILocationY() + members.get(0).getSizeY();
-		for(GridMember member : members)
-		{
-			this.minX = member.getUILocationX() < minX ? member.getUILocationX() : minX;
-			this.minY = member.getUILocationY() < minY ? member.getUILocationY() : minY;
-			this.maxX = member.getUILocationX() + members.get(0).getSizeX() > maxX ? member.getUILocationX() + members.get(0).getSizeX() : maxX;
-			this.maxY = member.getUILocationY() + members.get(0).getSizeY() > maxY ? member.getUILocationY() + members.get(0).getSizeY() : maxY;
-		}
-		this.setSize(this.maxX - this.minX, this.maxY - this.minY);
 
-	}
-	@Override
-	public void paint(Graphics g)
-	{
-		BufferedImage img;
-		for(GridMember member : members)
-		{
-			img = member.getView();
-			//g.drawImage(img, , 0, img.getWidth(), img.getHeight(), this);
-		}
-	
-	}
-	void sizeUpdate()
-	{
-		this.repaint();
-		//TODO 변경 구현
-	}
+interface SizeUpdate
+{
+	void sizeUpdate();
 }
