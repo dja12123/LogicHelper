@@ -663,8 +663,6 @@ public class UI
 				this.minY = member.getUIabsLocationY() < minY ? member.getUIabsLocationY() : minY;
 				this.maxX = member.getUIabsLocationX() + member.getUIabsSizeX() > maxX ? member.getUIabsLocationX() + member.getUIabsSizeX() : maxX;
 				this.maxY = member.getUIabsLocationY() + member.getUIabsSizeY() > maxY ? member.getUIabsLocationY() + member.getUIabsSizeY() : maxY;
-				System.out.println("설정 최대값: " + minX + " " + minY + " " + maxX + " " + maxY);
-				System.out.println("멤버: " + member.getUIabsLocationX() + " " + member.getUIabsLocationY());
 			}
 			this.setSize((this.maxX - this.minX) * grid.getUISize().getmultiple(), (this.maxY - this.minY) * grid.getUISize().getmultiple());
 			this.repaint();

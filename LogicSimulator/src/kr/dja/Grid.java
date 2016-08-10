@@ -12,6 +12,12 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -28,6 +34,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.SwingConstants;
 import javax.swing.border.EtchedBorder;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import kr.dja.UI.UnderBar;
 
@@ -38,12 +48,12 @@ public class Grid
 	private JScrollPane gridScrollPane;
 	private ViewPort viewPort;
 	private GridPanel gridPanel;
-	private int gridSizeX = 10;
-	private int gridSizeY = 10;
-	private int negativeExtendX = 0;
-	private int negativeExtendY = 0;
-	private final int MAX_SIZE = 15;
-	private final int MAX_ABSOLUTE = 10;
+	private int gridSizeX = 30;
+	private int gridSizeY = 30;
+	private int negativeExtendX = 15;
+	private int negativeExtendY = 15;
+	private final int MAX_SIZE = 100;
+	private final int MAX_ABSOLUTE = 150;
 	 
 	private RulerPanel horizonRulerScrollPane;
 	private RulerPanel verticalRulerScrollPane;
@@ -287,7 +297,7 @@ public class Grid
 		private static final long serialVersionUID = 1L;
 		
 		private JLayeredPane layeredPane;
-		
+
 		private ExpansionPane eastExpansionPane;
 		private ExpansionPane westExpansionPane;
 		private ExpansionPane southExpansionPane;
@@ -295,12 +305,16 @@ public class Grid
 		
 		private Component dftComponent;
 		
+		private Selector selecter;
+
+		
 		ViewPort()
 		{
 			this.layeredPane = new JLayeredPane();
 			
 			eastExpansionPane = new ExpansionPane(SizeExt.EAST)
 			{
+				private static final long serialVersionUID = 1L;
 				{
 					this.setSize(Size.MARGIN - 6, Size.MARGIN * 2);
 					super.setLayout(new GridLayout(4, 1, 0, 2));
@@ -309,6 +323,7 @@ public class Grid
 			};
 			westExpansionPane = new ExpansionPane(SizeExt.WEST)
 			{
+				private static final long serialVersionUID = 1L;
 				{
 					this.setSize(Size.MARGIN - 6, Size.MARGIN * 2);
 					super.setLayout(new GridLayout(4, 1, 0, 2));
@@ -317,6 +332,7 @@ public class Grid
 			
 			southExpansionPane = new ExpansionPane(SizeExt.SOUTH)
 			{
+				private static final long serialVersionUID = 1L;
 				{
 					this.setSize(Size.MARGIN * 2, Size.MARGIN - 6);
 					super.setLayout(new GridLayout(1, 4, 2, 0));
@@ -325,6 +341,7 @@ public class Grid
 			
 			northExpansionPane = new ExpansionPane(SizeExt.NORTH)
 			{
+				private static final long serialVersionUID = 1L;
 				{
 					this.setSize(Size.MARGIN * 2, Size.MARGIN - 6);
 					super.setLayout(new GridLayout(1, 4, 2, 0));
@@ -335,17 +352,167 @@ public class Grid
 			this.layeredPane.add(westExpansionPane, new Integer(1));
 			this.layeredPane.add(southExpansionPane, new Integer(1));
 			this.layeredPane.add(northExpansionPane, new Integer(1));
-			super.setView(layeredPane);
 			
+
+			
+			this.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mousePressed(MouseEvent e)
+				{
+					removeSelecter();
+					if(e.getButton() == 1)
+					{
+						selecter = new Selector(50, 100, 255, 80, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY())
+						{
+							private static final long serialVersionUID = 1L;
+							@Override
+							void action(int mouseX, int mouseY, int viewX, int viewY)
+							{
+								for(GridMember member : gridPanel.getMembers())
+								{
+									if((this.getX() < member.getGridViewPane().getX() && this.getX() + this.getWidth() > member.getGridViewPane().getX() + member.getGridViewPane().getWidth())
+									 && this.getY() < member.getGridViewPane().getY() && this.getY() + this.getHeight() > member.getGridViewPane().getY() + member.getGridViewPane().getHeight())
+									{
+										if(!member.isSelect())
+										{
+											member.selectView();
+										}
+									}
+									else
+									{
+										member.selectDeView();
+									}
+								}
+								super.action(mouseX, mouseY, viewX, viewY);
+							}
+							@Override
+							void actionFinal()
+							{
+								for(GridMember member : gridPanel.getMembers())
+								{
+									if(member.isSelectView())
+									{
+										member.select();
+									}
+								}
+							}
+						};
+					}
+					else if(e.getButton() == 3)
+					{
+						selecter = new Selector(255, 100, 50, 80, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY())
+						{
+							private static final long serialVersionUID = 1L;
+							@Override
+							void action(int mouseX, int mouseY, int viewX, int viewY)
+							{
+								for(GridMember member : gridPanel.getMembers())
+								{
+									if((this.getX() < member.getGridViewPane().getX() && this.getX() + this.getWidth() > member.getGridViewPane().getX() + member.getGridViewPane().getWidth())
+									 && this.getY() < member.getGridViewPane().getY() && this.getY() + this.getHeight() > member.getGridViewPane().getY() + member.getGridViewPane().getHeight())
+									{
+										if(member.isSelect())
+										{
+											member.selectView();
+										}
+									}
+									else
+									{
+										member.selectDeView();
+									}
+								}
+								super.action(mouseX, mouseY, viewX, viewY);
+							}
+							@Override
+							void actionFinal()
+							{
+								for(GridMember member : gridPanel.getMembers())
+								{
+									if(member.isSelectView())
+									{
+										member.deSelect();
+									}
+								}
+							}
+						};
+					}
+					layeredPane.add(selecter, new Integer(2));
+				}
+				@Override
+				public void mouseReleased(MouseEvent e)
+				{
+					removeSelecter();
+				}
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					if(e.getButton() == 1)
+					{
+						for(GridMember member : gridPanel.getMembers())
+						{
+							if((member.getGridViewPane().getX() < e.getX() + (int)getViewPosition().getX() && member.getGridViewPane().getX() + member.getGridViewPane().getWidth() > e.getX() + (int)getViewPosition().getX())
+							&& (member.getGridViewPane().getY() < e.getY() + (int)getViewPosition().getY() && member.getGridViewPane().getY() + member.getGridViewPane().getHeight() > e.getY() + (int)getViewPosition().getY()))
+							{
+								member.selectFocus();
+							}
+						}
+					}
+					else if(e.getButton() == 3)
+					{
+						for(GridMember member : gridPanel.getMembers())
+						{
+							if((member.getGridViewPane().getX() < e.getX() + (int)getViewPosition().getX() && member.getGridViewPane().getX() + member.getGridViewPane().getWidth() > e.getX() + (int)getViewPosition().getX())
+							&& (member.getGridViewPane().getY() < e.getY() + (int)getViewPosition().getY() && member.getGridViewPane().getY() + member.getGridViewPane().getHeight() > e.getY() + (int)getViewPosition().getY()))
+							{
+								member.deSelect();
+							}
+						}
+					}
+				}
+			});
+			this.addMouseMotionListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseDragged(MouseEvent e)
+				{
+					if(selecter != null)
+					{
+						selecter.action(e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY());
+					}
+				}
+			});
+			this.addChangeListener(new ChangeListener(){
+
+				@Override
+				public void stateChanged(ChangeEvent arg0)
+				{
+					if(selecter != null)
+					{
+						selecter.action((int)getViewPosition().getX(), (int)getViewPosition().getY());
+					}
+
+				}
+				
+			});
+			super.setView(layeredPane);
+		}
+		void removeSelecter()
+		{
+			if(selecter != null)
+			{
+				selecter.actionFinal();
+				layeredPane.remove(selecter);
+				selecter = null;
+				layeredPane.repaint();
+			}
 		}
 		@Override
 		public void setView(Component p)
 		{
 			this.dftComponent = p;
-			
-			this.layeredPane.setPreferredSize(new Dimension(this.dftComponent.getPreferredSize().width, this.dftComponent.getPreferredSize().height));
-			p.setBounds(0, 0, this.dftComponent.getPreferredSize().width, this.dftComponent.getPreferredSize().height);
 			this.layeredPane.add(this.dftComponent, new Integer(0));
+			this.sizeUpdate();
 		}
 		@Override
 		public void setViewPosition(Point p)
@@ -368,6 +535,43 @@ public class Grid
 		public void sizeUpdate()
 		{
 			this.layeredPane.setPreferredSize(new Dimension(this.dftComponent.getWidth(), this.dftComponent.getHeight()));
+		}
+		private class Selector extends JPanel
+		{
+			int startX, startY, startViewX, startViewY;
+			int mouseX, mouseY;
+			private static final long serialVersionUID = 1L;
+			Selector(int r, int g, int b, int a, int startX, int startY, int startViewX, int startViewY)
+			{
+				this.startX = startX;
+				this.startY = startY;
+				this.mouseX = startX;
+				this.mouseY = startY;
+				this.startViewX = startViewX;
+				this.startViewY = startViewY;
+				this.setBackground(new Color(r, g, b, a));
+				this.setSize(0, 0);
+				this.action(startX, startY, startViewX, startViewY);
+			}
+			void action(int mouseX, int mouseY, int viewX, int viewY)
+			{
+				this.mouseX = mouseX;
+				this.mouseY = mouseY;
+				this.setSize(Math.abs(this.mouseX - this.startX + ((int)getViewPosition().getX() - startViewX)), 
+					    Math.abs(this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)));
+				this.setLocation((this.mouseX - this.startX + ((int)getViewPosition().getX() - startViewX)) > 0 ? this.getX() : (int)this.startX + startViewX - Math.abs(this.mouseX - this.startX + ((int)getViewPosition().getX() - startViewX)), 
+						    (this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)) > 0 ? this.getY() : (int)this.startY + startViewY - Math.abs(this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)));
+				this.repaint();
+				layeredPane.repaint();
+			}
+			void action(int viewX, int viewY)
+			{
+				this.action(mouseX, mouseY, viewX, viewY);
+			}
+			void actionFinal()
+			{
+				
+			}
 		}
 		private abstract class ExpansionPane extends JPanel
 		{
@@ -423,7 +627,6 @@ public class Grid
 						gridExtend(ext, -1);
 					}
 				});
-				
 				this.add(expButton);
 				this.add(expMButton);
 				this.add(redButton);
@@ -447,53 +650,50 @@ public class Grid
 	}
 	class GridPanel extends JPanel implements SizeUpdate
 	{
-		List<GridMember> members = new ArrayList<GridMember>();
-		HashMap<Integer, HashMap<Integer, LogicBlock>> logicMember = new HashMap<Integer, HashMap<Integer, LogicBlock>>();
+		private List<GridMember> members = new ArrayList<GridMember>();
+		private HashMap<Integer, HashMap<Integer, LogicBlock>> logicMembers = new HashMap<Integer, HashMap<Integer, LogicBlock>>();
 		private static final long serialVersionUID = 1L;
 		GridPanel()
 		{
 			this.setLayout(null);
 			this.setBackground(new Color(200, 200, 200));
 			this.sizeUpdate();
-			this.addMouseListener(new MouseListener()
-			{
-				@Override
-				public void mouseClicked(MouseEvent arg0)
-				{
-					System.out.println("gridCheck");
-					
-				}
-				@Override
-				public void mouseEntered(MouseEvent arg0){}
-				@Override
-				public void mouseExited(MouseEvent arg0){}
-				@Override
-				public void mousePressed(MouseEvent arg0){}
-				@Override
-				public void mouseReleased(MouseEvent arg0){}
-			});
 		}
 		void addMember(GridMember member)
 		{
 			if(member instanceof LogicBlock)
 			{
 				LogicBlock block = ((LogicBlock) member);
-				if(!logicMember.containsKey(new Integer(block.getBlockLocationX())))
+				if(logicMembers.containsKey(new Integer(block.getBlockLocationX())) && logicMembers.get(new Integer(block.getBlockLocationX())).containsKey(block.getBlockLocationY()))
 				{
-					logicMember.put(new Integer(block.getBlockLocationX()), new HashMap<Integer, LogicBlock>());
+					this.removeMember(logicMembers.get(new Integer(block.getBlockLocationX())).get(block.getBlockLocationY()));
 				}
-				else if(logicMember.get(new Integer(block.getBlockLocationX())).containsKey(block.getBlockLocationY()))
+				if(!logicMembers.containsKey(new Integer(block.getBlockLocationX())))
 				{
-					this.removeMember(logicMember.get(new Integer(block.getBlockLocationX())).get(block.getBlockLocationY()));
+					logicMembers.put(new Integer(block.getBlockLocationX()), new HashMap<Integer, LogicBlock>());
 				}
-				logicMember.get(new Integer(block.getBlockLocationX())).put(new Integer(block.getBlockLocationY()), block);
+				logicMembers.get(new Integer(block.getBlockLocationX())).put(new Integer(block.getBlockLocationY()), block);
 			}
 			this.members.add(member);
 			this.add(member.getGridViewPane());
 		}
 		void removeMember(GridMember member)
 		{
-			
+			if(member instanceof LogicBlock)
+			{
+				LogicBlock block = ((LogicBlock) member);
+				logicMembers.get(new Integer(block.getBlockLocationX())).remove(new Integer(block.getBlockLocationY()), block);
+				if(logicMembers.get(new Integer(block.getBlockLocationX())).size() == 0)
+				{
+					logicMembers.remove(new Integer(block.getBlockLocationX()));
+				}
+			}
+			this.members.remove(member);
+			this.remove(member.getGridViewPane());
+		}
+		List<GridMember> getMembers()
+		{
+			return this.members;
 		}
 		@Override
 		public void paintComponent(Graphics g)
@@ -512,30 +712,157 @@ public class Grid
 		@Override
 		public void sizeUpdate()
 		{
+			List<GridMember> tempMembers = new ArrayList<GridMember>(); //ConcurrentModificationException방지용
 			this.setSize((gridSizeX * UI_Size.getWidth()) + (Size.MARGIN * 2), (gridSizeY * UI_Size.getWidth()) + (Size.MARGIN * 2));
 			for(GridMember member : members)
 			{
-				member.getGridViewPane().sizeUpdate();
+				member.sizeUpdate();
+				tempMembers.add(member);
 			}
 			this.repaint();
+			for(GridMember member : tempMembers)
+			{
+				if((this.getWidth() - Size.MARGIN < member.getGridViewPane().getX() + member.getGridViewPane().getWidth() || Size.MARGIN > member.getGridViewPane().getX()) || (this.getHeight() - Size.MARGIN < member.getGridViewPane().getY() + member.getGridViewPane().getHeight() || Size.MARGIN > member.getGridViewPane().getY()))
+				{
+					this.removeMember(member);
+				}
+			}
 		}
+
 	}
+	private ArrayList<GridMember> selectMembers = new ArrayList<GridMember>();
+	private GridMember selectFocusMember;
 	abstract class GridMember implements SizeUpdate
 	{
 		protected int UIabslocationX = 0;
 		protected int UIabslocationY = 0;
 		protected int UIabsSizeX = 1;
 		protected int UIabsSizeY = 1;
+		private JLayeredPane layeredPane;
 		protected GridViewPane gridViewPane;
+		
+		private SelectShowPanel selectShowPanel = null;
+		private SelectShowPanel selectView = null;
+		private boolean selectViewFlag = false;
 		
 		protected GridMember()
 		{
 			this.gridViewPane = new GridViewPane();
-			this.gridViewPane.setBackground(Color.red);
+			this.gridViewPane.setBackground(new Color(100, 100, 100));
 			this.gridViewPane.setLayout(null);
+			this.layeredPane = new JLayeredPane();
+			this.layeredPane.add(gridViewPane, new Integer(0));
 			this.sizeUpdate();
 		}
 		protected abstract GridMember clone();
+		void selectFocus()
+		{
+			ArrayList<GridMember> members = new ArrayList<GridMember>();
+			for(GridMember member : selectMembers)
+			{
+				members.add(member);
+			}
+			for(GridMember member : members)
+			{
+				member.deSelect();
+			}
+			this.selectDeView();
+			if(this.selectShowPanel == null)
+			{
+				this.selectShowPanel = new SelectShowPanel(50, 255, 100, 60, 50, 255, 100);
+				this.layeredPane.add(selectShowPanel, new Integer(1));
+				if(selectFocusMember != null)
+				{
+					selectFocusMember.deSelect();
+				}
+				selectMembers.add(this);
+				selectFocusMember = this;
+				this.sizeUpdate();
+			}
+			else
+			{
+				this.deSelect();
+				this.selectFocus();
+			}
+		}
+		void select()
+		{
+			this.selectDeView();
+			if(this.selectShowPanel == null)
+			{
+				this.selectShowPanel = new SelectShowPanel(50, 100, 255, 60, 100, 150, 255);
+				this.layeredPane.add(selectShowPanel, new Integer(1));
+				selectMembers.add(this);
+				this.sizeUpdate();
+				if(selectFocusMember != null)
+				{
+					selectFocusMember.select();
+				}
+			}
+			else
+			{
+				this.deSelect();
+				this.select();
+			}
+		}
+		void selectView()
+		{//단순 표시용
+			if(selectView == null)
+			{
+				/*if(this.selectShowPanel != null)
+				{
+					this.layeredPane.remove(this.selectShowPanel);
+				}*/
+				this.selectViewFlag = true;
+				this.selectView = new SelectShowPanel(0, 0, 0, 0, 255, 100, 30);
+				this.layeredPane.add(this.selectView, new Integer(2));
+				this.sizeUpdate();
+			}
+		}
+		boolean isSelectView()
+		{
+			return this.selectViewFlag;
+		}
+		void selectDeView()
+		{
+			if(selectView != null)
+			{
+				
+				this.selectViewFlag = false;
+				this.layeredPane.remove(this.selectView);
+				this.selectView = null;
+				/*if(this.selectShowPanel != null)
+				{
+					this.layeredPane.add(this.selectShowPanel, new Integer(1));
+				}*/
+				this.sizeUpdate();
+			}
+		}
+		void deSelect()
+		{
+			if(selectFocusMember == this)
+			{
+				selectFocusMember = null;
+			}
+			if(selectMembers.contains(this))
+			{
+				selectMembers.remove(this);
+			}
+			if(this.selectShowPanel != null)
+			{
+				this.layeredPane.remove(this.selectShowPanel);
+				this.selectShowPanel = null;
+			}
+			this.selectDeView();
+		}
+		boolean isSelect()
+		{
+			if(this.selectShowPanel != null)
+			{
+				return true;
+			}
+			return false;
+		}
 		int getUIabsLocationX()
 		{//실제 위치는 절대 위치에 배수를 곱해서 사용
 			return UIabslocationX;
@@ -556,6 +883,15 @@ public class Grid
 		public void sizeUpdate()
 		{
 			this.gridViewPane.sizeUpdate();
+			this.layeredPane.setBounds(((UIabslocationX + (negativeExtendX * Size.REGULAR_SIZE)) * UI_Size.getmultiple()) + Size.MARGIN, ((UIabslocationY + (negativeExtendY * Size.REGULAR_SIZE)) * UI_Size.getmultiple()) + Size.MARGIN, UIabsSizeX * UI_Size.getmultiple(), UIabsSizeY * UI_Size.getmultiple());
+			if(this.selectShowPanel != null)
+			{
+				this.selectShowPanel.sizeUpdate();
+			}
+			if(this.selectView != null)
+			{
+				this.selectView.sizeUpdate();
+			}
 		}
 		void put(int absX, int absY)
 		{
@@ -575,16 +911,38 @@ public class Grid
 			this.gridViewPane.printAll(img.getGraphics());
 			return img;
 		}
-		GridViewPane getGridViewPane()
+		JLayeredPane getGridViewPane()
 		{
-			return this.gridViewPane;
+			return this.layeredPane;
+		}
+		class SelectShowPanel extends JPanel implements SizeUpdate
+		{
+			private static final long serialVersionUID = 1L;
+			int r, g, b, s, a, rs, gs, bs;
+			SelectShowPanel(int r, int g, int b, int a, int rs, int gs, int bs)
+			{
+				this.r = r; this.g = g; this.b = b; this.a = a;this.rs = rs; this.gs = gs; this.bs = bs;
+				this.setBackground(new Color(r, g, b, a));
+			}
+			@Override
+			public void sizeUpdate()
+			{
+				this.setBounds(UI_Size.getmultiple(), UI_Size.getmultiple(), UIabsSizeX * UI_Size.getmultiple() - (UI_Size.getmultiple() * 2), UIabsSizeY * UI_Size.getmultiple() - (UI_Size.getmultiple() * 2));
+			}
+			@Override
+			public void paint(Graphics g)
+			{
+				g.setColor(new Color(this.rs, this.gs, this.bs));
+				g.drawRect(0, 0, this.getWidth() - 1, this.getHeight() - 1);
+				super.paint(g);
+			}
 		}
 		class GridViewPane extends JPanel implements SizeUpdate
 		{
 			private static final long serialVersionUID = 1L;
 			GridViewPane()
 			{
-				sizeUpdate();
+				this.sizeUpdate();
 			}
 			@Override
 			public void paint(Graphics g)
@@ -594,7 +952,7 @@ public class Grid
 			@Override
 			public void sizeUpdate()
 			{
-				this.setBounds(((UIabslocationX + (negativeExtendX * Size.REGULAR_SIZE)) * UI_Size.getmultiple()) + Size.MARGIN, ((UIabslocationY + (negativeExtendY * Size.REGULAR_SIZE)) * UI_Size.getmultiple()) + Size.MARGIN, UIabsSizeX * UI_Size.getmultiple(), UIabsSizeY * UI_Size.getmultiple());
+				this.setBounds(0, 0, UIabsSizeX * UI_Size.getmultiple(), UIabsSizeY * UI_Size.getmultiple());
 			}
 		}
 	}
@@ -643,14 +1001,12 @@ public class Grid
 		@Override
 		void put(int absX, int absY)
 		{
-			System.out.println("mouseABS: " + absX + " " + absY);
 			absX = absX < 0 ? absX - (Size.REGULAR_SIZE) : absX;
 			absY = absY < 0 ? absY - (Size.REGULAR_SIZE) : absY;
 			absX = absX / Size.REGULAR_SIZE;
 			absY = absY / Size.REGULAR_SIZE;
 			this.blocklocationX = absX;
 			this.blocklocationY = absY;
-			System.out.println("BLOCK: " + blocklocationX + " " + blocklocationY);
 			super.put((this.blocklocationX * Size.REGULAR_SIZE), (this.blocklocationY * Size.REGULAR_SIZE));
 		}
 		int getBlockLocationX()
@@ -666,7 +1022,9 @@ public class Grid
 	{
 		AND()
 		{
-			
+			JButton b = new JButton("AND");
+			b.setBounds(1, 15, 58, 30);
+			super.gridViewPane.add(b);
 		}
 		AND(AND org)
 		{
