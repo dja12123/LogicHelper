@@ -23,14 +23,19 @@ public class LogicCore
 	{
 		new UI();
 	}
+	public static Resource getResource()
+	{
+		return RES;
+	}
 }
 class Resource
 {
 	public Font NORMAL_FONT;
 	public Font PIXEL_FONT;
 	public Font BAR_FONT;
+	public int ASD;
 	Properties config = new Properties();
-	Resource()
+	public Resource()
 	{
 		
 		try

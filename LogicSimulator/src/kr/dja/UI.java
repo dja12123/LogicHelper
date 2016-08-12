@@ -32,12 +32,14 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
 import kr.dja.Grid.AND;
 import kr.dja.Grid.GridMember;
-
+import kr.dja.UI.ControlPane.BlockControlPanel;
+import kr.dja.*;
 public class UI
 {
 	private JFrame mainFrame;
@@ -52,7 +54,7 @@ public class UI
 	private TrackedPane trackedPane;
 	private JPanel glassPane;
 	final Color innerUIObjectColor = new Color(220, 220, 220);
-	UI()
+	public UI()
 	{
 		this.mainFrame = new JFrame("논리회로 시뮬레이터");
 		this.mainFrame.setSize(1600, 900);
@@ -183,9 +185,9 @@ public class UI
 
 
 	}
-	TaskManager getTaskManager()
+	ControlPane getControlPane()
 	{
-		return this.taskManager;
+		return this.controlPane;
 	}
 	UnderBar getUnderBar()
 	{
@@ -254,33 +256,37 @@ public class UI
 			
 			
 		}
-		private class BlockControlPanel extends JPanel
+		BlockControlPanel getBlockControlPanel()
+		{
+			return this.blockControlPanel;
+		}
+		class BlockControlPanel extends JPanel
 		{
 			private static final long serialVersionUID = 1L;
-			private JPanel detailViewPanel;
-			private JPanel detailControlPanel;
+			
+			private DefaultPane defaultPane;
 
 			BlockControlPanel()
 			{
 				super();
 				
+				this.defaultPane = new DefaultPane();
 				this.setLayout(null);
 				this.setBounds(5, 5, 390, 150);
 				this.setBorder(new PanelBorder("블록 세부 편집"));
-				
-				this.detailViewPanel = new JPanel();
-				this.detailViewPanel.setLayout(null);
-				this.detailViewPanel.setBounds(8, 21, 120, 120);
-				this.detailViewPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
-				this.detailViewPanel.setBackground(new Color(200, 220, 250));
-				
-				this.detailControlPanel = new JPanel();
-				this.detailControlPanel.setLayout(null);
-				this.detailControlPanel.setBounds(133, 21, 248, 120);
-				this.detailControlPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
-				
-				this.add(detailViewPanel);
-				this.add(detailControlPanel);
+				this.removeControlPane();
+			}
+			void addControlPanel(JPanel panel)
+			{
+				this.removeAll();
+				this.repaint();
+				panel.setBounds(8, 20, 373, 121);
+				this.add(panel);
+			}
+			void removeControlPane()
+			{
+				this.removeAll();
+				this.addControlPanel(defaultPane);
 			}
 		}
 		private class InfoPanel extends JPanel
@@ -304,7 +310,6 @@ public class UI
 				
 				
 				this.add(explanationArea);
-				
 			}
 		}
 		private class PalettePanel extends JPanel
@@ -730,4 +735,78 @@ class PanelBorder extends TitledBorder
 interface SizeUpdate
 {
 	void sizeUpdate();
+}
+class ManySelectEditPanel extends JPanel
+{
+	private static final long serialVersionUID = 1L;
+	private JLabel numberLabel;
+	private JButton createTempButton;
+	private JButton exportTempButton;
+	private JButton restoreButton;
+	private JButton removeButton;
+	ManySelectEditPanel(ArrayList<GridMember> selectMembers, BlockControlPanel blockControl)
+	{
+		super();
+		this.setLayout(null);
+		this.numberLabel = new JLabel();
+		this.numberLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.numberLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16F));
+		this.numberLabel.setBounds(0, 0, 373, 20);
+		this.numberLabel.setText(Integer.toString(selectMembers.size()) + " 개의 블록 선택");
+		this.createTempButton = new JButton();
+		this.createTempButton.setBounds(26, 30, 60, 60);
+		this.exportTempButton = new JButton();
+		this.exportTempButton.setBounds(112, 30, 60, 60);
+		this.restoreButton = new JButton();
+		this.restoreButton.setBounds(201, 30, 60, 60);
+		this.removeButton = new JButton();
+		this.removeButton.setBounds(287, 30, 60, 60);
+		
+		this.add(this.numberLabel);
+		this.add(this.createTempButton);
+		this.add(this.exportTempButton);
+		this.add(this.restoreButton);
+		this.add(this.removeButton);
+		
+		blockControl.addControlPanel(this);
+	}
+}
+class SelectControlPanel extends JPanel
+{
+	private static final long serialVersionUID = 1L;
+	private JLabel numberLabel;
+	SelectControlPanel(String text, BlockControlPanel blockControl)
+	{
+		super();
+		this.setLayout(null);
+		this.numberLabel = new JLabel();
+		this.numberLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.numberLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0F));
+		this.numberLabel.setBounds(0, 40, 373, 20);
+		this.setNumber(0);
+		this.add(this.numberLabel);
+		blockControl.addControlPanel(this);
+		
+	}
+	void setNumber(int num)
+	{
+		this.numberLabel.setText(Integer.toString(num) + " 개의 블록 선택");
+	}
+}
+class DefaultPane extends JPanel
+{
+	private static final long serialVersionUID = 1L;
+	
+	private JLabel text;
+	DefaultPane()
+	{
+		super();
+		this.setLayout(null);
+		this.text = new JLabel();
+		this.text.setHorizontalAlignment(SwingConstants.CENTER);
+		this.text.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
+		this.text.setBounds(0, 40, 373, 20);
+		this.text.setText("블록을 선택하시려면 클릭 혹은 드레그 하세요");
+		this.add(this.text);
+	}
 }

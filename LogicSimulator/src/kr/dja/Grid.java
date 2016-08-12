@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -39,11 +40,12 @@ import javax.swing.event.AncestorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import kr.dja.UI.ControlPane;
 import kr.dja.UI.UnderBar;
 
 public class Grid
-{
-	private UI ui;
+{//패키지로 분리 필요
+	private UI logicUI;
 	private Size UI_Size;
 	private JScrollPane gridScrollPane;
 	private ViewPort viewPort;
@@ -61,7 +63,7 @@ public class Grid
 	
 	Grid(UI ui)
  	{
-		this.ui = ui;
+		this.logicUI = ui;
 		this.gridScrollPane = new JScrollPane();;
 		this.UI_Size = Size.middle;
 		
@@ -275,7 +277,7 @@ public class Grid
 		}
 		reSize(this.UI_Size);
 		viewPort.sizeUpdate();
-		ui.getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
+		logicUI.getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
 	}
 	void reSize(Size size)
 	{
@@ -363,81 +365,59 @@ public class Grid
 					removeSelecter();
 					if(e.getButton() == 1)
 					{
-						selecter = new Selector(50, 100, 255, 80, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY())
+						selecter = new Selector(50, 100, 255, 80, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "개의 블록 추가 선택")
 						{
 							private static final long serialVersionUID = 1L;
+							
 							@Override
-							void action(int mouseX, int mouseY, int viewX, int viewY)
+							void selectAction(GridMember member)
 							{
-								for(GridMember member : gridPanel.getMembers())
-								{
-									if((this.getX() < member.getGridViewPane().getX() && this.getX() + this.getWidth() > member.getGridViewPane().getX() + member.getGridViewPane().getWidth())
-									 && this.getY() < member.getGridViewPane().getY() && this.getY() + this.getHeight() > member.getGridViewPane().getY() + member.getGridViewPane().getHeight())
+								System.out.println(isSelect(member));
+								if(!isSelect(member) || isFocusSelect(member))
+								{											
+									if(!super.selectMember.contains(member))
 									{
-										if(!member.isSelect())
-										{
-											member.selectView();
-										}
-									}
-									else
-									{
-										member.selectDeView();
+										System.out.println("추가");
+										super.selectMember.add(member);
 									}
 								}
-								super.action(mouseX, mouseY, viewX, viewY);
 							}
 							@Override
 							void actionFinal()
 							{
-								for(GridMember member : gridPanel.getMembers())
-								{
-									if(member.isSelectView())
-									{
-										member.select();
-									}
-								}
+								select(super.selectMember);
 							}
 						};
+						
 					}
 					else if(e.getButton() == 3)
 					{
-						selecter = new Selector(255, 100, 50, 80, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY())
+						selecter = new Selector(255, 100, 50, 80, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "개의 블록 선택 해제")
 						{
 							private static final long serialVersionUID = 1L;
+
 							@Override
-							void action(int mouseX, int mouseY, int viewX, int viewY)
+							void selectAction(GridMember member)
 							{
-								for(GridMember member : gridPanel.getMembers())
-								{
-									if((this.getX() < member.getGridViewPane().getX() && this.getX() + this.getWidth() > member.getGridViewPane().getX() + member.getGridViewPane().getWidth())
-									 && this.getY() < member.getGridViewPane().getY() && this.getY() + this.getHeight() > member.getGridViewPane().getY() + member.getGridViewPane().getHeight())
+								System.out.println(isSelect(member));
+								if(isSelect(member))
+								{											
+									if(!super.selectMember.contains(member))
 									{
-										if(member.isSelect())
-										{
-											member.selectView();
-										}
-									}
-									else
-									{
-										member.selectDeView();
+										System.out.println("추가");
+										super.selectMember.add(member);
 									}
 								}
-								super.action(mouseX, mouseY, viewX, viewY);
 							}
 							@Override
 							void actionFinal()
 							{
-								for(GridMember member : gridPanel.getMembers())
-								{
-									if(member.isSelectView())
-									{
-										member.deSelect();
-									}
-								}
+								deSelect(super.selectMember);
 							}
+						
 						};
 					}
-					layeredPane.add(selecter, new Integer(2));
+					
 				}
 				@Override
 				public void mouseReleased(MouseEvent e)
@@ -454,7 +434,7 @@ public class Grid
 							if((member.getGridViewPane().getX() < e.getX() + (int)getViewPosition().getX() && member.getGridViewPane().getX() + member.getGridViewPane().getWidth() > e.getX() + (int)getViewPosition().getX())
 							&& (member.getGridViewPane().getY() < e.getY() + (int)getViewPosition().getY() && member.getGridViewPane().getY() + member.getGridViewPane().getHeight() > e.getY() + (int)getViewPosition().getY()))
 							{
-								member.selectFocus();
+								selectFocus(member);
 							}
 						}
 					}
@@ -465,7 +445,9 @@ public class Grid
 							if((member.getGridViewPane().getX() < e.getX() + (int)getViewPosition().getX() && member.getGridViewPane().getX() + member.getGridViewPane().getWidth() > e.getX() + (int)getViewPosition().getX())
 							&& (member.getGridViewPane().getY() < e.getY() + (int)getViewPosition().getY() && member.getGridViewPane().getY() + member.getGridViewPane().getHeight() > e.getY() + (int)getViewPosition().getY()))
 							{
-								member.deSelect();
+								ArrayList<GridMember> temp = new ArrayList<GridMember>();
+								temp.add(member);
+								deSelect(temp);
 							}
 						}
 					}
@@ -480,6 +462,7 @@ public class Grid
 					{
 						selecter.action(e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY());
 					}
+					
 				}
 			});
 			this.addChangeListener(new ChangeListener(){
@@ -536,12 +519,17 @@ public class Grid
 		{
 			this.layeredPane.setPreferredSize(new Dimension(this.dftComponent.getWidth(), this.dftComponent.getHeight()));
 		}
-		private class Selector extends JPanel
+		private abstract class Selector extends JPanel
 		{
-			int startX, startY, startViewX, startViewY;
-			int mouseX, mouseY;
 			private static final long serialVersionUID = 1L;
-			Selector(int r, int g, int b, int a, int startX, int startY, int startViewX, int startViewY)
+			
+			private int startX, startY, startViewX, startViewY;
+			private int mouseX, mouseY;
+			protected ArrayList<GridMember> selectMember;
+			private SelectControlPanel selectControlPanel;
+			private String text;
+
+			Selector(int r, int g, int b, int a, int startX, int startY, int startViewX, int startViewY, String text)
 			{
 				this.startX = startX;
 				this.startY = startY;
@@ -549,11 +537,13 @@ public class Grid
 				this.mouseY = startY;
 				this.startViewX = startViewX;
 				this.startViewY = startViewY;
+				this.text = text;
 				this.setBackground(new Color(r, g, b, a));
 				this.setSize(0, 0);
 				this.action(startX, startY, startViewX, startViewY);
+				layeredPane.add(this, new Integer(2));
 			}
-			void action(int mouseX, int mouseY, int viewX, int viewY)
+			private void action(int mouseX, int mouseY, int viewX, int viewY)
 			{
 				this.mouseX = mouseX;
 				this.mouseY = mouseY;
@@ -563,15 +553,38 @@ public class Grid
 						    (this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)) > 0 ? this.getY() : (int)this.startY + startViewY - Math.abs(this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)));
 				this.repaint();
 				layeredPane.repaint();
+				this.selectMember = new ArrayList<GridMember>();
+				for(GridMember member : gridPanel.getMembers())
+				{
+					if((this.getX() < member.getGridViewPane().getX() && this.getX() + this.getWidth() > member.getGridViewPane().getX() + member.getGridViewPane().getWidth())
+					 && this.getY() < member.getGridViewPane().getY() && this.getY() + this.getHeight() > member.getGridViewPane().getY() + member.getGridViewPane().getHeight())
+					{
+						selectAction(member);
+					}
+					else
+					{
+						if(this.selectMember.contains(member))
+						{
+							this.selectMember.remove(member);
+						}
+					}
+				}
+				if(this.selectMember.size() > 0 && this.selectControlPanel == null)
+				{
+					this.selectControlPanel = new SelectControlPanel(text, logicUI.getControlPane().getBlockControlPanel());
+				}
+				if(this.selectControlPanel != null)
+				{
+					this.selectControlPanel.setNumber(this.selectMember.size());
+				}
+				selectSign(this.selectMember);
 			}
 			void action(int viewX, int viewY)
 			{
 				this.action(mouseX, mouseY, viewX, viewY);
 			}
-			void actionFinal()
-			{
-				
-			}
+			abstract void selectAction(GridMember member);
+			abstract void actionFinal();
 		}
 		private abstract class ExpansionPane extends JPanel
 		{
@@ -650,7 +663,7 @@ public class Grid
 	}
 	class GridPanel extends JPanel implements SizeUpdate
 	{
-		private List<GridMember> members = new ArrayList<GridMember>();
+		private ArrayList<GridMember> members = new ArrayList<GridMember>();
 		private HashMap<Integer, HashMap<Integer, LogicBlock>> logicMembers = new HashMap<Integer, HashMap<Integer, LogicBlock>>();
 		private static final long serialVersionUID = 1L;
 		GridPanel()
@@ -691,7 +704,7 @@ public class Grid
 			this.members.remove(member);
 			this.remove(member.getGridViewPane());
 		}
-		List<GridMember> getMembers()
+		ArrayList<GridMember> getMembers()
 		{
 			return this.members;
 		}
@@ -728,10 +741,121 @@ public class Grid
 				}
 			}
 		}
-
 	}
-	private ArrayList<GridMember> selectMembers = new ArrayList<GridMember>();
+
 	private GridMember selectFocusMember;
+	private ArrayList<GridMember> selectMembers = new ArrayList<GridMember>();
+	private ArrayList<GridMember> selectSignMembers = new ArrayList<GridMember>();
+	private int[] selectSignColor = new int[]{0, 0, 0, 0, 255, 255, 30};
+	private int[] selectColor = new int[]{50, 100, 255, 60, 100, 150, 255};
+	private int[] selectFocusColor = new int[]{50, 255, 100, 60, 50, 255, 100};
+	void selectSign(ArrayList<GridMember> selectSignMembers)
+	{
+		deSelectSign();
+		for(GridMember member : selectSignMembers)
+		{
+			member.setSelectView(this.selectSignColor);
+			this.selectSignMembers.add(member);
+		}
+	}
+	void deSelectSign()
+	{
+		for(GridMember member : this.selectSignMembers)
+		{
+			member.removeSelectView();
+			if(this.selectMembers.contains(member))
+			{
+				member.setSelectView(this.selectColor);
+			}
+			if(this.selectFocusMember == member)
+			{
+				member.setSelectView(this.selectFocusColor);
+			}
+		}
+		this.selectSignMembers = new ArrayList<GridMember>();
+	}
+	void select(ArrayList<GridMember> selectMembers)
+	{
+		this.deSelectSign();
+		for(GridMember member : selectMembers)
+		{
+			this.deSelectFocus();
+			member.setSelectView(this.selectColor);
+			this.selectMembers.add(member);
+		}
+		if(this.selectMembers.size() == 1)
+		{
+			this.selectFocus(this.selectMembers.get(0));
+		}
+		else if(this.selectMembers.size() > 0)
+		{
+			new ManySelectEditPanel(this.selectMembers, logicUI.getControlPane().getBlockControlPanel());
+		}
+		else
+		{
+			this.logicUI.getControlPane().getBlockControlPanel().removeControlPane();
+		}
+		
+	}
+	void deSelect(ArrayList<GridMember> deSelectMembers)
+	{
+		for(GridMember member : deSelectMembers)
+		{
+			if(this.selectMembers.contains(member))
+			{
+				member.removeSelectView();
+				this.selectMembers.remove(member);
+			}
+			if(deSelectMembers.contains(this.selectFocusMember))
+			{
+				this.deSelectFocus();
+			}
+			if(this.selectSignMembers.contains(member))
+			{
+				member.setSelectView(this.selectSignColor);
+			}
+			member.removeSelectView();
+		}
+		if(this.selectMembers.size() > 0)
+		{
+			new ManySelectEditPanel(this.selectMembers, logicUI.getControlPane().getBlockControlPanel());
+		}
+		else
+		{
+			this.logicUI.getControlPane().getBlockControlPanel().removeControlPane();
+		}
+	}
+	boolean isSelect(GridMember member)
+	{
+		if((this.selectMembers.contains(member)) || (this.selectFocusMember == member))
+		{
+			return true;
+		}
+		return false;	
+	}
+	boolean isFocusSelect(GridMember member)
+	{
+		if(this.selectFocusMember == member)
+		{
+			return true;
+		}
+		return false;
+	}
+	void selectFocus(GridMember member)
+	{
+		this.deSelect(gridPanel.getMembers());
+		this.selectFocusMember = member;
+		member.setSelectView(this.selectFocusColor);
+	}
+	void deSelectFocus()
+	{
+		if(this.selectFocusMember != null)
+		{
+			this.selectFocusMember.removeSelectView();
+			this.selectFocusMember = null;
+		}
+	}
+	
 	abstract class GridMember implements SizeUpdate
 	{
 		protected int UIabslocationX = 0;
@@ -741,9 +865,7 @@ public class Grid
 		private JLayeredPane layeredPane;
 		protected GridViewPane gridViewPane;
 		
-		private SelectShowPanel selectShowPanel = null;
 		private SelectShowPanel selectView = null;
-		private boolean selectViewFlag = false;
 		
 		protected GridMember()
 		{
@@ -755,113 +877,28 @@ public class Grid
 			this.sizeUpdate();
 		}
 		protected abstract GridMember clone();
-		void selectFocus()
-		{
-			ArrayList<GridMember> members = new ArrayList<GridMember>();
-			for(GridMember member : selectMembers)
-			{
-				members.add(member);
-			}
-			for(GridMember member : members)
-			{
-				member.deSelect();
-			}
-			this.selectDeView();
-			if(this.selectShowPanel == null)
-			{
-				this.selectShowPanel = new SelectShowPanel(50, 255, 100, 60, 50, 255, 100);
-				this.layeredPane.add(selectShowPanel, new Integer(1));
-				if(selectFocusMember != null)
-				{
-					selectFocusMember.deSelect();
-				}
-				selectMembers.add(this);
-				selectFocusMember = this;
-				this.sizeUpdate();
-			}
-			else
-			{
-				this.deSelect();
-				this.selectFocus();
-			}
-		}
-		void select()
-		{
-			this.selectDeView();
-			if(this.selectShowPanel == null)
-			{
-				this.selectShowPanel = new SelectShowPanel(50, 100, 255, 60, 100, 150, 255);
-				this.layeredPane.add(selectShowPanel, new Integer(1));
-				selectMembers.add(this);
-				this.sizeUpdate();
-				if(selectFocusMember != null)
-				{
-					selectFocusMember.select();
-				}
-			}
-			else
-			{
-				this.deSelect();
-				this.select();
-			}
-		}
-		void selectView()
+		void setSelectView(int[] color)
 		{//단순 표시용
-			if(selectView == null)
+			if(this.selectView == null)
 			{
-				/*if(this.selectShowPanel != null)
-				{
-					this.layeredPane.remove(this.selectShowPanel);
-				}*/
-				this.selectViewFlag = true;
-				this.selectView = new SelectShowPanel(0, 0, 0, 0, 255, 100, 30);
+				this.selectView = new SelectShowPanel(color[0], color[1], color[2], color[3], color[4], color[5], color[6]);
 				this.layeredPane.add(this.selectView, new Integer(2));
 				this.sizeUpdate();
 			}
+			else
+			{
+				this.removeSelectView();
+				this.setSelectView(color);
+			}
 		}
-		boolean isSelectView()
-		{
-			return this.selectViewFlag;
-		}
-		void selectDeView()
+		void removeSelectView()
 		{
 			if(selectView != null)
 			{
-				
-				this.selectViewFlag = false;
 				this.layeredPane.remove(this.selectView);
 				this.selectView = null;
-				/*if(this.selectShowPanel != null)
-				{
-					this.layeredPane.add(this.selectShowPanel, new Integer(1));
-				}*/
 				this.sizeUpdate();
 			}
-		}
-		void deSelect()
-		{
-			if(selectFocusMember == this)
-			{
-				selectFocusMember = null;
-			}
-			if(selectMembers.contains(this))
-			{
-				selectMembers.remove(this);
-			}
-			if(this.selectShowPanel != null)
-			{
-				this.layeredPane.remove(this.selectShowPanel);
-				this.selectShowPanel = null;
-			}
-			this.selectDeView();
-		}
-		boolean isSelect()
-		{
-			if(this.selectShowPanel != null)
-			{
-				return true;
-			}
-			return false;
 		}
 		int getUIabsLocationX()
 		{//실제 위치는 절대 위치에 배수를 곱해서 사용
@@ -884,10 +921,6 @@ public class Grid
 		{
 			this.gridViewPane.sizeUpdate();
 			this.layeredPane.setBounds(((UIabslocationX + (negativeExtendX * Size.REGULAR_SIZE)) * UI_Size.getmultiple()) + Size.MARGIN, ((UIabslocationY + (negativeExtendY * Size.REGULAR_SIZE)) * UI_Size.getmultiple()) + Size.MARGIN, UIabsSizeX * UI_Size.getmultiple(), UIabsSizeY * UI_Size.getmultiple());
-			if(this.selectShowPanel != null)
-			{
-				this.selectShowPanel.sizeUpdate();
-			}
 			if(this.selectView != null)
 			{
 				this.selectView.sizeUpdate();
