@@ -36,10 +36,7 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
-import kr.dja.Grid.AND;
-import kr.dja.Grid.GridMember;
 import kr.dja.UI.ControlPane.BlockControlPanel;
-import kr.dja.*;
 public class UI
 {
 	private JFrame mainFrame;
@@ -95,13 +92,11 @@ public class UI
 					Component panelComp = pointComp2.getComponentAt(compX, compY);
 					if(panelComp == grid.getGridPanel())
 					{
+						System.out.println("push");
 						Point loc = grid.getGridScrollPanel().getViewport().getViewPosition().getLocation();
-						if(compX + loc.getX() <= grid.getGridPanel().getWidth() - Size.MARGIN && compY + loc.getY() <= grid.getGridPanel().getHeight() - Size.MARGIN && compX + loc.getX() >= Size.MARGIN && compY + loc.getY() >= Size.MARGIN)
-						{
-							//System.out.println(((int)(() / grid.getUISize().getWidth()) - grid.getNegativeExtendX()) + " " +  ((int)(() / grid.getUISize().getWidth()) - grid.getNegativeExtendY()));
-							trackedPane.addMemberOnGrid((int)((compX + loc.getX()) - Size.MARGIN) / grid.getUISize().getmultiple(), (int)((compY + loc.getY()) - Size.MARGIN) / grid.getUISize().getmultiple());
-							removeTrackedPane(trackedPane);
-						}
+						trackedPane.addMemberOnGrid((int)((compX + loc.getX()) - Size.MARGIN) / grid.getUISize().getmultiple(), (int)((compY + loc.getY()) - Size.MARGIN) / grid.getUISize().getmultiple());
+						removeTrackedPane(trackedPane);
+						
 					}
 				}
 			}
@@ -121,69 +116,20 @@ public class UI
 			public void mouseReleased(MouseEvent e)
 			{
 			}
-			
 		});
-		
 		this.toolBar = new ToolBar();
 		this.underBar = new UnderBar();
-		//layerPane = mainFrame.getLayeredPane();
-		
-
-		
 		this.grid = new Grid(this);
-		
 		this.taskManager = new TaskManager();
-		
-		//this.taskOperator = new TaskOperator(this.grid);
-		
 		this.controlPane = new ControlPane();
 		this.controlPane.setPreferredSize(new Dimension(400, 0));
-		
-
-		//layerPane.add(controlPane, new Integer(2));
-		
-		
-		
-		//mainFrame.addComponentListener(new ResizeListener());
 		this.mainFrame.add(this.grid.getGridScrollPanel(), BorderLayout.CENTER);
 		this.mainFrame.add(this.toolBar, BorderLayout.NORTH);
 		this.mainFrame.add(this.underBar, BorderLayout.SOUTH);
 		this.mainFrame.add(this.controlPane, BorderLayout.EAST);
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		this.mainFrame.setLocation(screenSize.width/2-mainFrame.getSize().width/2, screenSize.height/2-mainFrame.getSize().height/2);
-		/*this.mainFrame.getRootPane().addMouseMotionListener(new MouseMotionListener()
-		{
-			@Override
-			public void mouseDragged(MouseEvent arg0)
-			{
-				
-			}
-			@Override
-			public void mouseMoved(MouseEvent arg0)
-			{
-				System.out.println("asd");
-				if(trackedPane != null)
-					trackedPane.setLocation(arg0.getX() - (trackedPane.getWidth() / 2), arg0.getY() - (trackedPane.getHeight() / 2));
-				
-			}
-		});*/
 		this.mainFrame.setVisible(true);
-		/*long eventMask = AWTEvent.MOUSE_MOTION_EVENT_MASK + AWTEvent.MOUSE_EVENT_MASK;
-		Toolkit.getDefaultToolkit().addAWTEventListener( new AWTEventListener()
-		{
-		    public void eventDispatched(AWTEvent e)
-		    {
-		    	
-		    	if(e.paramString().contains("MOUSE_MOVED"))
-		    	{
-		    		//System.out.print(Integer.parseInt(e.paramString().split(",")[1].replace("(", "")));
-		    		//System.out.println(Integer.parseInt(e.paramString().split(",")[2].replace(")", "")));
-		    		System.out.println(e);
-		    	}
-		    }
-		}, eventMask);*/
-
-
 	}
 	ControlPane getControlPane()
 	{
@@ -326,7 +272,7 @@ public class UI
 				this.setBorder(new PanelBorder("팔레트"));
 				
 				//this.add(new Palette_AND_Gate().getPalettePanel());
-				paletteMember.add(new PaletteMember(grid.new AND()));
+				paletteMember.add(new PaletteMember(new AND(grid.getUISize())));
 				paletteMember.add(new JButton());
 				paletteMember.add(new JButton());
 				paletteMember.add(new JButton());
@@ -360,10 +306,10 @@ public class UI
 						@Override
 						public void actionPerformed(ActionEvent e)
 						{
-							AND and = grid.new AND();
 							ArrayList<GridMember> list = new ArrayList<GridMember>();
-							list.add(and);
-							addTrackedPane(new TrackedPane(list));
+							//TODO putMember 복사 필요
+							list.add(new AND(grid.getUISize()));
+							addTrackedPane(new TrackedPane(list, grid));
 						}
 					});
 				}
@@ -633,59 +579,6 @@ public class UI
 			this.repaint();
 		}
 	}
-	class TrackedPane extends JPanel implements SizeUpdate
-	{
-		private static final long serialVersionUID = 1L;
-		private List<GridMember> members;
-		private int maxX, maxY, minX, minY;
-		TrackedPane(List<GridMember> members)
-		{
-			this.members = members;
-			this.setBackground(new Color(0, 255, 0, 0));
-			this.sizeUpdate();
-		}
-		@Override
-		public void paint(Graphics g)
-		{
-			BufferedImage img;
-			for(GridMember member : members)
-			{
-				img = member.getSnapShot();
-				g.drawImage(img, (member.getUIabsLocationX() - minX) * grid.getUISize().getmultiple(), (member.getUIabsLocationY() - minY) * grid.getUISize().getmultiple(), this);
-			}
-			super.paint(g);
-		}
-		@Override
-		public void sizeUpdate()
-		{
-			this.minX = members.get(0).getUIabsLocationX();
-			this.minY = members.get(0).getUIabsLocationY();
-			this.maxX = members.get(0).getUIabsLocationX() + members.get(0).getUIabsSizeX();
-			this.maxY = members.get(0).getUIabsLocationY() + members.get(0).getUIabsSizeY();
-			for(GridMember member : members)
-			{
-				this.minX = member.getUIabsLocationX() < minX ? member.getUIabsLocationX() : minX;
-				this.minY = member.getUIabsLocationY() < minY ? member.getUIabsLocationY() : minY;
-				this.maxX = member.getUIabsLocationX() + member.getUIabsSizeX() > maxX ? member.getUIabsLocationX() + member.getUIabsSizeX() : maxX;
-				this.maxY = member.getUIabsLocationY() + member.getUIabsSizeY() > maxY ? member.getUIabsLocationY() + member.getUIabsSizeY() : maxY;
-			}
-			this.setSize((this.maxX - this.minX) * grid.getUISize().getmultiple(), (this.maxY - this.minY) * grid.getUISize().getmultiple());
-			this.repaint();
-
-		}
-		void addMemberOnGrid(int absX, int absY)
-		{
-			int stdX = absX - ((this.getWidth() / 2) / grid.getUISize().getmultiple()) - (grid.getNegativeExtendX() * Size.REGULAR_SIZE);
-			int stdY = absY - ((this.getHeight() / 2) / grid.getUISize().getmultiple()) - (grid.getNegativeExtendY() * Size.REGULAR_SIZE);
-			System.out.println("nSize" + grid.getNegativeExtendX() + " " + grid.getNegativeExtendY());
-			
-			for(GridMember member : members)
-			{
-				member.put(stdX - this.minX + member.getUIabsLocationX(), stdY - this.minY + member.getUIabsLocationY());
-			}
-			this.removeAll();
-		}
-	}
 }
 class UIButton extends JButton
 {
@@ -740,10 +633,12 @@ class ManySelectEditPanel extends JPanel
 {
 	private static final long serialVersionUID = 1L;
 	private JLabel numberLabel;
-	private JButton createTempButton;
-	private JButton exportTempButton;
-	private JButton restoreButton;
-	private JButton removeButton;
+	private UIButton copyButton;
+	private UIButton cutButton;
+	private UIButton createTempButton;
+	private UIButton exportTempButton;
+	private UIButton restoreButton;
+	private UIButton removeButton;
 	ManySelectEditPanel(ArrayList<GridMember> selectMembers, BlockControlPanel blockControl)
 	{
 		super();
@@ -753,20 +648,22 @@ class ManySelectEditPanel extends JPanel
 		this.numberLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16F));
 		this.numberLabel.setBounds(0, 0, 373, 20);
 		this.numberLabel.setText(Integer.toString(selectMembers.size()) + " 개의 블록 선택");
-		this.createTempButton = new JButton();
-		this.createTempButton.setBounds(26, 30, 60, 60);
-		this.exportTempButton = new JButton();
-		this.exportTempButton.setBounds(112, 30, 60, 60);
-		this.restoreButton = new JButton();
-		this.restoreButton.setBounds(201, 30, 60, 60);
-		this.removeButton = new JButton();
-		this.removeButton.setBounds(287, 30, 60, 60);
+		this.copyButton = new UIButton(66, 25, 40, 40, null, null);
+		this.cutButton = new UIButton(166, 25, 40, 40, null, null);
+		this.removeButton = new UIButton(266, 25, 40, 40, null, null);
+		this.createTempButton = new UIButton(66, 75, 40, 40, null, null);
+		this.exportTempButton = new UIButton(166, 75, 40, 40, null, null);
+		this.restoreButton = new UIButton(266, 75, 40, 40, null, null);
+		
 		
 		this.add(this.numberLabel);
+		this.add(this.copyButton);
+		this.add(this.cutButton);
+		this.add(this.removeButton);
 		this.add(this.createTempButton);
 		this.add(this.exportTempButton);
 		this.add(this.restoreButton);
-		this.add(this.removeButton);
+		
 		
 		blockControl.addControlPanel(this);
 	}
@@ -808,5 +705,63 @@ class DefaultPane extends JPanel
 		this.text.setBounds(0, 40, 373, 20);
 		this.text.setText("블록을 선택하시려면 클릭 혹은 드레그 하세요");
 		this.add(this.text);
+	}
+}
+class TrackedPane extends JPanel implements SizeUpdate
+{
+	private static final long serialVersionUID = 1L;
+	private List<GridMember> members;
+	private int maxX, maxY, minX, minY;
+	private Grid grid;
+	TrackedPane(List<GridMember> members, Grid grid)
+	{
+		this.grid = grid;
+		this.members = members;
+		this.setBackground(new Color(0, 255, 0, 0));
+		this.sizeUpdate();
+	}
+	@Override
+	public void paint(Graphics g)
+	{
+		BufferedImage img;
+		for(GridMember member : members)
+		{
+			img = member.getSnapShot();
+			g.drawImage(img, (member.getUIabsLocationX() - minX) * grid.getUISize().getmultiple(), (member.getUIabsLocationY() - minY) * grid.getUISize().getmultiple(), this);
+		}
+		super.paint(g);
+	}
+	@Override
+	public void sizeUpdate()
+	{
+		this.minX = members.get(0).getUIabsLocationX();
+		this.minY = members.get(0).getUIabsLocationY();
+		this.maxX = members.get(0).getUIabsLocationX() + members.get(0).getUIabsSizeX();
+		this.maxY = members.get(0).getUIabsLocationY() + members.get(0).getUIabsSizeY();
+		for(GridMember member : members)
+		{
+			this.minX = member.getUIabsLocationX() < minX ? member.getUIabsLocationX() : minX;
+			this.minY = member.getUIabsLocationY() < minY ? member.getUIabsLocationY() : minY;
+			this.maxX = member.getUIabsLocationX() + member.getUIabsSizeX() > maxX ? member.getUIabsLocationX() + member.getUIabsSizeX() : maxX;
+			this.maxY = member.getUIabsLocationY() + member.getUIabsSizeY() > maxY ? member.getUIabsLocationY() + member.getUIabsSizeY() : maxY;
+		}
+		this.setSize((this.maxX - this.minX) * grid.getUISize().getmultiple(), (this.maxY - this.minY) * grid.getUISize().getmultiple());
+		this.repaint();
+
+	}
+	void addMemberOnGrid(int absX, int absY)
+	{
+		int stdX = absX - ((this.getWidth() / 2) / grid.getUISize().getmultiple()) - (grid.getNegativeExtendX() * Size.REGULAR_SIZE);
+		int stdY = absY - ((this.getHeight() / 2) / grid.getUISize().getmultiple()) - (grid.getNegativeExtendY() * Size.REGULAR_SIZE);
+		stdX = stdX > 0 ? stdX + (Size.REGULAR_SIZE / 2) : stdX - (Size.REGULAR_SIZE / 2);
+		stdY = stdY > 0 ? stdY + (Size.REGULAR_SIZE / 2) : stdY - (Size.REGULAR_SIZE / 2);
+		stdX = (stdX / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
+		stdY = (stdY / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
+		for(GridMember member : members)
+		{
+			grid.addMember(member, stdX, stdY);
+			//TODO
+		}
+		this.removeAll();
 	}
 }
