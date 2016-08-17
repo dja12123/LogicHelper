@@ -3,6 +3,9 @@ package kr.dja;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -18,18 +21,18 @@ public abstract class GridMember implements SizeUpdate
 	protected int UIabsSizeY = 1;
 	protected GridViewPane gridViewPane;
 	protected Size size;
+	protected final String name;
 	private JLayeredPane layeredPane;
 	private SelectShowPanel selectView = null;
-	private EditPanel editPanel;
+	private boolean placement = false;
 
-	protected GridMember(Size size)
+	protected GridMember(Size size, String name)
 	{
-		System.out.println("first");
+		this.name = name;
 		this.size = size;
 		
 		this.layeredPane = new JLayeredPane();
 		new GridViewPane();
-		new EditPanel();
 		this.sizeUpdate();
 	}
 	protected abstract GridMember clone();
@@ -56,8 +59,12 @@ public abstract class GridMember implements SizeUpdate
 			this.sizeUpdate();
 		}
 	}
+	String getName()
+	{
+		return this.name;
+	}
 	int getUIabsLocationX()
-	{//실제 위치는 절대 위치에 배수를 곱해서 사용
+	{//그리드상 실제 위치는 절대 위치에 배수를 곱해서 사용
 		return UIabslocationX;
 	}
 	int getUIabsLocationY()
@@ -78,6 +85,15 @@ public abstract class GridMember implements SizeUpdate
 		this.UIabslocationX = absX;
 		this.UIabslocationY = absY;
 		System.out.println("PUT: " + UIabslocationX + " " + UIabslocationY);
+		this.placement = true;
+	}
+	void remove()
+	{
+		this.placement = false;
+	}
+	boolean isPlacement()
+	{
+		return this.placement;
 	}
 	BufferedImage getSnapShot()
 	{
@@ -91,16 +107,11 @@ public abstract class GridMember implements SizeUpdate
 		this.sizeUpdate();
 		return this.layeredPane;
 	}
-	EditPanel getEditPanel()
-	{
-		return this.editPanel;
-	}
 	@Override
 	public void sizeUpdate()
 	{
 		this.gridViewPane.sizeUpdate();
 		this.layeredPane.setSize(UIabsSizeX * size.getmultiple(), UIabsSizeY * size.getmultiple());
-		this.editPanel.sizeUpdate();
 		if(this.selectView != null)
 		{
 			this.selectView.sizeUpdate();
@@ -136,7 +147,7 @@ public abstract class GridMember implements SizeUpdate
 			gridViewPane = this;
 			layeredPane.removeAll();
 			layeredPane.add(this, new Integer(0));
-			this.setBackground(new Color(125, 125, 125));
+			this.setBackground(new Color(235, 241, 222));
 			this.setLayout(null);
 		}
 		@Override
@@ -150,27 +161,12 @@ public abstract class GridMember implements SizeUpdate
 			this.setSize(UIabsSizeX * size.getmultiple(), UIabsSizeY * size.getmultiple());
 		}
 	}
-	class EditPanel extends JPanel implements SizeUpdate
-	{
-		private static final long serialVersionUID = 1L;
-		
-		EditPanel()
-		{
-			editPanel = this;
-			this.setLayout(null);
-		}
-		@Override
-		public void sizeUpdate()
-		{
-			
-		}
-	}
 }
 class Partition extends GridMember
 {
 	Partition(Size size)
 	{
-		super(size);
+		super(size, "Partition");
 	}
 	@Override
 	public Partition clone()
@@ -182,7 +178,7 @@ class Tag extends GridMember
 {
 	Tag(Size size)
 	{
-		super(size);
+		super(size, "Partition");
 	}
 	@Override
 	public Tag clone()
@@ -195,20 +191,19 @@ abstract class LogicBlock extends GridMember
 	protected int blocklocationX = 0;
 	protected int blocklocationY = 0;
 	protected boolean onOffStatus = false;
-	protected boolean eastIOStatus = false;
-	protected boolean westIOStatus = false;
-	protected final String name;
+	protected HashMap<Direction, IOPanel> io = new HashMap<Direction, IOPanel>();
 	
 	protected LogicBlock(Size size, String name)
 	{
-		super(size);
-		this.name = name;
-		System.out.println("second");
+		super(size, name);
 		super.UIabsSizeX = 30;
 		super.UIabsSizeY = 30;
 		new LogicViewPane();
+		new IOPanel(Direction.EAST);
+		new IOPanel(Direction.WEST);
+		new IOPanel(Direction.SOUTH);
+		new IOPanel(Direction.NORTH);
 	}
-	abstract void updateState();
 	@Override
 	void put(int absX, int absY)
 	{
@@ -226,15 +221,73 @@ abstract class LogicBlock extends GridMember
 	{
 		return this.blocklocationY;
 	}
-	private class IOPanel
+	ArrayList<Direction> getOnlineOutput()
 	{
-		void on()
+		ArrayList<Direction> returnInfo = new ArrayList<Direction>();
+		for(Direction ext : this.io.keySet())
 		{
-			
+			if(this.io.get(ext).getStatus() == IOStatus.TRANCE && this.io.get(ext).getOnOffStatus())
+			{
+				returnInfo.add(this.io.get(ext).getDirection());
+			}
 		}
-		boolean getStatus()
+		return returnInfo;
+	}
+	IOPanel getIO(Direction ext)
+	{
+		return this.io.get(ext);
+	}
+	abstract void calculate();
+	class IOPanel
+	{
+		private IOStatus status;
+		private boolean onOffStatus;
+		private final Direction ext;
+		private Color image;
+		IOPanel(Direction ext)
 		{
-			return false;
+			this.ext = ext;
+			io.put(ext, this);
+			this.setStatus(IOStatus.NONE);
+		}
+		void setStatus(IOStatus status)
+		{
+			this.status = status;
+			if(status == IOStatus.NONE)
+			{
+				this.image = gridViewPane.getBackground();
+			}
+			else if(status == IOStatus.RECEIV)
+			{
+				this.image = new Color(127, 127, 127);
+			}
+			else if(status == IOStatus.TRANCE)
+			{
+				this.image = new Color(99, 37, 35);
+			}
+			calculate();
+			gridViewPane.repaint();
+		}
+		IOStatus getStatus()
+		{
+			return this.status;
+		}
+		void setOnOffStatus(boolean status)
+		{
+			this.onOffStatus = status;
+			calculate();
+		}
+		private boolean getOnOffStatus()
+		{
+			return this.onOffStatus;
+		}
+		Direction getDirection()
+		{
+			return this.ext;
+		}
+		Color getImage()
+		{
+			return this.image;
 		}
 	}
 	class LogicViewPane extends GridViewPane
@@ -243,68 +296,28 @@ abstract class LogicBlock extends GridMember
 		LogicViewPane()
 		{
 			super();
-			new LogicEdit();
 		}
 		@Override
 		public void paint(Graphics g)
-		{
+		{//임시 땜빵용
 			super.paint(g);
-			g.setColor(new Color(255, 100, 100));
-			g.fillRect(7 * size.getmultiple(), size.getmultiple(), 16 * size.getmultiple(), 4 * size.getmultiple());
-			g.fillRect(size.getmultiple(), 7 * size.getmultiple(), 4 * size.getmultiple(), 16 * size.getmultiple());
-			g.fillRect(7 * size.getmultiple(), 25 * size.getmultiple(), 16 * size.getmultiple(), 4 * size.getmultiple());
+			g.setColor(getIO(Direction.EAST).getImage());
 			g.fillRect(25 * size.getmultiple(), 7 * size.getmultiple(), 4 * size.getmultiple(), 16 * size.getmultiple());
-		}
-	}
-	class LogicEdit extends EditPanel
-	{
-		private static final long serialVersionUID = 1L;
-		
-		private JLabel text = new JLabel();
-		private JLabel locationText = new JLabel();
-		private UIButton restoreButton = new UIButton(265, 70, 40, 40, null, null);
-		private UIButton removeButton = new UIButton(320, 70, 40, 40, null, null);
-		
-		private JPanel editViewPanel = new JPanel()
-		{
-			@Override
-			public void paint(Graphics g)
+			g.setColor(getIO(Direction.WEST).getImage());
+			g.fillRect(size.getmultiple(), 7 * size.getmultiple(), 4 * size.getmultiple(), 16 * size.getmultiple());
+			g.setColor(getIO(Direction.SOUTH).getImage());
+			g.fillRect(7 * size.getmultiple(), 25 * size.getmultiple(), 16 * size.getmultiple(), 4 * size.getmultiple());
+			g.setColor(getIO(Direction.NORTH).getImage());
+			g.fillRect(7 * size.getmultiple(), size.getmultiple(), 16 * size.getmultiple(), 4 * size.getmultiple());
+			if(onOffStatus)
 			{
-				super.paint(g);
-				g.setColor(new Color(255, 100, 100));
-				g.fillRect(28, 4, 64, 16);
-				g.fillRect(4, 28, 16, 64);
-				g.fillRect(28, 100, 64, 16);
-				g.fillRect(100, 28, 16, 64);
-				g.setColor(new Color(50, 200, 250));
-				g.drawRect(0, 0, 119, 119);
+				g.setColor(new Color(247, 150, 70));
 			}
-		};
-		
-		LogicEdit()
-		{
-			this.text.setHorizontalAlignment(SwingConstants.CENTER);
-			this.text.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
-			this.text.setBounds(135, 0, 223, 20);
-			this.text.setText(name + " 게이트 편집");
-			
-			this.locationText.setHorizontalAlignment(SwingConstants.LEADING);
-			this.locationText.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
-			this.locationText.setBounds(135, 30, 223, 20);
-			
-			this.editViewPanel.setBounds(5, 0, 120, 120);
-			this.editViewPanel.setBackground(new Color(200, 200, 200));
-			
-			this.add(this.text);
-			this.add(this.locationText);
-			this.add(this.restoreButton);
-			this.add(this.removeButton);
-			this.add(this.editViewPanel);
-		}
-		@Override
-		public void sizeUpdate()
-		{
-			this.locationText.setText("위치: X:" + blocklocationX + " Y: " + blocklocationY);
+			else
+			{
+				g.setColor(new Color(127, 127, 127));
+			}
+			g.fillRect(7 * size.getmultiple(), 7 * size.getmultiple(), 16 * size.getmultiple(), 16 * size.getmultiple());
 		}
 	}
 }
@@ -315,14 +328,14 @@ class AND extends LogicBlock
 		super(size, "AND");
 	}
 	@Override
-	void updateState()
-	{
-		
-	}
-	@Override
 	public AND clone()
 	{
 		return null;
+	}
+	@Override
+	void calculate()
+	{
+		
 	}
 }
 class OR extends LogicBlock
@@ -332,14 +345,29 @@ class OR extends LogicBlock
 		super(size, "OR");
 	}
 	@Override
-	void updateState()
+	public OR clone()
+	{
+		return null;
+	}
+	@Override
+	void calculate()
 	{
 		// TODO Auto-generated method stub
 		
 	}
-	@Override
-	public OR clone()
+}
+class IOStatus
+{
+	public final String tag;
+	public static final IOStatus NONE = new IOStatus("NONE");
+	public static final IOStatus RECEIV = new IOStatus("RECEIV");
+	public static final IOStatus TRANCE = new IOStatus("TRANCE");
+	private IOStatus(String tag)
 	{
-		return null;
+		this.tag = tag;
+	}
+	public String getTag()
+	{
+		return this.tag;
 	}
 }

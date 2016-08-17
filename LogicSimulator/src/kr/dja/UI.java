@@ -18,8 +18,10 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -206,6 +208,10 @@ public class UI
 		{
 			return this.blockControlPanel;
 		}
+		PalettePanel getPalettePanel()
+		{
+			return this.palettePanel;
+		}
 		class BlockControlPanel extends JPanel
 		{
 			private static final long serialVersionUID = 1L;
@@ -258,51 +264,67 @@ public class UI
 				this.add(explanationArea);
 			}
 		}
-		private class PalettePanel extends JPanel
+		class PalettePanel extends JPanel
 		{
 			private static final long serialVersionUID = 1L;
-			private List<JButton> paletteMember = new ArrayList<JButton>();
+			private HashMap<String, PaletteMember> paletteMembers = new HashMap<String, PaletteMember>();
 			
 			PalettePanel()
 			{
 				super();
 				
-				this.setLayout(new GridLayout(4, 5, 3, 3));
+				
+				this.setLayout(null);
 				this.setBounds(5, 295, 225, 180);
 				this.setBorder(new PanelBorder("팔레트"));
+				LogicEditPane DFTLogicControl = new LogicEditPane();
 				
-				//this.add(new Palette_AND_Gate().getPalettePanel());
-				paletteMember.add(new PaletteMember(new AND(grid.getUISize())));
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				paletteMember.add(new JButton());
-				Iterator<JButton> itr = paletteMember.iterator();
-				while(itr.hasNext())
+				new PaletteMember(new AND(grid.getUISize()), DFTLogicControl);
+				new PaletteMember(new OR(grid.getUISize()), DFTLogicControl);
+				Set<String> key = paletteMembers.keySet();
+				int i = 0, j = 0;
+				for(String str : key)
 				{
-					this.add(itr.next());
+					PaletteMember p = this.paletteMembers.get(str);
+					if(i < 4)
+					{
+						if(j < 5)
+						{
+							p.setBounds(j * 44 + 10, i * 44 + 20, 40, 40);
+							System.out.println(i + " " + j);
+							j++;
+						}
+						else
+						{
+							j = 0;
+							i++;
+						}
+					}
+					else
+					{
+						i = 0;
+					}
+					this.add(p);
 				}
+			}
+			PaletteMember getPaletteMember(String str)
+			{
+				return this.paletteMembers.get(str);
 			}
 			class PaletteMember extends JButton
 			{
-				GridMember putMember;
-				PaletteMember(GridMember member)
+				private static final long serialVersionUID = 1L;
+				
+				private GridMember putMember;
+				private EditPane selectControlPanel;
+				PaletteMember(GridMember member, LogicEditPane control)
 				{
+					paletteMembers.put(member.getName(), this);
+					this.selectControlPanel = control;
 					this.putMember = member;
 					this.addActionListener(new ActionListener()
 					{
+
 						@Override
 						public void actionPerformed(ActionEvent e)
 						{
@@ -313,7 +335,10 @@ public class UI
 						}
 					});
 				}
-
+				EditPane getControl()
+				{
+					return selectControlPanel;
+				}
 			}
 		}
 		private class TaskOperatorPanel extends JPanel
@@ -612,19 +637,6 @@ class PanelBorder extends TitledBorder
 	}
 }
 
-
-/*class Palette_AND_Gate extends PaletteMember
-{
-
-	@Overridere
-	void Action()
-	{
-		System.out.println("Action");
-	}
-	
-}*/
-
-
 interface SizeUpdate
 {
 	void sizeUpdate();
@@ -693,7 +705,6 @@ class SelectControlPanel extends JPanel
 class DefaultPane extends JPanel
 {
 	private static final long serialVersionUID = 1L;
-	
 	private JLabel text;
 	DefaultPane()
 	{
@@ -705,6 +716,125 @@ class DefaultPane extends JPanel
 		this.text.setBounds(0, 40, 373, 20);
 		this.text.setText("블록을 선택하시려면 클릭 혹은 드레그 하세요");
 		this.add(this.text);
+	}
+}
+class EditPane extends JPanel
+{
+	private static final long serialVersionUID = 1L;
+	
+	private UIButton copyButton = new UIButton(275, 100, 20, 20, null, null);
+	private UIButton removeButton = new UIButton(300, 100, 20, 20, null, null);
+	private UIButton disableButton = new UIButton(325, 100, 20, 20, null, null);
+	private UIButton restoreButton = new UIButton(350, 100, 20, 20, null, null);
+	
+	protected GridMember member;
+	
+	EditPane()
+	{
+		this.setLayout(null);
+		this.add(this.copyButton);
+		this.add(this.removeButton);
+		this.add(this.disableButton);
+		this.add(this.restoreButton);
+	}
+	void setInfo(GridMember member)
+	{
+		this.member = member;
+	}
+}
+class LogicEditPane extends EditPane
+{
+	private static final long serialVersionUID = 1L;
+	
+	private JLabel text = new JLabel();
+	private JLabel locationText = new JLabel();
+	private LogicBlock logicMember;
+	
+	private JPanel editViewPanel = new JPanel()
+	{
+		private static final long serialVersionUID = 1L;
+		IOControlButton eastIOEditButton = new IOControlButton(100, 28, 16, 64, Direction.EAST);
+		IOControlButton westIOEditButton = new IOControlButton(4, 28, 16, 64, Direction.WEST);
+		IOControlButton southIOEditButton = new IOControlButton(28, 100, 64, 16, Direction.SOUTH);
+		IOControlButton northIOEditButton = new IOControlButton(28, 4, 64, 16, Direction.NORTH);
+		{
+			this.setLayout(null);
+			this.add(eastIOEditButton);
+			this.add(westIOEditButton);
+			this.add(southIOEditButton);
+			this.add(northIOEditButton);
+		}
+		@Override
+		public void paint(Graphics g)
+		{
+			super.paint(g);
+			g.drawRect(0, 0, 119, 119);
+		}
+	};
+	
+	LogicEditPane()
+	{
+		this.text.setHorizontalAlignment(SwingConstants.CENTER);
+		this.text.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
+		this.text.setBounds(135, 0, 223, 20);
+
+		this.locationText.setHorizontalAlignment(SwingConstants.CENTER);
+		this.locationText.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
+		this.locationText.setBounds(135, 100, 135, 20);
+		
+		this.editViewPanel.setBounds(5, 0, 120, 120);
+		this.editViewPanel.setBackground(new Color(200, 200, 200));
+		
+		this.add(this.text);
+		this.add(this.locationText);
+		this.add(this.editViewPanel);
+	}
+	@Override
+	void setInfo(GridMember member)
+	{
+		super.setInfo(member);
+		this.logicMember = (LogicBlock)member;
+		if(member.isPlacement())
+		{
+			this.locationText.setText("(X:" + logicMember.getBlockLocationX() + " Y: " + logicMember.getBlockLocationY() + ")");
+		}
+		else
+		{
+			this.locationText.setText("배치된 블록이 아님");
+		}
+		
+		this.text.setText(super.member.getName() + " 게이트 편집");
+	}
+	private class IOControlButton extends JButton implements ActionListener
+	{
+		private static final long serialVersionUID = 1L;
+		
+		int locX, locY, sizeX, sizeY; //패널 bounds
+		Direction ext;
+		
+		IOControlButton(int locX, int locY, int sizeX, int sizeY, Direction ext)
+		{
+			this.locX = locX; this.locY = locY; this.sizeX = sizeX; this.sizeY = sizeY;
+			this.setBounds(locX, locY, sizeX, sizeY);
+			this.ext = ext;
+			this.addActionListener(this);
+		}
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			if(logicMember.getIO(ext).getStatus() == IOStatus.NONE)
+			{
+				logicMember.getIO(ext).setStatus(IOStatus.TRANCE);
+			}
+			else if(logicMember.getIO(ext).getStatus() == IOStatus.TRANCE)
+			{
+				logicMember.getIO(ext).setStatus(IOStatus.RECEIV);
+			}
+			else if(logicMember.getIO(ext).getStatus() == IOStatus.RECEIV)
+			{
+				logicMember.getIO(ext).setStatus(IOStatus.NONE);
+			}
+		}
 	}
 }
 class TrackedPane extends JPanel implements SizeUpdate

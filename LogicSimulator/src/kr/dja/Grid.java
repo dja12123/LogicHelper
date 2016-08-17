@@ -216,9 +216,9 @@ public class Grid
 	{
 		return this.gridSizeY;
 	}
-	void gridExtend(SizeExt ext, int size)
+	void gridExtend(Direction ext, int size)
 	{//그리드 넓이 확장
-		if(ext == SizeExt.EAST)
+		if(ext == Direction.EAST)
 		{
 			if(gridSizeX + size < 1)
 			{//사이즈 최저치 예외
@@ -235,7 +235,7 @@ public class Grid
 			gridSizeX += size;
 			viewPort.setViewPosition(new Point(gridPanel.getWidth(), viewPort.getViewPosition().y));
 		}
-		else if(ext == SizeExt.WEST)
+		else if(ext == Direction.WEST)
 		{
 			if(gridSizeX + size < 1)
 			{//사이즈 최저치 예외
@@ -253,7 +253,7 @@ public class Grid
 			negativeExtendX += size;
 			viewPort.setViewPosition(new Point(0, viewPort.getViewPosition().y));
 		}
-		else if(ext == SizeExt.SOUTH)
+		else if(ext == Direction.SOUTH)
 		{
 			if(gridSizeY + size < 1)
 			{//사이즈 최저치 예외
@@ -270,7 +270,7 @@ public class Grid
 			gridSizeY += size;
 			viewPort.setViewPosition(new Point(viewPort.getViewPosition().x, gridPanel.getHeight()));
 		}
-		else if(ext == SizeExt.NORTH)
+		else if(ext == Direction.NORTH)
 		{
 			if(gridSizeY + size < 1)
 			{//사이즈 최저치 예외
@@ -355,6 +355,7 @@ public class Grid
 	}
 	void removeMember(GridMember member)
 	{
+		member.remove();
 		if(member instanceof LogicBlock)
 		{
 			LogicBlock block = ((LogicBlock) member);
@@ -482,7 +483,9 @@ public class Grid
 		this.deSelect(getMembers());
 		this.selectFocusMember = member;
 		member.setSelectView(this.selectFocusColor);
-		this.logicUI.getControlPane().getBlockControlPanel().addControlPanel(member.getEditPanel());
+		EditPane editer = this.logicUI.getControlPane().getPalettePanel().getPaletteMember(member.getName()).getControl();
+		editer.setInfo(member);
+		this.logicUI.getControlPane().getBlockControlPanel().addControlPanel(editer);
 	}
 	void deSelectFocus()
 	{
@@ -542,7 +545,6 @@ public class Grid
 
 		}
 	}
-
 	private class ViewPort extends JViewport implements SizeUpdate
 	{
 		private static final long serialVersionUID = 1L;
@@ -563,7 +565,7 @@ public class Grid
 		{
 			this.layeredPane = new JLayeredPane();
 			
-			eastExpansionPane = new ExpansionPane(SizeExt.EAST)
+			eastExpansionPane = new ExpansionPane(Direction.EAST)
 			{
 				private static final long serialVersionUID = 1L;
 				{
@@ -572,7 +574,7 @@ public class Grid
 					
 				}
 			};
-			westExpansionPane = new ExpansionPane(SizeExt.WEST)
+			westExpansionPane = new ExpansionPane(Direction.WEST)
 			{
 				private static final long serialVersionUID = 1L;
 				{
@@ -581,7 +583,7 @@ public class Grid
 				}
 			};
 			
-			southExpansionPane = new ExpansionPane(SizeExt.SOUTH)
+			southExpansionPane = new ExpansionPane(Direction.SOUTH)
 			{
 				private static final long serialVersionUID = 1L;
 				{
@@ -590,7 +592,7 @@ public class Grid
 				}
 			};
 			
-			northExpansionPane = new ExpansionPane(SizeExt.NORTH)
+			northExpansionPane = new ExpansionPane(Direction.NORTH)
 			{
 				private static final long serialVersionUID = 1L;
 				{
@@ -839,7 +841,7 @@ public class Grid
 			protected UIButton redButton;
 			protected UIButton redMButton;
 			
-			ExpansionPane(SizeExt ext)
+			ExpansionPane(Direction ext)
 			{
 				super();
 				
@@ -892,16 +894,32 @@ public class Grid
 		}
 	}
 }
-
-class SizeExt
-{//그리드 넓이 확장 방향을 결정하는 상수 클래스
-public static final SizeExt EAST = new SizeExt();
-public static final SizeExt NORTH = new SizeExt();
-public static final SizeExt WEST = new SizeExt();
-public static final SizeExt SOUTH = new SizeExt();
+class Direction
+{//방향 관련 상수
+	public static final Direction EAST = new Direction(1, 0);
+	public static final Direction NORTH = new Direction(0, -1);
+	public static final Direction WEST = new Direction(-1, 0);
+	public static final Direction SOUTH = new Direction(0, 1);
+	
+	public final int wayX;
+	public final int wayY;
+	
+	private Direction(int wayX, int wayY)
+	{
+		this.wayX = wayX;
+		this.wayY = wayY;
+	}
+	public int getWayX()
+	{
+		return this.wayX;
+	}
+	public int getWayY()
+	{
+		return this.wayY;
+	}
 }
 class Size
-{
+{//그리드 보기 사이즈 관련 상수
 	public static final int REGULAR_SIZE = 30;
 	public static final int MARGIN = 50;
 	public static final Size small = new Size(1);
