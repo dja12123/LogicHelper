@@ -6,14 +6,10 @@ import javax.swing.JPanel;
 
 public class TaskOperator
 {
-	Grid grid;
-	JPanel graphPanel;
-	TaskOperator(Grid grid, JPanel graphPanel)
+	private LogicCore core;
+	
+	TaskOperator(LogicCore core)
 	{
-		this.grid = grid;
-		this.graphPanel = graphPanel;
-		this.graphPanel.setLayout(null);
-		this.graphPanel.setSize(140, 110);
-		this.graphPanel.setBackground(Color.black);
+		this.core = core;
 	}
 }

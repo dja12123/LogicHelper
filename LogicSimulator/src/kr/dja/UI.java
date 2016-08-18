@@ -7,19 +7,20 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -38,29 +39,73 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
-import kr.dja.UI.ControlPane.BlockControlPanel;
 public class UI
 {
-	private JFrame mainFrame;
-	//JLayeredPane layerPane;
+	private LogicCore core;
+	
+	private Size UI_Size;
+	
 	private ToolBar toolBar;
 	private UnderBar underBar;
-	private ControlPane controlPane;
-	private Grid grid;
-	private TaskManager taskManager;
-	private TaskOperator taskOperator;
-	private JLayeredPane mainLayeredPane;
+	private TaskOperatorPanel taskOperatorPanel;
+	private PalettePanel palettePanel;
+	private InfoPanel infoPanel;
+	private BlockControlPanel blockControlPanel;
+	private TemplatePanel templatePanel;
+	private TaskManagerPanel taskManagerPanel;
+	
 	private TrackedPane trackedPane;
+	
+	private JFrame mainFrame;
+	private JLayeredPane mainLayeredPane;
 	private JPanel glassPane;
+	
+	private JPanel controlView;
+	private JPanel staticControlView;
+	private JPanel moveControlView;
+	
 	final Color innerUIObjectColor = new Color(220, 220, 220);
-	public UI()
+	
+	UI(LogicCore core)
 	{
+		this.core = core;
+		
+		this.UI_Size = Size.middle;
+		this.toolBar = new ToolBar();
+		this.underBar = new UnderBar();
+		
 		this.mainFrame = new JFrame("논리회로 시뮬레이터");
 		this.mainFrame.setSize(1600, 900);
 		this.mainFrame.setMinimumSize(new Dimension(1131, 800));
-		this.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		this.mainFrame.setLocation(screenSize.width/2-mainFrame.getSize().width/2, screenSize.height/2-mainFrame.getSize().height/2);
 		this.mainLayeredPane = this.mainFrame.getLayeredPane();
+		this.mainFrame.addWindowListener(new WindowAdapter()
+		{
+			@Override
+			public void windowClosing(WindowEvent e)
+			{
+				System.out.println("close");
+				LogicCore.removeInstance(core);
+			}
+		});
+
+		this.taskOperatorPanel = new TaskOperatorPanel();
+		this.palettePanel = new PalettePanel(this);
+		this.infoPanel = new InfoPanel();
+		this.blockControlPanel = new BlockControlPanel();
+		this.templatePanel = new TemplatePanel();
+		this.taskManagerPanel = new TaskManagerPanel();
+		
+		this.controlView = new JPanel();
+		this.controlView.setPreferredSize(new Dimension(400, 0));
+		this.controlView.setLayout(new BorderLayout());
+		this.staticControlView = new JPanel();
+		this.staticControlView.setPreferredSize(new Dimension(0, 475));
+		this.staticControlView.setLayout(null);
+		this.moveControlView = new JPanel();
+		this.moveControlView.setLayout(new BoxLayout(this.moveControlView, BoxLayout.PAGE_AXIS));
+		this.moveControlView.setBorder(BorderFactory.createEmptyBorder(0, 5, 5, 5));
 		
 		this.glassPane = (JPanel)this.mainFrame.getGlassPane();
 		this.glassPane.addMouseMotionListener(new MouseMotionListener()
@@ -92,11 +137,11 @@ public class UI
 					int compY = (int)(e.getY() - pointComp.getLocation().getY() - pointComp1.getLocation().getY());
 					Component pointComp2 = pointComp1.getComponentAt(compX, compY);
 					Component panelComp = pointComp2.getComponentAt(compX, compY);
-					if(panelComp == grid.getGridPanel())
+					if(panelComp == core.getGrid().getGridPanel())
 					{
 						System.out.println("push");
-						Point loc = grid.getGridScrollPanel().getViewport().getViewPosition().getLocation();
-						trackedPane.addMemberOnGrid((int)((compX + loc.getX()) - Size.MARGIN) / grid.getUISize().getmultiple(), (int)((compY + loc.getY()) - Size.MARGIN) / grid.getUISize().getmultiple());
+						Point loc = core.getGrid().getGridScrollPanel().getViewport().getViewPosition().getLocation();
+						trackedPane.addMemberOnGrid((int)((compX + loc.getX()) - Size.MARGIN) / getUISize().getmultiple(), (int)((compY + loc.getY()) - Size.MARGIN) / getUISize().getmultiple());
 						removeTrackedPane(trackedPane);
 						
 					}
@@ -119,27 +164,18 @@ public class UI
 			{
 			}
 		});
-		this.toolBar = new ToolBar();
-		this.underBar = new UnderBar();
-		this.grid = new Grid(this);
-		this.taskManager = new TaskManager();
-		this.controlPane = new ControlPane();
-		this.controlPane.setPreferredSize(new Dimension(400, 0));
-		this.mainFrame.add(this.grid.getGridScrollPanel(), BorderLayout.CENTER);
-		this.mainFrame.add(this.toolBar, BorderLayout.NORTH);
-		this.mainFrame.add(this.underBar, BorderLayout.SOUTH);
-		this.mainFrame.add(this.controlPane, BorderLayout.EAST);
-		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		this.mainFrame.setLocation(screenSize.width/2-mainFrame.getSize().width/2, screenSize.height/2-mainFrame.getSize().height/2);
-		this.mainFrame.setVisible(true);
 	}
-	ControlPane getControlPane()
+	Size getUISize()
 	{
-		return this.controlPane;
+		return this.UI_Size;
+	}
+	LogicCore getCore()
+	{
+		return this.core;
 	}
 	UnderBar getUnderBar()
 	{
-		return underBar;
+		return this.underBar;
 	}
 	void addTrackedPane(TrackedPane trackedPane)
 	{
@@ -155,454 +191,482 @@ public class UI
 		mainLayeredPane.remove(trackedPane);
 		glassPane.setVisible(false);
 	}
-	class ControlPane extends JPanel
+	BlockControlPanel getBlockControlPanel()
+	{
+		return this.blockControlPanel;
+	}
+	PalettePanel getPalettePanel()
+	{
+		return this.palettePanel;
+	}
+	void doLayout()
+	{
+		this.staticControlView.add(this.blockControlPanel.getComponent());
+		this.staticControlView.add(this.infoPanel.getComponent());
+		this.staticControlView.add(this.palettePanel.getComponent());
+		this.staticControlView.add(this.taskOperatorPanel.getComponent());
+		
+		this.moveControlView.add(this.taskManagerPanel.getComponent(), BorderLayout.CENTER);
+		this.moveControlView.add(this.templatePanel.getComponent(), BorderLayout.SOUTH);
+		
+		this.controlView.add(moveControlView, BorderLayout.CENTER);
+		this.controlView.add(staticControlView, BorderLayout.NORTH);
+		
+		this.mainFrame.add(this.core.getGrid().getGridScrollPanel(), BorderLayout.CENTER);
+		this.mainFrame.add(this.toolBar.getComponent(), BorderLayout.NORTH);
+		this.mainFrame.add(this.underBar.getComponent(), BorderLayout.SOUTH);
+		this.mainFrame.add(this.controlView, BorderLayout.EAST);
+
+		this.mainFrame.setVisible(true);
+	}
+}
+class ToolBar implements LogicUIComponent
+{
+	private static final long serialVersionUID = 1L;
+	
+	private JToolBar toolbar;
+	private JPanel leftSidePanel;
+	private JPanel toolBarPanel;
+	private JPanel rightSidePanel;
+	private JLabel titleLabel;
+	private UIButton saveButton;
+	private UIButton optionSaveButton;
+	private UIButton loadButton;
+	private UIButton createNewfileButton;
+	private UIButton sizeUpButton;
+	private UIButton sizeDownButton;
+	private UIButton setViewButton;
+	private UIButton consolButton;
+	private UIButton helpButton;
+	private UIButton newInstanceButton;
+	private UIButton controlOpenButton;
+	
+	ToolBar()
+	{
+		this.toolbar = new JToolBar();
+		
+		this.toolbar.setPreferredSize(new Dimension(0, 30));
+		this.toolbar.setFloatable(false);
+		
+		this.toolBarPanel = new JPanel();
+		this.toolBarPanel.setLayout(new BorderLayout());
+		this.toolBarPanel.setBackground(new Color(255, 0, 0, 0));
+		
+		this.rightSidePanel = new JPanel();
+		this.rightSidePanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+		this.rightSidePanel.setBackground(new Color(255, 0, 0, 0));
+		this.rightSidePanel.setPreferredSize(new Dimension(300, 0));
+		
+		this.leftSidePanel = new JPanel();
+		this.leftSidePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		this.leftSidePanel.setBackground(new Color(255, 0, 0, 0));
+		this.leftSidePanel.setPreferredSize(new Dimension(300, 0));
+		
+		this.titleLabel = new JLabel("FileName");
+		this.titleLabel.setHorizontalAlignment(JLabel.CENTER);
+		
+		this.saveButton = new UIButton(20, 20, null, null);
+		this.optionSaveButton = new UIButton(20, 20, null, null);
+		this.loadButton = new UIButton(20, 20, null, null);
+		this.createNewfileButton = new UIButton(20, 20, null, null);
+		this.sizeUpButton = new UIButton(20, 20, null, null);
+		this.sizeDownButton = new UIButton(20, 20, null, null);
+		this.setViewButton = new UIButton(20, 20, null, null);
+		
+		this.consolButton = new UIButton(20, 20, null, null);
+		this.helpButton = new UIButton(20, 20, null, null);
+		this.newInstanceButton = new UIButton(20, 20, null, null);
+		this.controlOpenButton = new UIButton(20, 20, null, null);
+		
+		this.leftSidePanel.add(this.saveButton);
+		this.leftSidePanel.add(this.optionSaveButton);
+		this.leftSidePanel.add(this.loadButton);
+		this.leftSidePanel.add(this.createNewfileButton);
+		this.leftSidePanel.add(Box.createRigidArea(new Dimension(10, 0)));
+		this.leftSidePanel.add(this.sizeDownButton);
+		this.leftSidePanel.add(this.sizeUpButton);
+		this.leftSidePanel.add(Box.createRigidArea(new Dimension(10, 0)));
+		this.leftSidePanel.add(this.setViewButton);
+		
+		this.rightSidePanel.add(this.helpButton);
+		this.rightSidePanel.add(this.consolButton);
+		this.rightSidePanel.add(this.controlOpenButton);
+		this.rightSidePanel.add(this.newInstanceButton);
+		
+		this.toolBarPanel.add(this.leftSidePanel, BorderLayout.WEST);
+		this.toolBarPanel.add(this.titleLabel, BorderLayout.CENTER);
+		this.toolBarPanel.add(this.rightSidePanel, BorderLayout.EAST);
+		
+		this.toolbar.add(toolBarPanel);
+	}
+	@Override
+	public Component getComponent()
+	{
+		return this.toolbar;
+	}
+}
+class UnderBar implements LogicUIComponent
+{
+	private static final long serialVersionUID = 1L;
+	
+	private JToolBar underbar;
+	private JPanel leftSidePanel;
+	private JPanel centerSidePanel;
+	private JPanel rightSidePanel;
+	private JLabel sizeLabel;
+	
+	UnderBar()
+	{
+		this.underbar = new JToolBar();
+		
+		this.underbar.setPreferredSize(new Dimension(0, 25));
+		this.underbar.setFloatable(false);
+		this.underbar.setLayout(new BorderLayout());
+		
+		this.leftSidePanel = new JPanel();
+		this.leftSidePanel.setPreferredSize(new Dimension(300, 0));
+		this.leftSidePanel.setBackground(new Color(255, 0, 0, 0));
+		this.leftSidePanel.setLayout(null);
+		
+		this.centerSidePanel = new JPanel();
+		this.centerSidePanel.setBackground(new Color(255, 0, 0, 0));
+		
+		this.rightSidePanel = new JPanel();
+		this.rightSidePanel.setPreferredSize(new Dimension(300, 0));
+		this.rightSidePanel.setBackground(new Color(255, 0, 0, 0));
+		this.rightSidePanel.setLayout(null);
+		
+		this.sizeLabel = new JLabel();
+		this.sizeLabel.setBounds(5, 0, 120, 22);
+		this.sizeLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(14f));
+		
+		this.leftSidePanel.add(this.sizeLabel);
+		
+		this.underbar.add(centerSidePanel, BorderLayout.CENTER);
+		this.underbar.add(leftSidePanel, BorderLayout.WEST);
+		this.underbar.add(rightSidePanel, BorderLayout.EAST);
+	}
+	void setGridSizeInfo(int x, int y)
+	{
+		this.sizeLabel.setText("X: " + x + "  Y: " + y);
+		this.underbar.repaint();
+	}
+	@Override
+	public Component getComponent()
+	{
+		return this.underbar;
+	}
+}
+class TaskOperatorPanel implements LogicUIComponent
+{
+	private static final long serialVersionUID = 1L;
+	
+	private JPanel taskOperatorPanel;
+	
+	private JPanel graphPanel;
+	private UIButton pauseButton;
+	private UIButton subTime1Button;
+	private UIButton subTime10Button;
+	private UIButton subTime100Button;
+	private UIButton addTime1Button;
+	private UIButton addTime10Button;
+	private UIButton addTime100Button;
+	private JLabel taskIntervalLabel;
+	private JLabel msLabel;
+	
+	TaskOperatorPanel()
+	{
+		this.taskOperatorPanel = new JPanel();
+		
+		this.taskOperatorPanel.setLayout(null);
+		this.taskOperatorPanel.setBounds(230, 295, 165, 180);
+		this.taskOperatorPanel.setBorder(new PanelBorder("연산"));
+		
+		this.graphPanel = new JPanel();
+		this.graphPanel.setBounds(8, 20, 148, 90);
+		this.graphPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
+		
+		this.pauseButton = new UIButton(8, 145, 148, 25, null, null);
+		this.subTime1Button = new UIButton(42, 120, 15, 20, null, null);
+		this.subTime10Button = new UIButton(25, 120, 15, 20, null, null);
+		this.subTime100Button = new UIButton(8, 120, 15, 20, null, null);
+		this.addTime1Button = new UIButton(107, 120, 15, 20, null, null);
+		this.addTime10Button = new UIButton(124, 120, 15, 20, null, null);
+		this.addTime100Button = new UIButton(141, 120, 15, 20, null, null);
+		
+		this.taskIntervalLabel = new JLabel("200");
+		this.taskIntervalLabel.setHorizontalAlignment(JLabel.RIGHT);
+		this.taskIntervalLabel.setBounds(56, 120, 30, 20);
+		
+		this.msLabel = new JLabel("ms");
+		this.msLabel.setBounds(87, 120, 30, 20);
+		
+		this.taskOperatorPanel.add(this.graphPanel);
+		this.taskOperatorPanel.add(this.pauseButton);
+		this.taskOperatorPanel.add(this.subTime1Button);
+		this.taskOperatorPanel.add(this.subTime10Button);
+		this.taskOperatorPanel.add(this.subTime100Button);
+		this.taskOperatorPanel.add(this.addTime1Button);
+		this.taskOperatorPanel.add(this.addTime10Button);
+		this.taskOperatorPanel.add(this.addTime100Button);
+		this.taskOperatorPanel.add(this.taskIntervalLabel);
+		this.taskOperatorPanel.add(this.msLabel);
+	}
+	@Override
+	public Component getComponent()
+	{
+		return this.taskOperatorPanel;
+	}
+}
+class BlockControlPanel implements LogicUIComponent
+{
+	private JPanel blockControlPanel;
+	
+	private DefaultPane defaultPane;
+
+	BlockControlPanel()
+	{
+		this.blockControlPanel = new JPanel();
+		
+		this.defaultPane = new DefaultPane();
+		this.blockControlPanel.setLayout(null);
+		this.blockControlPanel.setBounds(5, 5, 390, 150);
+		this.blockControlPanel.setBorder(new PanelBorder("블록 세부 편집"));
+		this.removeControlPane();
+	}
+	void addControlPanel(JPanel panel)
+	{
+		this.blockControlPanel.removeAll();
+		this.blockControlPanel.repaint();
+		panel.setBounds(8, 20, 373, 121);
+		this.blockControlPanel.add(panel);
+	}
+	void removeControlPane()
+	{
+		this.blockControlPanel.removeAll();
+		this.addControlPanel(defaultPane);
+	}
+	@Override
+	public Component getComponent()
+	{
+		return this.blockControlPanel;
+	}
+}
+class InfoPanel implements LogicUIComponent
+{
+	private JPanel infoPanel;
+
+	private JTextArea explanationArea;
+	
+	InfoPanel()
+	{
+		this.infoPanel = new JPanel();
+		
+		this.infoPanel.setLayout(null);
+		this.infoPanel.setBounds(5, 155, 390, 140);
+		this.infoPanel.setBorder(new PanelBorder("정보"));
+		
+		this.explanationArea = new JTextArea();
+		this.explanationArea.setBounds(8, 20, 373, 111);
+		this.explanationArea.setEditable(false);
+		this.explanationArea.setText("정보 패널");
+		this.explanationArea.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14.0f));
+		
+		this.infoPanel.add(explanationArea);
+	}
+	public Component getComponent()
+	{
+		return this.infoPanel;
+	}
+}
+class PalettePanel implements LogicUIComponent
+{
+	private UI logicUI;
+	
+	private JPanel palettePanel;
+
+	private HashMap<String, PaletteMember> paletteMembers = new HashMap<String, PaletteMember>();
+	
+	PalettePanel(UI logicUI)
+	{
+		this.logicUI = logicUI;
+		
+		this.palettePanel = new JPanel();
+		
+		this.palettePanel.setLayout(null);
+		this.palettePanel.setBounds(5, 295, 225, 180);
+		this.palettePanel.setBorder(new PanelBorder("팔레트"));
+		LogicEditPane DFTLogicControl = new LogicEditPane();
+		
+		new PaletteMember(new AND(this.logicUI.getUISize()), DFTLogicControl);
+		new PaletteMember(new OR(this.logicUI.getUISize()), DFTLogicControl);
+		Set<String> key = paletteMembers.keySet();
+		int i = 0, j = 0;
+		for(String str : key)
+		{
+			PaletteMember p = this.paletteMembers.get(str);
+			if(i < 4)
+			{
+				if(j < 5)
+				{
+					p.setBounds(j * 44 + 10, i * 44 + 20, 40, 40);
+					System.out.println(i + " " + j);
+					j++;
+				}
+				else
+				{
+					j = 0;
+					i++;
+				}
+			}
+			else
+			{
+				i = 0;
+			}
+			this.palettePanel.add(p);
+		}
+	}
+	@Override
+	public Component getComponent()
+	{
+		return this.palettePanel;
+	}
+	EditPane getControl(GridMember member)
+	{
+		
+		EditPane edit = this.paletteMembers.get(member.getName()).getControl();
+		edit.setInfo(member);
+		return edit;
+	}
+	class PaletteMember extends JButton
 	{
 		private static final long serialVersionUID = 1L;
-		private JPanel controlAreaPanel;
 		
-		private TaskOperatorPanel taskOperatorPanel;
-		private PalettePanel palettePanel;
-		private InfoPanel infoPanel;
-		private BlockControlPanel blockControlPanel;
-		
-		private JPanel resizablePanel;
-		private TemplatePanel templatePanel;
-		private TaskManagerPanel taskManagerPanel;
-		
-		ControlPane()
+		private GridMember putMember;
+		private EditPane selectControlPanel;
+		PaletteMember(GridMember member, LogicEditPane control)
 		{
-			super();
-			
-			this.setLayout(new BorderLayout());
-			this.controlAreaPanel = new JPanel();
-			this.controlAreaPanel.setLayout(null);
-			this.controlAreaPanel.setPreferredSize(new Dimension(0, 475));
-			
-			this.taskOperatorPanel = new TaskOperatorPanel();
-			this.palettePanel = new PalettePanel();
-			this.infoPanel = new InfoPanel();
-			this.blockControlPanel = new BlockControlPanel();
-
-			this.controlAreaPanel.add(taskOperatorPanel);
-			this.controlAreaPanel.add(palettePanel);
-			this.controlAreaPanel.add(infoPanel);
-			this.controlAreaPanel.add(blockControlPanel);
-			
-			this.resizablePanel = new JPanel();
-			this.resizablePanel.setLayout(new BoxLayout(this.resizablePanel, BoxLayout.PAGE_AXIS));
-			this.resizablePanel.setBorder(BorderFactory.createEmptyBorder(0, 5, 5, 5));
-			
-			this.templatePanel = new TemplatePanel();
-			
-			this.taskManagerPanel = new TaskManagerPanel();
-			
-			this.resizablePanel.add(templatePanel);
-			this.resizablePanel.add(taskManagerPanel);
-			
-			this.add(resizablePanel, BorderLayout.CENTER);
-			this.add(controlAreaPanel, BorderLayout.NORTH);
-			
-			
-		}
-		BlockControlPanel getBlockControlPanel()
-		{
-			return this.blockControlPanel;
-		}
-		PalettePanel getPalettePanel()
-		{
-			return this.palettePanel;
-		}
-		class BlockControlPanel extends JPanel
-		{
-			private static final long serialVersionUID = 1L;
-			
-			private DefaultPane defaultPane;
-
-			BlockControlPanel()
+			paletteMembers.put(member.getName(), this);
+			this.selectControlPanel = control;
+			this.putMember = member;
+			this.addMouseListener(new MouseAdapter()
 			{
-				super();
-				
-				this.defaultPane = new DefaultPane();
-				this.setLayout(null);
-				this.setBounds(5, 5, 390, 150);
-				this.setBorder(new PanelBorder("블록 세부 편집"));
-				this.removeControlPane();
-			}
-			void addControlPanel(JPanel panel)
-			{
-				this.removeAll();
-				this.repaint();
-				panel.setBounds(8, 20, 373, 121);
-				this.add(panel);
-			}
-			void removeControlPane()
-			{
-				this.removeAll();
-				this.addControlPanel(defaultPane);
-			}
-		}
-		private class InfoPanel extends JPanel
-		{
-			private static final long serialVersionUID = 1L;
-			private JTextArea explanationArea;
-			
-			InfoPanel()
-			{
-				super();
-				
-				this.setLayout(null);
-				this.setBounds(5, 155, 390, 140);
-				this.setBorder(new PanelBorder("정보"));
-				
-				this.explanationArea = new JTextArea();
-				this.explanationArea.setBounds(8, 20, 373, 111);
-				this.explanationArea.setEditable(false);
-				this.explanationArea.setText("정보 패널");
-				this.explanationArea.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14.0f));
-				
-				
-				this.add(explanationArea);
-			}
-		}
-		class PalettePanel extends JPanel
-		{
-			private static final long serialVersionUID = 1L;
-			private HashMap<String, PaletteMember> paletteMembers = new HashMap<String, PaletteMember>();
-			
-			PalettePanel()
-			{
-				super();
-				
-				
-				this.setLayout(null);
-				this.setBounds(5, 295, 225, 180);
-				this.setBorder(new PanelBorder("팔레트"));
-				LogicEditPane DFTLogicControl = new LogicEditPane();
-				
-				new PaletteMember(new AND(grid.getUISize()), DFTLogicControl);
-				new PaletteMember(new OR(grid.getUISize()), DFTLogicControl);
-				Set<String> key = paletteMembers.keySet();
-				int i = 0, j = 0;
-				for(String str : key)
+				public void mouseClicked(MouseEvent e)
 				{
-					PaletteMember p = this.paletteMembers.get(str);
-					if(i < 4)
+					if(e.getButton() == 1)
 					{
-						if(j < 5)
-						{
-							p.setBounds(j * 44 + 10, i * 44 + 20, 40, 40);
-							System.out.println(i + " " + j);
-							j++;
-						}
-						else
-						{
-							j = 0;
-							i++;
-						}
+						ArrayList<GridMember> list = new ArrayList<GridMember>();
+						list.add(putMember.clone());
+						logicUI.addTrackedPane(new TrackedPane(list, logicUI));
 					}
-					else
+					else if(e.getButton() == 3)
 					{
-						i = 0;
+						selectControlPanel.setInfo(putMember);
+						logicUI.getBlockControlPanel().addControlPanel(selectControlPanel);
 					}
-					this.add(p);
 				}
-			}
-			PaletteMember getPaletteMember(String str)
-			{
-				return this.paletteMembers.get(str);
-			}
-			class PaletteMember extends JButton
-			{
-				private static final long serialVersionUID = 1L;
-				
-				private GridMember putMember;
-				private EditPane selectControlPanel;
-				PaletteMember(GridMember member, LogicEditPane control)
-				{
-					paletteMembers.put(member.getName(), this);
-					this.selectControlPanel = control;
-					this.putMember = member;
-					this.addActionListener(new ActionListener()
-					{
+			});
+		}
+		EditPane getControl()
+		{
+			return this.selectControlPanel;
+		}
+	}
+}
 
-						@Override
-						public void actionPerformed(ActionEvent e)
-						{
-							ArrayList<GridMember> list = new ArrayList<GridMember>();
-							//TODO putMember 복사 필요
-							list.add(new AND(grid.getUISize()));
-							addTrackedPane(new TrackedPane(list, grid));
-						}
-					});
-				}
-				EditPane getControl()
-				{
-					return selectControlPanel;
-				}
-			}
-		}
-		private class TaskOperatorPanel extends JPanel
-		{
-			private static final long serialVersionUID = 1L;
-			
-			private JPanel graphPanel;
-			private UIButton pauseButton;
-			private UIButton subTime1Button;
-			private UIButton subTime10Button;
-			private UIButton subTime100Button;
-			private UIButton addTime1Button;
-			private UIButton addTime10Button;
-			private UIButton addTime100Button;
-			private JLabel taskIntervalLabel;
-			private JLabel msLabel;
-			
-			TaskOperatorPanel()
-			{
-				super();
-				
-				this.setLayout(null);
-				this.setBounds(230, 295, 165, 180);
-				this.setBorder(new PanelBorder("연산"));
-				
-				//this.setBackground(innerUIObjectColor);
-				this.graphPanel = new JPanel();
-				this.graphPanel.setBounds(8, 20, 148, 90);
-				this.graphPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
-				
-				this.pauseButton = new UIButton(8, 145, 148, 25, null, null);
-				this.subTime1Button = new UIButton(42, 120, 15, 20, null, null);
-				this.subTime10Button = new UIButton(25, 120, 15, 20, null, null);
-				this.subTime100Button = new UIButton(8, 120, 15, 20, null, null);
-				this.addTime1Button = new UIButton(107, 120, 15, 20, null, null);
-				this.addTime10Button = new UIButton(124, 120, 15, 20, null, null);
-				this.addTime100Button = new UIButton(141, 120, 15, 20, null, null);
-				
-				this.taskIntervalLabel = new JLabel("200");
-				this.taskIntervalLabel.setHorizontalAlignment(JLabel.RIGHT);
-				this.taskIntervalLabel.setBounds(56, 120, 30, 20);
-				
-				this.msLabel = new JLabel("ms");
-				this.msLabel.setBounds(87, 120, 30, 20);
-				
-				this.add(this.graphPanel);
-				this.add(this.pauseButton);
-				this.add(this.subTime1Button);
-				this.add(this.subTime10Button);
-				this.add(this.subTime100Button);
-				this.add(this.addTime1Button);
-				this.add(this.addTime10Button);
-				this.add(this.addTime100Button);
-				this.add(this.taskIntervalLabel);
-				this.add(this.msLabel);
-			}
-		}
-	}
-	private class TemplatePanel extends JPanel
-	{
-		private static final long serialVersionUID = 1L;
-		
-		private JPanel templateAreaPanel;
-		private JPanel buttonAreaPanel;
-		private JPanel clipBoardPanel;
-		private JScrollPane templateScrollPane;
-		private UIButton addTemplateButton;
-		private UIButton putGridButton;
-		private UIButton removeTemplateButton;
+class TemplatePanel implements LogicUIComponent
+{
+	private JPanel templatePanel;
+	
+	private JPanel templateAreaPanel;
+	private JPanel buttonAreaPanel;
+	private JPanel clipBoardPanel;
+	private JScrollPane templateScrollPane;
+	private UIButton addTemplateButton;
+	private UIButton putGridButton;
+	private UIButton removeTemplateButton;
 
-		TemplatePanel()
-		{
-			super();
-			
-			this.setLayout(new BorderLayout());
-			this.setBorder(new PanelBorder("템플릿"));
-			
-			this.templateAreaPanel = new JPanel();
-			this.templateAreaPanel.setLayout(new BorderLayout());
-			
-			this.buttonAreaPanel = new JPanel();
-			this.buttonAreaPanel.setPreferredSize(new Dimension(30, 0));
-			this.buttonAreaPanel.setLayout(null);
-			
-			this.addTemplateButton = new UIButton(2, 4, 26, 26, null, null);
-			this.putGridButton = new UIButton(2, 38, 26, 26, null, null);
-			this.removeTemplateButton = new UIButton(2, 68, 26, 26, null, null);
-			
-			this.buttonAreaPanel.add(this.addTemplateButton);
-			this.buttonAreaPanel.add(this.putGridButton);
-			this.buttonAreaPanel.add(this.removeTemplateButton);
-			
-			this.clipBoardPanel = new JPanel();
-			this.clipBoardPanel.setPreferredSize(new Dimension(0, 34));
-			this.clipBoardPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-			
-			this.templateScrollPane = new JScrollPane();
-			this.templateScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-			this.templateScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-			
-			this.templateAreaPanel.add(this.templateScrollPane, BorderLayout.CENTER);
-			this.templateAreaPanel.add(this.clipBoardPanel, BorderLayout.NORTH);
-			
-			this.add(this.templateAreaPanel, BorderLayout.CENTER);
-			this.add(this.buttonAreaPanel, BorderLayout.EAST);
-			
-		}
-	}
-	private class TaskManagerPanel extends JPanel
+	TemplatePanel()
 	{
-		private static final long serialVersionUID = 1L;
+		this.templatePanel = new JPanel();
 		
-		private JScrollPane taskScrollPane;
-		private JPanel buttonAreaPanel;
-		private UIButton TaskUndoButton;
-		private UIButton TaskRedoButton;
+		this.templatePanel.setLayout(new BorderLayout());
+		this.templatePanel.setBorder(new PanelBorder("템플릿"));
 		
-		TaskManagerPanel()
-		{
-			super();
-			
-			this.setLayout(new BorderLayout());
-			this.setBorder(new PanelBorder("작업"));
-			
-			this.taskScrollPane = new JScrollPane();
-			this.taskScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-			this.taskScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-			
-			this.buttonAreaPanel = new JPanel();
-			this.buttonAreaPanel.setPreferredSize(new Dimension(30, 0));
-			this.buttonAreaPanel.setLayout(null);
-			
-			this.TaskUndoButton = new UIButton(2, 4, 26, 26, null, null);
-			this.TaskRedoButton = new UIButton(2, 34, 26, 26, null, null);
-			
-			this.buttonAreaPanel.add(this.TaskUndoButton);
-			this.buttonAreaPanel.add(this.TaskRedoButton);
-			
-			this.add(this.taskScrollPane, BorderLayout.CENTER);
-			this.add(this.buttonAreaPanel, BorderLayout.EAST);
-			
-		}
+		this.templateAreaPanel = new JPanel();
+		this.templateAreaPanel.setLayout(new BorderLayout());
+		
+		this.buttonAreaPanel = new JPanel();
+		this.buttonAreaPanel.setPreferredSize(new Dimension(30, 0));
+		this.buttonAreaPanel.setLayout(null);
+		
+		this.addTemplateButton = new UIButton(2, 4, 26, 26, null, null);
+		this.putGridButton = new UIButton(2, 38, 26, 26, null, null);
+		this.removeTemplateButton = new UIButton(2, 68, 26, 26, null, null);
+		
+		this.buttonAreaPanel.add(this.addTemplateButton);
+		this.buttonAreaPanel.add(this.putGridButton);
+		this.buttonAreaPanel.add(this.removeTemplateButton);
+		
+		this.clipBoardPanel = new JPanel();
+		this.clipBoardPanel.setPreferredSize(new Dimension(0, 34));
+		this.clipBoardPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+		
+		this.templateScrollPane = new JScrollPane();
+		this.templateScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		this.templateScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+		
+		this.templateAreaPanel.add(this.templateScrollPane, BorderLayout.CENTER);
+		this.templateAreaPanel.add(this.clipBoardPanel, BorderLayout.NORTH);
+		
+		this.templatePanel.add(this.templateAreaPanel, BorderLayout.CENTER);
+		this.templatePanel.add(this.buttonAreaPanel, BorderLayout.EAST);
+		
 	}
-	class ToolBar extends JToolBar
+	@Override
+	public Component getComponent()
 	{
-		private static final long serialVersionUID = 1L;
-		private JPanel leftSidePanel;
-		private JPanel toolBarPanel;
-		private JPanel rightSidePanel;
-		private JLabel titleLabel;
-		private UIButton saveButton;
-		private UIButton optionSaveButton;
-		private UIButton loadButton;
-		private UIButton createNewfileButton;
-		private UIButton sizeUpButton;
-		private UIButton sizeDownButton;
-		private UIButton setViewButton;
-		private UIButton consolButton;
-		private UIButton helpButton;
-		private UIButton newInstanceButton;
-		private UIButton controlOpenButton;
-		
-		ToolBar()
-		{
-			super();
-			
-			this.setPreferredSize(new Dimension(0, 30));
-			this.setFloatable(false);
-			
-			this.toolBarPanel = new JPanel();
-			this.toolBarPanel.setLayout(new BorderLayout());
-			this.toolBarPanel.setBackground(new Color(255, 0, 0, 0));
-			
-			this.rightSidePanel = new JPanel();
-			this.rightSidePanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-			this.rightSidePanel.setBackground(new Color(255, 0, 0, 0));
-			this.rightSidePanel.setPreferredSize(new Dimension(300, 0));
-			
-			this.leftSidePanel = new JPanel();
-			this.leftSidePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-			this.leftSidePanel.setBackground(new Color(255, 0, 0, 0));
-			this.leftSidePanel.setPreferredSize(new Dimension(300, 0));
-			
-			this.titleLabel = new JLabel("FileName");
-			this.titleLabel.setHorizontalAlignment(JLabel.CENTER);
-			
-			this.saveButton = new UIButton(20, 20, null, null);
-			this.optionSaveButton = new UIButton(20, 20, null, null);
-			this.loadButton = new UIButton(20, 20, null, null);
-			this.createNewfileButton = new UIButton(20, 20, null, null);
-			this.sizeUpButton = new UIButton(20, 20, null, null);
-			this.sizeDownButton = new UIButton(20, 20, null, null);
-			this.setViewButton = new UIButton(20, 20, null, null);
-			
-			this.consolButton = new UIButton(20, 20, null, null);
-			this.helpButton = new UIButton(20, 20, null, null);
-			this.newInstanceButton = new UIButton(20, 20, null, null);
-			this.controlOpenButton = new UIButton(20, 20, null, null);
-			
-			this.leftSidePanel.add(this.saveButton);
-			this.leftSidePanel.add(this.optionSaveButton);
-			this.leftSidePanel.add(this.loadButton);
-			this.leftSidePanel.add(this.createNewfileButton);
-			this.leftSidePanel.add(Box.createRigidArea(new Dimension(10, 0)));
-			this.leftSidePanel.add(this.sizeDownButton);
-			this.leftSidePanel.add(this.sizeUpButton);
-			this.leftSidePanel.add(Box.createRigidArea(new Dimension(10, 0)));
-			this.leftSidePanel.add(this.setViewButton);
-			
-			this.rightSidePanel.add(this.helpButton);
-			this.rightSidePanel.add(this.consolButton);
-			this.rightSidePanel.add(this.controlOpenButton);
-			this.rightSidePanel.add(this.newInstanceButton);
-			
-			this.toolBarPanel.add(this.leftSidePanel, BorderLayout.WEST);
-			this.toolBarPanel.add(this.titleLabel, BorderLayout.CENTER);
-			this.toolBarPanel.add(this.rightSidePanel, BorderLayout.EAST);
-			
-			this.add(toolBarPanel);
-		}
+		return this.templatePanel;
 	}
-	class UnderBar extends JToolBar
+}
+class TaskManagerPanel implements LogicUIComponent
+{
+	private JPanel taskManagerPanel;
+	
+	private JScrollPane taskScrollPane;
+	private JPanel buttonAreaPanel;
+	private UIButton TaskUndoButton;
+	private UIButton TaskRedoButton;
+	
+	TaskManagerPanel()
 	{
-		private static final long serialVersionUID = 1L;
-		private JPanel leftSidePanel;
-		private JPanel centerSidePanel;
-		private JPanel rightSidePanel;
-		private JLabel sizeLabel;
+		this.taskManagerPanel = new JPanel();
 		
-		UnderBar()
-		{
-			super();
-			this.setPreferredSize(new Dimension(0, 25));
-			this.setFloatable(false);
-			this.setLayout(new BorderLayout());
-			
-			this.leftSidePanel = new JPanel();
-			this.leftSidePanel.setPreferredSize(new Dimension(300, 0));
-			this.leftSidePanel.setBackground(new Color(255, 0, 0, 0));
-			this.leftSidePanel.setLayout(null);
-			
-			this.centerSidePanel = new JPanel();
-			this.centerSidePanel.setBackground(new Color(255, 0, 0, 0));
-			
-			this.rightSidePanel = new JPanel();
-			this.rightSidePanel.setPreferredSize(new Dimension(300, 0));
-			this.rightSidePanel.setBackground(new Color(255, 0, 0, 0));
-			this.rightSidePanel.setLayout(null);
-			
-			this.sizeLabel = new JLabel();
-			this.sizeLabel.setBounds(5, 0, 120, 22);
-			this.sizeLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(14f));
-			
-			this.leftSidePanel.add(this.sizeLabel);
-			
-			this.add(centerSidePanel, BorderLayout.CENTER);
-			this.add(leftSidePanel, BorderLayout.WEST);
-			this.add(rightSidePanel, BorderLayout.EAST);
-		}
-		void setGridSizeInfo(int x, int y)
-		{
-			this.sizeLabel.setText("X: " + x + "  Y: " + y);
-			this.repaint();
-		}
+		this.taskManagerPanel.setLayout(new BorderLayout());
+		this.taskManagerPanel.setBorder(new PanelBorder("작업"));
+		
+		this.taskScrollPane = new JScrollPane();
+		this.taskScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		this.taskScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+		
+		this.buttonAreaPanel = new JPanel();
+		this.buttonAreaPanel.setPreferredSize(new Dimension(30, 0));
+		this.buttonAreaPanel.setLayout(null);
+		
+		this.TaskUndoButton = new UIButton(2, 4, 26, 26, null, null);
+		this.TaskRedoButton = new UIButton(2, 34, 26, 26, null, null);
+		
+		this.buttonAreaPanel.add(this.TaskUndoButton);
+		this.buttonAreaPanel.add(this.TaskRedoButton);
+		
+		this.taskManagerPanel.add(this.taskScrollPane, BorderLayout.CENTER);
+		this.taskManagerPanel.add(this.buttonAreaPanel, BorderLayout.EAST);
+		
+	}
+	@Override
+	public Component getComponent()
+	{
+		return this.taskManagerPanel;
 	}
 }
 class UIButton extends JButton
@@ -635,11 +699,6 @@ class PanelBorder extends TitledBorder
 		super(new EtchedBorder(EtchedBorder.LOWERED), title);
 		super.setTitleFont(LogicCore.RES.NORMAL_FONT.deriveFont(Font.BOLD, 16.0f));
 	}
-}
-
-interface SizeUpdate
-{
-	void sizeUpdate();
 }
 class ManySelectEditPanel extends JPanel
 {
@@ -842,10 +901,10 @@ class TrackedPane extends JPanel implements SizeUpdate
 	private static final long serialVersionUID = 1L;
 	private List<GridMember> members;
 	private int maxX, maxY, minX, minY;
-	private Grid grid;
-	TrackedPane(List<GridMember> members, Grid grid)
+	private UI logicUI;
+	TrackedPane(List<GridMember> members, UI logicUI)
 	{
-		this.grid = grid;
+		this.logicUI = logicUI;
 		this.members = members;
 		this.setBackground(new Color(0, 255, 0, 0));
 		this.sizeUpdate();
@@ -857,7 +916,7 @@ class TrackedPane extends JPanel implements SizeUpdate
 		for(GridMember member : members)
 		{
 			img = member.getSnapShot();
-			g.drawImage(img, (member.getUIabsLocationX() - minX) * grid.getUISize().getmultiple(), (member.getUIabsLocationY() - minY) * grid.getUISize().getmultiple(), this);
+			g.drawImage(img, (member.getUIabsLocationX() - minX) * logicUI.getUISize().getmultiple(), (member.getUIabsLocationY() - minY) * logicUI.getUISize().getmultiple(), this);
 		}
 		super.paint(g);
 	}
@@ -875,23 +934,31 @@ class TrackedPane extends JPanel implements SizeUpdate
 			this.maxX = member.getUIabsLocationX() + member.getUIabsSizeX() > maxX ? member.getUIabsLocationX() + member.getUIabsSizeX() : maxX;
 			this.maxY = member.getUIabsLocationY() + member.getUIabsSizeY() > maxY ? member.getUIabsLocationY() + member.getUIabsSizeY() : maxY;
 		}
-		this.setSize((this.maxX - this.minX) * grid.getUISize().getmultiple(), (this.maxY - this.minY) * grid.getUISize().getmultiple());
+		this.setSize((this.maxX - this.minX) * logicUI.getUISize().getmultiple(), (this.maxY - this.minY) * logicUI.getUISize().getmultiple());
 		this.repaint();
 
 	}
 	void addMemberOnGrid(int absX, int absY)
 	{
-		int stdX = absX - ((this.getWidth() / 2) / grid.getUISize().getmultiple()) - (grid.getNegativeExtendX() * Size.REGULAR_SIZE);
-		int stdY = absY - ((this.getHeight() / 2) / grid.getUISize().getmultiple()) - (grid.getNegativeExtendY() * Size.REGULAR_SIZE);
+		int stdX = absX - ((this.getWidth() / 2) / this.logicUI.getUISize().getmultiple()) - (this.logicUI.getCore().getGrid().getNegativeExtendX() * Size.REGULAR_SIZE);
+		int stdY = absY - ((this.getHeight() / 2) / this.logicUI.getUISize().getmultiple()) - (this.logicUI.getCore().getGrid().getNegativeExtendY() * Size.REGULAR_SIZE);
 		stdX = stdX > 0 ? stdX + (Size.REGULAR_SIZE / 2) : stdX - (Size.REGULAR_SIZE / 2);
 		stdY = stdY > 0 ? stdY + (Size.REGULAR_SIZE / 2) : stdY - (Size.REGULAR_SIZE / 2);
 		stdX = (stdX / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
 		stdY = (stdY / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
 		for(GridMember member : members)
 		{
-			grid.addMember(member, stdX, stdY);
+			this.logicUI.getCore().getGrid().addMember(member, stdX, stdY);
 			//TODO
 		}
 		this.removeAll();
 	}
+}
+interface SizeUpdate
+{
+	void sizeUpdate();
+}
+interface LogicUIComponent
+{
+	Component getComponent();
 }

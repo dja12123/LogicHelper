@@ -1,33 +1,19 @@
 package kr.dja;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
-import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 import java.util.*;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
@@ -35,13 +21,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.SwingConstants;
 import javax.swing.border.EtchedBorder;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
-import kr.dja.UI.ControlPane;
-import kr.dja.UI.UnderBar;
 
 public class Grid
 {//패키지로 분리 필요
@@ -52,8 +33,7 @@ public class Grid
 	private ArrayList<GridMember> selectMembers = new ArrayList<GridMember>();
 	private ArrayList<GridMember> selectSignMembers = new ArrayList<GridMember>();
 	
-	private UI logicUI;
-	private Size UI_Size;
+	private LogicCore core;
 	private JScrollPane gridScrollPane;
 	private ViewPort viewPort;
 	private GridPanel gridPanel;
@@ -74,17 +54,16 @@ public class Grid
 	private RulerPanel verticalRulerScrollPane;
 	private JPanel side;
 	
-	Grid(UI ui)
+	Grid(LogicCore core)
  	{
-		this.logicUI = ui;
+		this.core = core;
 		this.gridScrollPane = new JScrollPane();;
-		this.UI_Size = Size.middle;
 		
-		ui.getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
+		core.getUI().getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
 		gridScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		gridScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-		gridScrollPane.getVerticalScrollBar().setUnitIncrement((int)(this.UI_Size.getWidth() / 2.5));
-		gridScrollPane.getHorizontalScrollBar().setUnitIncrement((int)(this.UI_Size.getWidth() / 2.5));
+		gridScrollPane.getVerticalScrollBar().setUnitIncrement((int)(this.core.getUI().getUISize().getWidth() / 2.5));
+		gridScrollPane.getHorizontalScrollBar().setUnitIncrement((int)(this.core.getUI().getUISize().getWidth() / 2.5));
 		
 		horizonRulerScrollPane = new RulerPanel()
 		{
@@ -94,24 +73,24 @@ public class Grid
 			{
 				super.paintComponent(g);
 				g.setColor(new Color(122, 138, 153));
-				g.drawLine(UI_Size.getWidth() / 2 - 1, 0, UI_Size.getWidth() / 2 - 1, gridSizeY * UI_Size.getWidth() + (Size.MARGIN * 2));
+				g.drawLine(core.getUI().getUISize().getWidth() / 2 - 1, 0, core.getUI().getUISize().getWidth() / 2 - 1, gridSizeY * core.getUI().getUISize().getWidth() + (Size.MARGIN * 2));
 				g.setColor(Color.gray);
 				for(int i = 0; i <= gridSizeY; i++)
 				{
 					if((negativeExtendY - i) % 10 == 0 && i != gridSizeY)
 					{
 						g.setColor(new Color(180, 200, 230));
-						g.fillRect(1,(i * UI_Size.getWidth()) + Size.MARGIN + 2 , (UI_Size.getWidth() / 2) - 2, UI_Size.getWidth() - 3);
+						g.fillRect(1,(i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 2 , (core.getUI().getUISize().getWidth() / 2) - 2, core.getUI().getUISize().getWidth() - 3);
 						g.setColor(Color.gray);
 					}
-					g.drawLine(UI_Size.getWidth() / 4, (i * UI_Size.getWidth()) + Size.MARGIN,  UI_Size.getWidth() / 2, (i * UI_Size.getWidth()) + Size.MARGIN);
+					g.drawLine(core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN,  core.getUI().getUISize().getWidth() / 2, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN);
 				}
 			}
 			@Override
 			public void sizeUpdate()
 			{
 				this.removeAll();//수정 필요
-				this.setPreferredSize(new Dimension(UI_Size.getWidth() / 2, (gridSizeY * UI_Size.getWidth()) + (Size.MARGIN * 2)));
+				this.setPreferredSize(new Dimension(core.getUI().getUISize().getWidth() / 2, (gridSizeY * core.getUI().getUISize().getWidth()) + (Size.MARGIN * 2)));
 				for(int i = 0; i < gridSizeY; i++)
 				{
 					JLabel label = new JLabel(Integer.toString(i - negativeExtendY), SwingConstants.CENTER)
@@ -126,8 +105,8 @@ public class Grid
 							super.paintComponent(g2d);
 						}
 					};
-					label.setFont(LogicCore.RES.NORMAL_FONT.deriveFont((float)(UI_Size.getWidth() / 3.5)));
-					label.setBounds(0, (UI_Size.getWidth() * i) + Size.MARGIN, UI_Size.getWidth(), UI_Size.getWidth());
+					label.setFont(LogicCore.RES.NORMAL_FONT.deriveFont((float)(core.getUI().getUISize().getWidth() / 3.5)));
+					label.setBounds(0, (core.getUI().getUISize().getWidth() * i) + Size.MARGIN, core.getUI().getUISize().getWidth(), core.getUI().getUISize().getWidth());
 					this.add(label);
 					this.repaint();
 				}
@@ -142,29 +121,29 @@ public class Grid
 			{
 				super.paintComponent(g);
 				g.setColor(new Color(122, 138, 153));
-				g.drawLine(0, UI_Size.getWidth() / 2 - 1, gridSizeX * UI_Size.getWidth() + (Size.MARGIN * 2), UI_Size.getWidth() / 2 - 1);
+				g.drawLine(0, core.getUI().getUISize().getWidth() / 2 - 1, gridSizeX * core.getUI().getUISize().getWidth() + (Size.MARGIN * 2), core.getUI().getUISize().getWidth() / 2 - 1);
 				g.setColor(Color.gray);
 				for(int i = 0; i <= gridSizeX; i++)
 				{
 					if((negativeExtendX - i) % 10 == 0 && i != gridSizeX)
 					{
 						g.setColor(new Color(180, 200, 230));
-						g.fillRect((i * UI_Size.getWidth()) + Size.MARGIN + 2,1 , UI_Size.getWidth() - 3, (UI_Size.getWidth() / 2) - 2);
+						g.fillRect((i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 2,1 , core.getUI().getUISize().getWidth() - 3, (core.getUI().getUISize().getWidth() / 2) - 2);
 						g.setColor(Color.gray);
 					}
-					g.drawLine((i * UI_Size.getWidth()) + Size.MARGIN, UI_Size.getWidth() / 4, (i * UI_Size.getWidth()) + Size.MARGIN, UI_Size.getWidth() / 2);
+					g.drawLine((i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 2);
 				}
 			}
 			@Override
 			public void sizeUpdate()
 			{
 				this.removeAll();//수정 필요
-				this.setPreferredSize(new Dimension((gridSizeX * UI_Size.getWidth()) + (Size.MARGIN * 2), UI_Size.getWidth() / 2));
+				this.setPreferredSize(new Dimension((gridSizeX * core.getUI().getUISize().getWidth()) + (Size.MARGIN * 2), core.getUI().getUISize().getWidth() / 2));
 				for(int i = 0; i < gridSizeX; i++)
 				{
 					JLabel label = new JLabel(Integer.toString(i - negativeExtendX), SwingConstants.CENTER);
-					label.setFont(LogicCore.RES.NORMAL_FONT.deriveFont((float)(UI_Size.getWidth() / 3.5)));
-					label.setBounds((UI_Size.getWidth() * i) + Size.MARGIN, 0, UI_Size.getWidth(), UI_Size.getWidth() / 2);
+					label.setFont(LogicCore.RES.NORMAL_FONT.deriveFont((float)(core.getUI().getUISize().getWidth() / 3.5)));
+					label.setBounds((core.getUI().getUISize().getWidth() * i) + Size.MARGIN, 0, core.getUI().getUISize().getWidth(), core.getUI().getUISize().getWidth() / 2);
 					this.add(label);
 					this.repaint();
 				}
@@ -191,14 +170,10 @@ public class Grid
 
 		
 		
-		this.reSize(UI_Size);
+		this.reSize(core.getUI().getUISize());
 		//UI_Instance.setGridPanel(gridScrollPane);
 		
 		
-	}
-	Size getUISize()
-	{//이름 변경 필요
-		return this.UI_Size;
 	}
 	int getNegativeExtendX()
 	{
@@ -289,7 +264,7 @@ public class Grid
 			viewPort.setViewPosition(new Point(viewPort.getViewPosition().x, 0));
 		}
 		List<GridMember> tempMembers = new ArrayList<GridMember>(); //ConcurrentModificationException방지용
-		reSize(this.UI_Size);
+		reSize(this.core.getUI().getUISize());
 		viewPort.sizeUpdate();
 		deSelectAll();
 		for(GridMember member : getMembers())
@@ -304,14 +279,13 @@ public class Grid
 				removeMember(member);
 			}
 		}
-		logicUI.getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
+		this.core.getUI().getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
 	}
 	void reSize(Size size)
 	{
 		this.horizonRulerScrollPane.sizeUpdate();
 		this.verticalRulerScrollPane.sizeUpdate();
 		this.gridPanel.sizeUpdate();
-		this.UI_Size = size;
 	}
 	JScrollPane getGridScrollPanel()
 	{
@@ -346,7 +320,7 @@ public class Grid
 			{
 				System.out.println(member.getGridViewPane().getComponent(i).getSize());
 			}
-			member.getGridViewPane().setLocation((member.getUIabsLocationX() + (this.negativeExtendX * Size.REGULAR_SIZE)) * this.UI_Size.getmultiple() + Size.MARGIN, (member.getUIabsLocationY() + (this.negativeExtendY * Size.REGULAR_SIZE)) * this.UI_Size.getmultiple() + Size.MARGIN);
+			member.getGridViewPane().setLocation((member.getUIabsLocationX() + (this.negativeExtendX * Size.REGULAR_SIZE)) * this.core.getUI().getUISize().getmultiple() + Size.MARGIN, (member.getUIabsLocationY() + (this.negativeExtendY * Size.REGULAR_SIZE)) * this.core.getUI().getUISize().getmultiple() + Size.MARGIN);
 			this.gridPanel.add(member.getGridViewPane());
 			this.selectFocus(member);
 			System.out.println("Loc: " + ((LogicBlock) member).getBlockLocationX() + " " + ((LogicBlock) member).getBlockLocationY());
@@ -415,13 +389,12 @@ public class Grid
 		}
 		else if(this.selectMembers.size() > 0)
 		{
-			new ManySelectEditPanel(this.selectMembers, logicUI.getControlPane().getBlockControlPanel());
+			new ManySelectEditPanel(this.selectMembers, this.core.getUI().getBlockControlPanel());
 		}
 		else if(this.selectFocusMember == null)
 		{
-			this.logicUI.getControlPane().getBlockControlPanel().removeControlPane();
+			this.core.getUI().getBlockControlPanel().removeControlPane();
 		}
-		
 	}
 	void deSelect(ArrayList<GridMember> deSelectMembers)
 	{
@@ -444,11 +417,11 @@ public class Grid
 		}
 		if(this.selectMembers.size() > 0)
 		{
-			new ManySelectEditPanel(this.selectMembers, logicUI.getControlPane().getBlockControlPanel());
+			new ManySelectEditPanel(this.selectMembers, this.core.getUI().getBlockControlPanel());
 		}
 		else if(this.selectFocusMember == null)
 		{
-			this.logicUI.getControlPane().getBlockControlPanel().removeControlPane();
+			this.core.getUI().getBlockControlPanel().removeControlPane();
 		}
 	}
 	boolean isSelect(GridMember member)
@@ -469,7 +442,7 @@ public class Grid
 	}
 	void deSelectAll()
 	{
-		this.logicUI.getControlPane().getBlockControlPanel().removeControlPane();
+		this.core.getUI().getBlockControlPanel().removeControlPane();
 		this.selectFocusMember = null;
 		this.selectMembers = new ArrayList<GridMember>();
 		this.selectSignMembers = new ArrayList<GridMember>();
@@ -483,9 +456,8 @@ public class Grid
 		this.deSelect(getMembers());
 		this.selectFocusMember = member;
 		member.setSelectView(this.selectFocusColor);
-		EditPane editer = this.logicUI.getControlPane().getPalettePanel().getPaletteMember(member.getName()).getControl();
-		editer.setInfo(member);
-		this.logicUI.getControlPane().getBlockControlPanel().addControlPanel(editer);
+		EditPane editer = this.core.getUI().getPalettePanel().getControl(member);
+		this.core.getUI().getBlockControlPanel().addControlPanel(editer);
 	}
 	void deSelectFocus()
 	{
@@ -525,24 +497,23 @@ public class Grid
 			g.setColor(new Color(150, 150, 150));
 			for(int x = 0; x <= gridSizeX; x++)
 			{
-				g.drawLine((x * UI_Size.getWidth()) + Size.MARGIN, Size.MARGIN, (x * UI_Size.getWidth()) + Size.MARGIN, (gridSizeY * UI_Size.getWidth()) + Size.MARGIN);
+				g.drawLine((x * core.getUI().getUISize().getWidth()) + Size.MARGIN, Size.MARGIN, (x * core.getUI().getUISize().getWidth()) + Size.MARGIN, (gridSizeY * core.getUI().getUISize().getWidth()) + Size.MARGIN);
 			}
 			for(int y = 0; y <= gridSizeY; y++)
 			{
-				g.drawLine(Size.MARGIN, (y * UI_Size.getWidth()) + Size.MARGIN, (gridSizeX * UI_Size.getWidth()) + Size.MARGIN, (y * UI_Size.getWidth()) + Size.MARGIN);
+				g.drawLine(Size.MARGIN, (y * core.getUI().getUISize().getWidth()) + Size.MARGIN, (gridSizeX * core.getUI().getUISize().getWidth()) + Size.MARGIN, (y * core.getUI().getUISize().getWidth()) + Size.MARGIN);
 			}
 		}
 		@Override
 		public void sizeUpdate()
 		{
-			this.setSize((gridSizeX * UI_Size.getWidth()) + (Size.MARGIN * 2), (gridSizeY * UI_Size.getWidth()) + (Size.MARGIN * 2));
+			this.setSize((gridSizeX * core.getUI().getUISize().getWidth()) + (Size.MARGIN * 2), (gridSizeY * core.getUI().getUISize().getWidth()) + (Size.MARGIN * 2));
 			for(GridMember member : members)
 			{
 				member.sizeUpdate();
-				member.getGridViewPane().setLocation((member.getUIabsLocationX() + (negativeExtendX * Size.REGULAR_SIZE)) * UI_Size.getmultiple() + Size.MARGIN, (member.getUIabsLocationY() + (negativeExtendY * Size.REGULAR_SIZE)) * UI_Size.getmultiple() + Size.MARGIN);
+				member.getGridViewPane().setLocation((member.getUIabsLocationX() + (negativeExtendX * Size.REGULAR_SIZE)) * core.getUI().getUISize().getmultiple() + Size.MARGIN, (member.getUIabsLocationY() + (negativeExtendY * Size.REGULAR_SIZE)) * core.getUI().getUISize().getmultiple() + Size.MARGIN);
 			}
 			this.repaint();
-
 		}
 	}
 	private class ViewPort extends JViewport implements SizeUpdate
@@ -559,7 +530,6 @@ public class Grid
 		private Component dftComponent;
 		
 		private Selector selecter;
-
 		
 		ViewPort()
 		{
@@ -817,7 +787,7 @@ public class Grid
 				}
 				if(this.selectMember.size() > 0 && this.selectControlPanel == null)
 				{
-					this.selectControlPanel = new SelectControlPanel(text, logicUI.getControlPane().getBlockControlPanel());
+					this.selectControlPanel = new SelectControlPanel(text, core.getUI().getBlockControlPanel());
 				}
 				if(this.selectControlPanel != null)
 				{
@@ -894,12 +864,9 @@ public class Grid
 		}
 	}
 }
-class Direction
+enum Direction
 {//방향 관련 상수
-	public static final Direction EAST = new Direction(1, 0);
-	public static final Direction NORTH = new Direction(0, -1);
-	public static final Direction WEST = new Direction(-1, 0);
-	public static final Direction SOUTH = new Direction(0, 1);
+	EAST(1, 0), NORTH(0, -1), WEST(-1, 0),SOUTH(0, 1);
 	
 	public final int wayX;
 	public final int wayY;
@@ -918,13 +885,12 @@ class Direction
 		return this.wayY;
 	}
 }
-class Size
+enum Size
 {//그리드 보기 사이즈 관련 상수
+	small(1), middle(2), big(4);
 	public static final int REGULAR_SIZE = 30;
 	public static final int MARGIN = 50;
-	public static final Size small = new Size(1);
-	public static final Size middle = new Size(2);
-	public static final Size big = new Size(4);
+	
 	private int multiple;
 	private Size(int multiple)
 	{

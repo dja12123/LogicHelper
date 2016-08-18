@@ -1,31 +1,70 @@
 package kr.dja;
 
-import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.FontFormatException;
-import java.awt.Image;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+import java.util.ArrayList;
 import java.util.Properties;
-
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 public class LogicCore
 {
 	public static final Resource RES = new Resource();
+	
+	private static ArrayList<LogicCore> Task = new ArrayList<LogicCore>();
+	
+	private TaskManager taskManager;
+	private TaskOperator taskOperator;
+	private Grid grid;
+	private UI logicUI;
+	
 	public static void main(String[] args)
 	{
-		new UI();
+		createInstance();
 	}
 	public static Resource getResource()
 	{
 		return RES;
+	}
+	static void createInstance()
+	{	
+		Task.add(new LogicCore());
+	}
+	static void removeInstance(LogicCore task)
+	{
+		if(Task.contains(task))
+		{
+			Task.remove(task);
+		}
+		if(Task.size() <= 0)
+		{//프로그램 종료
+			System.exit(0);
+		}
+	}
+	private LogicCore()
+	{
+		this.logicUI = new UI(this);
+		this.taskManager = new TaskManager(this);
+		this.taskOperator = new TaskOperator(this);
+		this.grid = new Grid(this);
+		this.logicUI.doLayout();
+	}
+	TaskManager getTaskManager()
+	{
+		return this.taskManager;
+	}
+	TaskOperator getTaskOperator()
+	{
+		return this.taskOperator;
+	}
+	Grid getGrid()
+	{
+		return this.grid;
+	}
+	UI getUI()
+	{
+		return this.logicUI;
 	}
 }
 class Resource
@@ -37,7 +76,6 @@ class Resource
 	Properties config = new Properties();
 	public Resource()
 	{
-		
 		try
 		{
 			NORMAL_FONT = Font.createFont(Font.TRUETYPE_FONT, getClass().getClassLoader().getResourceAsStream("font/SeoulNamsanM.ttf"));
@@ -48,7 +86,6 @@ class Resource
 		{
 			e.printStackTrace();
 		}
-		
 		try
 		{
 			BufferedReader reader = new BufferedReader(new FileReader(getClass().getClassLoader().getResource("config.properties").getFile()));
@@ -61,7 +98,5 @@ class Resource
 		config.getOrDefault("SaveLocation", "");
 		config.getOrDefault("Cycle", "200");
 		config.getOrDefault("OpenFile", "");
-		
-		
 	}
 }
