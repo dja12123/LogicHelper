@@ -10,12 +10,12 @@ public class TaskOperator
 	private LogicCore core;
 	private Signaller signaller;
 	
-	private int taskTick = 200;
-	public final int MAX_TASK_TICK = 500;
+	private int taskTick = 500;
+	public final int MAX_TASK_TICK = 5000;
 	public final int MIN_TASK_TICK = 3;
 	private JPanel graphPanel;
 	
-	private ArrayList<LogicBlock> reserveTask = new ArrayList<LogicBlock>();
+	private volatile ArrayList<LogicBlock> reserveTask = new ArrayList<LogicBlock>();
 	
 	TaskOperator(LogicCore core)
 	{
@@ -25,7 +25,10 @@ public class TaskOperator
 	}
 	void addReserveTask(LogicBlock member)
 	{
-		this.reserveTask.add(member);
+		if(!this.reserveTask.contains(member))
+		{
+			this.reserveTask.add(member);
+		}
 	}
 	void removeReserveTask(GridMember member)
 	{
@@ -37,9 +40,11 @@ public class TaskOperator
 	private void doTask()
 	{
 		System.out.println("doTask");
-		for(LogicBlock member : reserveTask)
+		@SuppressWarnings("unchecked")
+		ArrayList<LogicBlock> taskTemp = (ArrayList<LogicBlock>)this.reserveTask.clone(); //ConcurrentModificationException ¹æÁö¿ë
+		for(LogicBlock member : taskTemp)
 		{
-			reserveTask.remove(member);
+			this.reserveTask.remove(member);
 			if(member instanceof LogicTimerTask)
 			{
 				((LogicTimerTask)member).ping();
@@ -114,4 +119,8 @@ class GraphPanel extends JPanel
 interface LogicTimerTask
 {
 	void ping();
+}
+interface LogicWire
+{
+	
 }

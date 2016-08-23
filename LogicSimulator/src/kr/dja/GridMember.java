@@ -10,6 +10,8 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLayeredPane;
@@ -344,22 +346,13 @@ class NOT extends LogicBlock
 }
 class Button extends LogicBlock implements LogicTimerTask
 {
-	private JButton btn;
+	private TimerButton btn;
 	private int basicTime = 3;
 	private int timer;
 	Button(Size size)
 	{
 		super(size, "BTN");
-		this.btn = new JButton();
-		this.btn.setBounds(7 * super.size.getmultiple(), 7 * super.size.getmultiple(), 16 * super.size.getmultiple(), 16 * super.size.getmultiple());
-		this.btn.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent arg0)
-			{
-				pushButton();
-			}
-		});
+		this.btn = new TimerButton();
 		super.gridViewPane.add(this.btn);
 	}
 	@Override
@@ -379,7 +372,9 @@ class Button extends LogicBlock implements LogicTimerTask
 	{
 		if(this.timer > 0)
 		{
+			this.operator.addReserveTask(this);
 			this.timer--;
+			System.out.println("Â°±ï");
 		}
 		else
 		{
@@ -393,10 +388,26 @@ class Button extends LogicBlock implements LogicTimerTask
 	void pushButton()
 	{
 		timer = basicTime;
+		this.operator.addReserveTask(this);
 		super.setPowerStatus(Power.ON);
-		super.operator.addReserveTask(this);
 	}
-
+	private class TimerButton extends JButton implements ActionListener
+	{
+		private static final long serialVersionUID = 1L;
+		
+		TimerButton()
+		{
+			this.setBounds(7 * size.getmultiple(), 7 * size.getmultiple(), 16 * size.getmultiple(), 16 * size.getmultiple());
+			this.addActionListener(this);
+			this.setPressedIcon(new ImageIcon(LogicCore.getResource().getImage("MIDDLE_BUTTON_OFF")));
+			this.setIcon(new ImageIcon(LogicCore.getResource().getImage("MIDDLE_BUTTON_OFF")));
+		}
+		@Override
+		public void actionPerformed(ActionEvent arg0)
+		{
+			pushButton();
+		}
+	}
 }
 class IOPanel
 {

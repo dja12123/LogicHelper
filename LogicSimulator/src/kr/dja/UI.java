@@ -108,19 +108,15 @@ public class UI
 		this.moveControlView.setBorder(BorderFactory.createEmptyBorder(0, 5, 5, 5));
 		
 		this.glassPane = (JPanel)this.mainFrame.getGlassPane();
-		this.glassPane.addMouseMotionListener(new MouseMotionListener()
+		this.glassPane.addMouseMotionListener(new MouseAdapter()
 		{
-			@Override
-			public void mouseDragged(MouseEvent e)
-			{
-			}
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
 				trackedPane.setLocation(e.getX() - (trackedPane.getWidth() / 2), e.getY() - (trackedPane.getHeight() / 2));
 			}
 		});
-		this.glassPane.addMouseListener(new MouseListener()
+		this.glassPane.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
@@ -146,22 +142,6 @@ public class UI
 						
 					}
 				}
-			}
-			@Override
-			public void mouseEntered(MouseEvent e)
-			{
-			}
-			@Override
-			public void mouseExited(MouseEvent e)
-			{
-			}
-			@Override
-			public void mousePressed(MouseEvent e)
-			{
-			}
-			@Override
-			public void mouseReleased(MouseEvent e)
-			{
 			}
 		});
 	}
@@ -222,8 +202,6 @@ public class UI
 }
 class ToolBar implements LogicUIComponent
 {
-	private static final long serialVersionUID = 1L;
-	
 	private JToolBar toolbar;
 	private JPanel leftSidePanel;
 	private JPanel toolBarPanel;
@@ -307,8 +285,6 @@ class ToolBar implements LogicUIComponent
 }
 class UnderBar implements LogicUIComponent
 {
-	private static final long serialVersionUID = 1L;
-	
 	private JToolBar underbar;
 	private JPanel leftSidePanel;
 	private JPanel centerSidePanel;
@@ -359,8 +335,6 @@ class UnderBar implements LogicUIComponent
 }
 class TaskOperatorPanel implements LogicUIComponent
 {
-	private static final long serialVersionUID = 1L;
-	
 	private JPanel taskOperatorPanel;
 	
 	private JPanel graphPanel;
@@ -450,6 +424,8 @@ class TaskOperatorPanel implements LogicUIComponent
 	}
 	private class PauseButton extends JButton implements ActionListener
 	{
+		private static final long serialVersionUID = 1L;
+		
 		private boolean pauseStatus = true;
 		PauseButton(int locationX, int locationY,int sizeX, int sizeY)
 		{
@@ -1015,6 +991,62 @@ class TrackedPane extends JPanel implements SizeUpdate
 		}
 		this.removeAll();
 	}
+}
+class LogicButton extends JPanel implements MouseMotionListener, MouseListener
+{//JPanel로 버튼을 구현하는 삽질
+	private static final long serialVersionUID = 1L;
+
+	LogicButton()
+	{
+		
+	}
+	@Override
+	public void mouseClicked(MouseEvent e)
+	{
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e)
+	{
+		
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e)
+	{
+		
+		
+	}
+	@Override
+	public void mousePressed(MouseEvent e)
+	{
+		
+		
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e)
+	{
+		
+		
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent arg0)
+	{
+		
+		
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent arg0)
+	{
+		
+		
+	}
+	
 }
 interface SizeUpdate
 {

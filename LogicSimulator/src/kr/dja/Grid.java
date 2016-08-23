@@ -74,16 +74,16 @@ public class Grid
 				super.paintComponent(g);
 				g.setColor(new Color(122, 138, 153));
 				g.drawLine(core.getUI().getUISize().getWidth() / 2 - 1, 0, core.getUI().getUISize().getWidth() / 2 - 1, gridSizeY * core.getUI().getUISize().getWidth() + (Size.MARGIN * 2));
-				g.setColor(Color.gray);
+				g.setColor(new Color(180, 200, 230));
 				for(int i = 0; i <= gridSizeY; i++)
 				{
 					if((negativeExtendY - i) % 10 == 0 && i != gridSizeY)
 					{
 						g.setColor(new Color(180, 200, 230));
-						g.fillRect(1,(i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 2 , (core.getUI().getUISize().getWidth() / 2) - 2, core.getUI().getUISize().getWidth() - 3);
-						g.setColor(Color.gray);
+						g.fillRect(1,(i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 1 , (core.getUI().getUISize().getWidth() / 2) - 2, core.getUI().getUISize().getWidth() - 2);
+						g.setColor(new Color(180, 200, 230));
 					}
-					g.drawLine(core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN,  core.getUI().getUISize().getWidth() / 2, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN);
+					g.fillRect(core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN - 1, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, 2);//(core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 2, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN);
 				}
 			}
 			@Override
@@ -128,10 +128,11 @@ public class Grid
 					if((negativeExtendX - i) % 10 == 0 && i != gridSizeX)
 					{
 						g.setColor(new Color(180, 200, 230));
-						g.fillRect((i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 2,1 , core.getUI().getUISize().getWidth() - 3, (core.getUI().getUISize().getWidth() / 2) - 2);
+						g.fillRect((i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 1,1 , core.getUI().getUISize().getWidth() - 2, (core.getUI().getUISize().getWidth() / 2) - 2);
 						g.setColor(Color.gray);
 					}
-					g.drawLine((i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 2);
+					//g.drawLine((i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 2);
+					g.fillRect((i * core.getUI().getUISize().getWidth()) + Size.MARGIN - 1, core.getUI().getUISize().getWidth() / 4, 2, core.getUI().getUISize().getWidth() / 2);
 				}
 			}
 			@Override
@@ -487,21 +488,23 @@ public class Grid
 		GridPanel()
 		{
 			this.setLayout(null);
-			this.setBackground(new Color(200, 200, 200));
+			this.setBackground(new Color(210, 210, 215));
 			this.sizeUpdate();
 		}
 		@Override
 		public void paintComponent(Graphics g)
 		{//최적화 가능
 			super.paintComponent(g);
-			g.setColor(new Color(150, 150, 150));
+			g.setColor(new Color(190, 190, 200));
 			for(int x = 0; x <= gridSizeX; x++)
 			{
-				g.drawLine((x * core.getUI().getUISize().getWidth()) + Size.MARGIN, Size.MARGIN, (x * core.getUI().getUISize().getWidth()) + Size.MARGIN, (gridSizeY * core.getUI().getUISize().getWidth()) + Size.MARGIN);
+				//g.drawLine((x * core.getUI().getUISize().getWidth()) + Size.MARGIN, Size.MARGIN, (x * core.getUI().getUISize().getWidth()) + Size.MARGIN, (gridSizeY * core.getUI().getUISize().getWidth()) + Size.MARGIN);
+				g.fillRect((x * core.getUI().getUISize().getWidth()) + Size.MARGIN - 1, Size.MARGIN, 2, (gridSizeY * core.getUI().getUISize().getWidth()));
 			}
 			for(int y = 0; y <= gridSizeY; y++)
 			{
-				g.drawLine(Size.MARGIN, (y * core.getUI().getUISize().getWidth()) + Size.MARGIN, (gridSizeX * core.getUI().getUISize().getWidth()) + Size.MARGIN, (y * core.getUI().getUISize().getWidth()) + Size.MARGIN);
+				//g.drawLine(Size.MARGIN, (y * core.getUI().getUISize().getWidth()) + Size.MARGIN, (gridSizeX * core.getUI().getUISize().getWidth()) + Size.MARGIN, (y * core.getUI().getUISize().getWidth()) + Size.MARGIN);
+				g.fillRect(Size.MARGIN, (y * core.getUI().getUISize().getWidth()) + Size.MARGIN - 1, (gridSizeX * core.getUI().getUISize().getWidth()), 2);
 			}
 		}
 		@Override
@@ -586,7 +589,7 @@ public class Grid
 					removeSelecter();
 					if(e.getButton() == 1)
 					{
-						selecter = new Selector(50, 100, 255, 80, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "개의 블록 추가 선택")
+						selecter = new Selector(120, 180, 255, 50, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "개의 블록 추가 선택")
 						{
 							private static final long serialVersionUID = 1L;
 							
@@ -611,7 +614,7 @@ public class Grid
 					}
 					else if(e.getButton() == 3)
 					{
-						selecter = new Selector(255, 100, 50, 80, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "개의 블록 선택 해제")
+						selecter = new Selector(255, 180, 120, 50, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "개의 블록 선택 해제")
 						{
 							private static final long serialVersionUID = 1L;
 
@@ -740,6 +743,7 @@ public class Grid
 		{
 			private static final long serialVersionUID = 1L;
 			
+			private int r, g, b;
 			private int startX, startY, startViewX, startViewY;
 			private int mouseX, mouseY;
 			protected ArrayList<GridMember> selectMember;
@@ -748,6 +752,9 @@ public class Grid
 
 			Selector(int r, int g, int b, int a, int startX, int startY, int startViewX, int startViewY, String text)
 			{
+				this.r = r;
+				this.g = g;
+				this.b = b;
 				this.startX = startX;
 				this.startY = startY;
 				this.mouseX = startX;
@@ -798,6 +805,13 @@ public class Grid
 			void action(int viewX, int viewY)
 			{
 				this.action(mouseX, mouseY, viewX, viewY);
+			}
+			@Override
+			public void paint(Graphics g)
+			{
+				g.setColor(new Color(this.r, this.g, this.b));
+				g.drawRect(0, 0, this.getWidth() - 1, this.getHeight() - 1);
+				super.paint(g);
 			}
 			abstract void selectAction(GridMember member);
 			abstract void actionFinal();
