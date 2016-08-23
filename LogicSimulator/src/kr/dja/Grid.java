@@ -41,8 +41,8 @@ public class Grid
 	private int gridSizeY = 30;
 	private int negativeExtendX = 15;
 	private int negativeExtendY = 15;
-	private final int MAX_SIZE = 100;
-	private final int MAX_ABSOLUTE = 150;
+	public final int MAX_SIZE = 100;
+	public final int MAX_ABSOLUTE = 150;
 
 	private GridMember selectFocusMember;
 
@@ -57,7 +57,7 @@ public class Grid
 	Grid(LogicCore core)
  	{
 		this.core = core;
-		this.gridScrollPane = new JScrollPane();;
+		this.gridScrollPane = new JScrollPane();
 		
 		core.getUI().getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
 		gridScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -172,8 +172,6 @@ public class Grid
 		
 		this.reSize(core.getUI().getUISize());
 		//UI_Instance.setGridPanel(gridScrollPane);
-		
-		
 	}
 	int getNegativeExtendX()
 	{
@@ -192,7 +190,7 @@ public class Grid
 		return this.gridSizeY;
 	}
 	void gridExtend(Direction ext, int size)
-	{//그리드 넓이 확장
+	{//재 작성 필요
 		if(ext == Direction.EAST)
 		{
 			if(gridSizeX + size < 1)
@@ -300,7 +298,7 @@ public class Grid
 		if(absX < (this.getgridSizeX() - this.getNegativeExtendX()) * Size.REGULAR_SIZE && absY < (this.getgridSizeY() - this.getNegativeExtendY()) * Size.REGULAR_SIZE
 		&& absX > - (this.getNegativeExtendX() + 1) * Size.REGULAR_SIZE && absY > - (this.getNegativeExtendY() + 1) * Size.REGULAR_SIZE)
 		{
-			member.put(absX, absY);
+			member.put(absX, absY, this.core.getTaskOperator());
 			if(member instanceof LogicBlock)
 			{
 				LogicBlock block = ((LogicBlock) member);
@@ -449,7 +447,9 @@ public class Grid
 		for(GridMember member : getMembers())
 		{
 			member.removeSelectView();
+			System.out.println("deselect");
 		}
+		this.gridPanel.repaint();
 	}
 	void selectFocus(GridMember member)
 	{
@@ -866,13 +866,15 @@ public class Grid
 }
 enum Direction
 {//방향 관련 상수
-	EAST(1, 0), NORTH(0, -1), WEST(-1, 0),SOUTH(0, 1);
+	EAST("EAST", 1, 0), NORTH("NORTH", 0, -1), WEST("WEST", -1, 0),SOUTH("SOUTH", 0, 1);
 	
+	public final String tag;
 	public final int wayX;
 	public final int wayY;
 	
-	private Direction(int wayX, int wayY)
+	private Direction(String tag, int wayX, int wayY)
 	{
+		this.tag = tag;
 		this.wayX = wayX;
 		this.wayY = wayY;
 	}
@@ -884,17 +886,23 @@ enum Direction
 	{
 		return this.wayY;
 	}
+	public String getTag()
+	{
+		return this.tag;
+	}
 }
 enum Size
-{//그리드 보기 사이즈 관련 상수
-	small(1), middle(2), big(4);
-	public static final int REGULAR_SIZE = 30;
+{
+	SMALL(1, "SMALL"), MIDDLE(2, "MIDDLE"), BIG(4, "BIG");
+	public static final int REGULAR_SIZE = 32;
 	public static final int MARGIN = 50;
 	
-	private int multiple;
-	private Size(int multiple)
+	public final int multiple;
+	public final String tag;
+	private Size(int multiple, String tag)
 	{
 		this.multiple = multiple;
+		this.tag = tag;
 	}
 	public int getmultiple()
 	{
@@ -903,5 +911,9 @@ enum Size
 	public int getWidth()
 	{
 		return REGULAR_SIZE * multiple;
+	}
+	public String getTag()
+	{
+		return this.tag;
 	}
 }

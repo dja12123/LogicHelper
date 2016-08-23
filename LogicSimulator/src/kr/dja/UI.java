@@ -70,7 +70,7 @@ public class UI
 	{
 		this.core = core;
 		
-		this.UI_Size = Size.middle;
+		this.UI_Size = Size.MIDDLE;
 		this.toolBar = new ToolBar();
 		this.underBar = new UnderBar();
 		
@@ -90,7 +90,7 @@ public class UI
 			}
 		});
 
-		this.taskOperatorPanel = new TaskOperatorPanel();
+		this.taskOperatorPanel = new TaskOperatorPanel(this.core.getTaskOperator());
 		this.palettePanel = new PalettePanel(this);
 		this.infoPanel = new InfoPanel();
 		this.blockControlPanel = new BlockControlPanel();
@@ -364,19 +364,22 @@ class TaskOperatorPanel implements LogicUIComponent
 	private JPanel taskOperatorPanel;
 	
 	private JPanel graphPanel;
-	private UIButton pauseButton;
-	private UIButton subTime1Button;
-	private UIButton subTime10Button;
-	private UIButton subTime100Button;
-	private UIButton addTime1Button;
-	private UIButton addTime10Button;
-	private UIButton addTime100Button;
+	private PauseButton pauseButton;
+	private TimeSetButton subTime1Button;
+	private TimeSetButton subTime10Button;
+	private TimeSetButton subTime100Button;
+	private TimeSetButton addTime1Button;
+	private TimeSetButton addTime10Button;
+	private TimeSetButton addTime100Button;
 	private JLabel taskIntervalLabel;
 	private JLabel msLabel;
+	private TaskOperator operator;
 	
-	TaskOperatorPanel()
+	TaskOperatorPanel(TaskOperator operator)
 	{
 		this.taskOperatorPanel = new JPanel();
+	
+		this.operator = operator;
 		
 		this.taskOperatorPanel.setLayout(null);
 		this.taskOperatorPanel.setBounds(230, 295, 165, 180);
@@ -386,15 +389,16 @@ class TaskOperatorPanel implements LogicUIComponent
 		this.graphPanel.setBounds(8, 20, 148, 90);
 		this.graphPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
 		
-		this.pauseButton = new UIButton(8, 145, 148, 25, null, null);
-		this.subTime1Button = new UIButton(42, 120, 15, 20, null, null);
-		this.subTime10Button = new UIButton(25, 120, 15, 20, null, null);
-		this.subTime100Button = new UIButton(8, 120, 15, 20, null, null);
-		this.addTime1Button = new UIButton(107, 120, 15, 20, null, null);
-		this.addTime10Button = new UIButton(124, 120, 15, 20, null, null);
-		this.addTime100Button = new UIButton(141, 120, 15, 20, null, null);
+		this.pauseButton = new PauseButton(8, 145, 148, 25);
 		
-		this.taskIntervalLabel = new JLabel("200");
+		this.subTime1Button = new TimeSetButton(42, 120, 15, 20, null, null, -1);
+		this.subTime10Button = new TimeSetButton(25, 120, 15, 20, null, null, -10);
+		this.subTime100Button = new TimeSetButton(8, 120, 15, 20, null, null, -100);
+		this.addTime1Button = new TimeSetButton(107, 120, 15, 20, null, null, 1);
+		this.addTime10Button = new TimeSetButton(124, 120, 15, 20, null, null, 10);
+		this.addTime100Button = new TimeSetButton(141, 120, 15, 20, null, null, 100);
+		
+		this.taskIntervalLabel = new JLabel(Integer.toString(this.operator.getTaskTick()));
 		this.taskIntervalLabel.setHorizontalAlignment(JLabel.RIGHT);
 		this.taskIntervalLabel.setBounds(56, 120, 30, 20);
 		
@@ -416,6 +420,61 @@ class TaskOperatorPanel implements LogicUIComponent
 	public Component getComponent()
 	{
 		return this.taskOperatorPanel;
+	}
+	private class TimeSetButton extends UIButton implements ActionListener
+	{
+		private static final long serialVersionUID = 1L;
+		
+		private final int tick;
+		TimeSetButton(int locationX, int locationY,int sizeX, int sizeY, Image basicImage, Image selectedIcon, int tick)
+		{
+			super(locationX, locationY, sizeX, sizeY, basicImage, selectedIcon);
+			this.tick = tick;
+			this.addActionListener(this);
+		}
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			int addTick = this.tick;
+			if(operator.getTaskTick() + addTick <= operator.MIN_TASK_TICK)
+			{
+				addTick -= (operator.getTaskTick() + addTick - operator.MIN_TASK_TICK);
+			}
+			if(operator.getTaskTick() + addTick > operator.MAX_TASK_TICK)
+			{
+				addTick -= operator.getTaskTick() + addTick - operator.MAX_TASK_TICK;
+			}
+			operator.setTaskTick(operator.getTaskTick() + addTick);
+			taskIntervalLabel.setText(Integer.toString(operator.getTaskTick()));
+		}
+	}
+	private class PauseButton extends JButton implements ActionListener
+	{
+		private boolean pauseStatus = true;
+		PauseButton(int locationX, int locationY,int sizeX, int sizeY)
+		{
+			super();
+			this.setBounds(locationX, locationY, sizeX, sizeY);
+			this.addActionListener(this);
+		}
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			if(pauseStatus)
+			{//작업 시작
+				pauseStatus = false;
+				this.setText("정지");
+				operator.taskStart();
+			}
+			else
+			{//작업 중지
+				pauseStatus = true;
+				this.setText("시작");
+				operator.taskPause();
+			}
+			
+		}
+		
 	}
 }
 class BlockControlPanel implements LogicUIComponent
@@ -500,6 +559,8 @@ class PalettePanel implements LogicUIComponent
 		
 		new PaletteMember(new AND(this.logicUI.getUISize()), DFTLogicControl);
 		new PaletteMember(new OR(this.logicUI.getUISize()), DFTLogicControl);
+		new PaletteMember(new NOT(this.logicUI.getUISize()), DFTLogicControl);
+		new PaletteMember(new Button(this.logicUI.getUISize()), DFTLogicControl);
 		Set<String> key = paletteMembers.keySet();
 		int i = 0, j = 0;
 		for(String str : key)
@@ -556,12 +617,13 @@ class PalettePanel implements LogicUIComponent
 					if(e.getButton() == 1)
 					{
 						ArrayList<GridMember> list = new ArrayList<GridMember>();
-						list.add(putMember.clone());
+						list.add(putMember.clone(logicUI.getUISize()));
 						logicUI.addTrackedPane(new TrackedPane(list, logicUI));
 					}
 					else if(e.getButton() == 3)
 					{
 						selectControlPanel.setInfo(putMember);
+						logicUI.getCore().getGrid().deSelectAll();
 						logicUI.getBlockControlPanel().addControlPanel(selectControlPanel);
 					}
 				}

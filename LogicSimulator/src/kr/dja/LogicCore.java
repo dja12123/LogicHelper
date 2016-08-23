@@ -2,11 +2,19 @@ package kr.dja;
 
 import java.awt.Font;
 import java.awt.FontFormatException;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Properties;
+
+import javax.imageio.ImageIO;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 public class LogicCore
 {
@@ -44,9 +52,9 @@ public class LogicCore
 	}
 	private LogicCore()
 	{
-		this.logicUI = new UI(this);
 		this.taskManager = new TaskManager(this);
 		this.taskOperator = new TaskOperator(this);
+		this.logicUI = new UI(this);
 		this.grid = new Grid(this);
 		this.logicUI.doLayout();
 	}
@@ -69,6 +77,7 @@ public class LogicCore
 }
 class Resource
 {
+	private HashMap<String, BufferedImage> images = new HashMap<String, BufferedImage>();
 	public Font NORMAL_FONT;
 	public Font PIXEL_FONT;
 	public Font BAR_FONT;
@@ -76,6 +85,18 @@ class Resource
 	Properties config = new Properties();
 	public Resource()
 	{
+		for(File imgFileList : new File(getClass().getClassLoader().getResource("images").getFile()).listFiles())
+		{
+			try
+			{
+				System.out.println(imgFileList.getName().split("[.]")[0]);
+				images.put(imgFileList.getName().split("[.]")[0], ImageIO.read(imgFileList));
+			}
+			catch(IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
 		try
 		{
 			NORMAL_FONT = Font.createFont(Font.TRUETYPE_FONT, getClass().getClassLoader().getResourceAsStream("font/SeoulNamsanM.ttf"));
@@ -95,8 +116,22 @@ class Resource
 		{
 			e.printStackTrace();
 		}
-		config.getOrDefault("SaveLocation", "");
+		/*config.getOrDefault("SaveLocation", "");
 		config.getOrDefault("Cycle", "200");
 		config.getOrDefault("OpenFile", "");
+		JFrame frame = new JFrame();
+		frame.setSize(100, 100);
+		frame.setVisible(true);
+		frame.add(new JPanel(){
+			@Override
+			public void paint(Graphics g)
+			{
+				g.drawImage(getImage("MIDDLE_BLOCK_OFF"), 0, 0, this);
+			}
+		});*/
+	}
+	BufferedImage getImage(String tag)
+	{
+		return this.images.get(tag);
 	}
 }

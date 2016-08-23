@@ -2,9 +2,16 @@ package kr.dja;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.PrintJob;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
@@ -18,6 +25,7 @@ public abstract class GridMember implements SizeUpdate
 	protected Size size;
 	protected final String name;
 	protected JLayeredPane layeredPane;
+	protected TaskOperator operator;
 	private SelectShowPanel selectView = null;
 	private boolean placement = false;
 
@@ -28,8 +36,9 @@ public abstract class GridMember implements SizeUpdate
 		
 		this.layeredPane = new JLayeredPane();
 		this.gridViewPane = new GridViewPane(this);
-		this.layeredPane.add(this.gridViewPane, new Integer(0));;
 		this.sizeUpdate();
+		this.layeredPane.add(this.gridViewPane, new Integer(0));;
+		
 	}
 	protected GridMember clone(GridMember member)
 	{
@@ -39,7 +48,7 @@ public abstract class GridMember implements SizeUpdate
 		member.UIabsSizeX = this.UIabsSizeY;
 		return member;
 	}
-	public abstract GridMember clone();
+	public abstract GridMember clone(Size size);
 	void setSelectView(int[] color)
 	{//´Ü¼ø Ç¥½Ã¿ë
 		if(this.selectView == null)
@@ -87,12 +96,14 @@ public abstract class GridMember implements SizeUpdate
 	{
 		return UIabsSizeY;
 	}
-	void put(int absX, int absY)
+	void put(int absX, int absY, TaskOperator operator)
 	{
 		this.sizeUpdate();
 		this.UIabslocationX = absX;
 		this.UIabslocationY = absY;
+		this.operator = operator;
 		System.out.println("PUT: " + UIabslocationX + " " + UIabslocationY);
+		System.out.println(this.layeredPane.getSize());
 		this.placement = true;
 	}
 	void remove()
@@ -107,7 +118,7 @@ public abstract class GridMember implements SizeUpdate
 	{
 		this.sizeUpdate();
 		BufferedImage img = new BufferedImage(this.gridViewPane.getWidth(), this.gridViewPane.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		this.gridViewPane.printAll(img.getGraphics());
+		this.gridViewPane.printAll(img.createGraphics());
 		return img;
 	}
 	JLayeredPane getGridViewPane()
@@ -137,7 +148,7 @@ public abstract class GridMember implements SizeUpdate
 		@Override
 		public void sizeUpdate()
 		{
-			this.setBounds(size.getmultiple(), size.getmultiple(), UIabsSizeX * size.getmultiple() - (size.getmultiple() * 2), UIabsSizeY * size.getmultiple() - (size.getmultiple() * 2));
+			this.setBounds(size.getmultiple() + gridViewPane.getX(), size.getmultiple() + gridViewPane.getY(), gridViewPane.getWidth() - size.getmultiple() - gridViewPane.getX(), gridViewPane.getHeight() - size.getmultiple() - gridViewPane.getY());
 		}
 		@Override
 		public void paint(Graphics g)
@@ -161,9 +172,9 @@ class Partition extends GridMember
 		super(size, "Partition");
 	}
 	@Override
-	public Partition clone()
+	public Partition clone(Size size)
 	{
-		Partition cloneMember = new Partition(this.size);
+		Partition cloneMember = new Partition(size);
 		super.clone(cloneMember);
 		return cloneMember;
 	}
@@ -175,9 +186,9 @@ class Tag extends GridMember
 		super(size, "Partition");
 	}
 	@Override
-	public Tag clone()
+	public Tag clone(Size size)
 	{
-		Tag cloneMember = new Tag(this.size);
+		Tag cloneMember = new Tag(size);
 		super.clone(cloneMember);
 		return cloneMember;
 	}
@@ -186,14 +197,14 @@ abstract class LogicBlock extends GridMember
 {
 	protected int blocklocationX = 0;
 	protected int blocklocationY = 0;
-	protected boolean onOffStatus = false;
+	protected Power power = Power.OFF;
 	protected HashMap<Direction, IOPanel> io = new HashMap<Direction, IOPanel>();
 	
 	protected LogicBlock(Size size, String name)
 	{
 		super(size, name);
-		super.UIabsSizeX = 30;
-		super.UIabsSizeY = 30;
+		super.UIabsSizeX = 32;
+		super.UIabsSizeY = 32;
 		super.layeredPane.removeAll();
 		super.gridViewPane = new LogicViewPane(this);
 		super.layeredPane.add(super.gridViewPane, new Integer(0));
@@ -209,7 +220,7 @@ abstract class LogicBlock extends GridMember
 		LogicBlock cloneMember = (LogicBlock)member;
 		cloneMember.blocklocationX = this.blocklocationX;
 		cloneMember.blocklocationY = this.blocklocationY;
-		cloneMember.onOffStatus = this.onOffStatus;
+		cloneMember.power = this.power;
 		cloneMember.io = new HashMap<Direction, IOPanel>();
 		cloneMember.io.put(Direction.EAST, this.io.get(Direction.EAST).clone(cloneMember));
 		cloneMember.io.put(Direction.WEST, this.io.get(Direction.WEST).clone(cloneMember));
@@ -218,13 +229,13 @@ abstract class LogicBlock extends GridMember
 		return cloneMember;
 	}
 	@Override
-	void put(int absX, int absY)
+	void put(int absX, int absY, TaskOperator operator)
 	{
 		absX = absX / Size.REGULAR_SIZE;
 		absY = absY / Size.REGULAR_SIZE;
 		this.blocklocationX = absX;
 		this.blocklocationY = absY;
-		super.put((this.blocklocationX * Size.REGULAR_SIZE), (this.blocklocationY * Size.REGULAR_SIZE));
+		super.put((this.blocklocationX * Size.REGULAR_SIZE), (this.blocklocationY * Size.REGULAR_SIZE), operator);
 	}
 	int getBlockLocationX()
 	{
@@ -234,31 +245,44 @@ abstract class LogicBlock extends GridMember
 	{
 		return this.blocklocationY;
 	}
-	ArrayList<Direction> getOnlineOutput()
+	ArrayList<Direction> getOutput()
 	{
 		ArrayList<Direction> returnInfo = new ArrayList<Direction>();
 		for(Direction ext : this.io.keySet())
 		{
-			if(this.io.get(ext).getStatus() == IOStatus.TRANCE && this.io.get(ext).getOnOffStatus() == Power.ON)
-			{
-				returnInfo.add(this.io.get(ext).getDirection());
-			}
+			returnInfo.add(this.io.get(ext).getDirection());
 		}
 		return returnInfo;
+	}
+	void setInput(Direction ext, Power power)
+	{
+		if(this.io.get(ext).getStatus() == IOStatus.RECEIV)
+		{
+			this.io.get(ext).setOnOffStatus(power);
+		}
+		this.calculate();
+	}
+	protected void setPowerStatus(Power power)
+	{
+		this.power = power;
+		for(Direction ext: this.io.keySet())
+		{
+			if(this.io.get(ext).getStatus() == IOStatus.TRANCE)
+			{
+				this.io.get(ext).setOnOffStatus(power);
+			}
+		}
+		super.gridViewPane.repaint();
 	}
 	IOPanel getIO(Direction ext)
 	{
 		return this.io.get(ext);
 	}
-	boolean getOnOffStatus()
+	Power getPower()
 	{
-		return this.onOffStatus;
+		return this.power;
 	}
-	void calculate()
-	{
-		
-	}
-
+	abstract void calculate();
 }
 class AND extends LogicBlock
 {
@@ -267,9 +291,9 @@ class AND extends LogicBlock
 		super(size, "AND");
 	}
 	@Override
-	public AND clone()
+	public AND clone(Size size)
 	{
-		AND cloneMember = new AND(this.size);
+		AND cloneMember = new AND(size);
 		super.clone(cloneMember);
 		return cloneMember;
 	}
@@ -286,9 +310,9 @@ class OR extends LogicBlock
 		super(size, "OR");
 	}
 	@Override
-	public OR clone()
+	public OR clone(Size size)
 	{
-		OR cloneMember = new OR(this.size);
+		OR cloneMember = new OR(size);
 		super.clone(cloneMember);
 		return cloneMember;
 	}
@@ -299,35 +323,99 @@ class OR extends LogicBlock
 		
 	}
 }
+class NOT extends LogicBlock
+{
+	NOT(Size size)
+	{
+		super(size, "NOT");
+	}
+	@Override
+	public NOT clone(Size size)
+	{
+		NOT cloneMember = new NOT(size);
+		super.clone(cloneMember);
+		return cloneMember;
+	}
+	@Override
+	void calculate()
+	{
+		
+	}
+}
+class Button extends LogicBlock implements LogicTimerTask
+{
+	private JButton btn;
+	private int basicTime = 3;
+	private int timer;
+	Button(Size size)
+	{
+		super(size, "BTN");
+		this.btn = new JButton();
+		this.btn.setBounds(7 * super.size.getmultiple(), 7 * super.size.getmultiple(), 16 * super.size.getmultiple(), 16 * super.size.getmultiple());
+		this.btn.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				pushButton();
+			}
+		});
+		super.gridViewPane.add(this.btn);
+	}
+	@Override
+	public Button clone(Size size)
+	{
+		Button cloneMember = new Button(size);
+		super.clone(cloneMember);
+		return cloneMember;
+	}
+	@Override
+	void calculate()
+	{
+		
+	}
+	@Override
+	public void ping()
+	{
+		if(this.timer > 0)
+		{
+			this.timer--;
+		}
+		else
+		{
+			super.setPowerStatus(Power.OFF);
+		}
+	}
+	void setTimer(int time)
+	{
+		this.basicTime = time;
+	}
+	void pushButton()
+	{
+		timer = basicTime;
+		super.setPowerStatus(Power.ON);
+		super.operator.addReserveTask(this);
+	}
+
+}
 class IOPanel
 {
 	private IOStatus status;
 	private Power power;
 	private final Direction ext;
 	private final LogicBlock member;
-	private Color image;
+	private BufferedImage image;
 	IOPanel(LogicBlock logicMember, Direction ext)
 	{
 		this.member = logicMember;
 		this.ext = ext;
-		
+		this.power = Power.OFF;
 		this.setStatus(IOStatus.NONE);
 	}
 	void setStatus(IOStatus status)
 	{
 		this.status = status;
-		if(status == IOStatus.NONE)
-		{
-			this.image = new Color(235, 241, 222);
-		}
-		else if(status == IOStatus.RECEIV)
-		{
-			this.image = new Color(127, 127, 127);
-		}
-		else if(status == IOStatus.TRANCE)
-		{
-			this.image = new Color(99, 37, 35);
-		}
+		this.image = LogicCore.RES.getImage(member.getSize().getTag() + "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
 		this.member.calculate();
 		this.member.getGridViewPane().repaint();
 	}
@@ -335,10 +423,13 @@ class IOPanel
 	{
 		return this.status;
 	}
-	void setOnOffStatus(Power status)
+	void setOnOffStatus(Power power)
 	{
-		this.power = status;
-		this.member.calculate();
+		this.power = power;
+		if(this.status == IOStatus.RECEIV)
+		{
+			this.member.calculate();
+		}
 	}
 	Power getOnOffStatus()
 	{
@@ -348,7 +439,7 @@ class IOPanel
 	{
 		return this.ext;
 	}
-	Color getImage()
+	BufferedImage getImage()
 	{
 		return this.image;
 	}
@@ -396,28 +487,36 @@ class LogicViewPane extends GridViewPane
 	public void paint(Graphics g)
 	{//ÀÓ½Ã ¶«»§¿ë
 		super.paint(g);
-		g.setColor(logicMember.getIO(Direction.EAST).getImage());
-		g.fillRect(25 * member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), 4 * member.getSize().getmultiple(), 16 * member.getSize().getmultiple());
-		g.setColor(logicMember.getIO(Direction.WEST).getImage());
-		g.fillRect(member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), 4 * member.getSize().getmultiple(), 16 * member.getSize().getmultiple());
-		g.setColor(logicMember.getIO(Direction.SOUTH).getImage());
-		g.fillRect(7 * member.getSize().getmultiple(), 25 * member.getSize().getmultiple(), 16 * member.getSize().getmultiple(), 4 * member.getSize().getmultiple());
-		g.setColor(logicMember.getIO(Direction.NORTH).getImage());
-		g.fillRect(7 * member.getSize().getmultiple(), member.getSize().getmultiple(), 16 * member.getSize().getmultiple(), 4 * member.getSize().getmultiple());
-		if(logicMember.getOnOffStatus())
+		
+		g.drawImage(LogicCore.getResource().getImage(logicMember.getSize().getTag() + "_BLOCK_BACKGROUND"), 0, 0, this);
+		if(logicMember.getIO(Direction.EAST).getStatus() != IOStatus.NONE)
 		{
-			g.setColor(new Color(247, 150, 70));
+			g.drawImage(logicMember.getIO(Direction.EAST).getImage(), 25 * member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), this);
 		}
-		else
+		if(logicMember.getIO(Direction.WEST).getStatus() != IOStatus.NONE)
 		{
-			g.setColor(new Color(127, 127, 127));
+			g.drawImage(logicMember.getIO(Direction.WEST).getImage(), 1 * member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), this);
 		}
-		g.fillRect(7 * member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), 16 * member.getSize().getmultiple(), 16 * member.getSize().getmultiple());
+		if(logicMember.getIO(Direction.SOUTH).getStatus() != IOStatus.NONE)
+		{
+			g.drawImage(logicMember.getIO(Direction.SOUTH).getImage(), 7 * member.getSize().getmultiple(), 25 * member.getSize().getmultiple(), this);
+		}
+		if(logicMember.getIO(Direction.NORTH).getStatus() != IOStatus.NONE)
+		{
+			g.drawImage(logicMember.getIO(Direction.NORTH).getImage(), 7 * member.getSize().getmultiple(), 1 * member.getSize().getmultiple(), this);
+		}
+		g.drawImage(LogicCore.getResource().getImage(logicMember.getSize().getTag() + "_BLOCK_" + logicMember.getPower().getTag()), 7 * member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), this);
+		super.paintComponents(g);
+	}
+	@Override
+	public void sizeUpdate()
+	{
+		this.setBounds(member.getSize().getmultiple(), member.getSize().getmultiple(), member.getUIabsSizeX() * member.getSize().getmultiple() - (member.getSize().getmultiple() * 2), member.getUIabsSizeX() * member.getSize().getmultiple() - (member.getSize().getmultiple() * 2));
 	}
 }
 enum IOStatus
 {
-	NONE("NONE"), RECEIV("RECEIV"), TRANCE("TRANCE");
+	NONE("RECEIV"), RECEIV("RECEIV"), TRANCE("TRANCE");
 	public final String tag;
 
 	private IOStatus(String tag)
@@ -432,14 +531,13 @@ enum IOStatus
 enum Power
 {
 	ON("ON"), OFF("OFF");
-	public final String power;
+	public final String tag;
 	private Power(String tag)
 	{
-		this.power = tag;
+		this.tag = tag;
 	}
-}
-interface LogicTimeTask
-{
-	void setSleepTime(int tick);
-	void ping();
+	String getTag()
+	{
+		return this.tag;
+	}
 }
