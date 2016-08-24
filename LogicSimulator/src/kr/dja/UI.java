@@ -537,16 +537,17 @@ class PalettePanel implements LogicUIComponent
 		new PaletteMember(new OR(this.logicUI.getUISize()), DFTLogicControl);
 		new PaletteMember(new NOT(this.logicUI.getUISize()), DFTLogicControl);
 		new PaletteMember(new Button(this.logicUI.getUISize()), DFTLogicControl);
-		Set<String> key = paletteMembers.keySet();
+		new PaletteMember(new XOR(this.logicUI.getUISize()), DFTLogicControl);
+		System.out.println(paletteMembers.keySet().size());
 		int i = 0, j = 0;
-		for(String str : key)
+		for(String str : paletteMembers.keySet())
 		{
 			PaletteMember p = this.paletteMembers.get(str);
 			if(i < 4)
 			{
 				if(j < 5)
 				{
-					p.setBounds(j * 44 + 10, i * 44 + 20, 40, 40);
+					p.setBounds(j * 42 + 9, i * 42 + 20, 38, 38);
 					System.out.println(i + " " + j);
 					j++;
 				}
@@ -575,7 +576,7 @@ class PalettePanel implements LogicUIComponent
 		edit.setInfo(member);
 		return edit;
 	}
-	class PaletteMember extends JButton
+	class PaletteMember extends ButtonPanel
 	{
 		private static final long serialVersionUID = 1L;
 		
@@ -586,24 +587,24 @@ class PalettePanel implements LogicUIComponent
 			paletteMembers.put(member.getName(), this);
 			this.selectControlPanel = control;
 			this.putMember = member;
-			this.addMouseListener(new MouseAdapter()
+		}
+		@Override
+		void pressed(int button)
+		{
 			{
-				public void mouseClicked(MouseEvent e)
+				if(button == 1)
 				{
-					if(e.getButton() == 1)
-					{
-						ArrayList<GridMember> list = new ArrayList<GridMember>();
-						list.add(putMember.clone(logicUI.getUISize()));
-						logicUI.addTrackedPane(new TrackedPane(list, logicUI));
-					}
-					else if(e.getButton() == 3)
-					{
-						selectControlPanel.setInfo(putMember);
-						logicUI.getCore().getGrid().deSelectAll();
-						logicUI.getBlockControlPanel().addControlPanel(selectControlPanel);
-					}
+					ArrayList<GridMember> list = new ArrayList<GridMember>();
+					list.add(putMember.clone(logicUI.getUISize()));
+					logicUI.addTrackedPane(new TrackedPane(list, logicUI));
 				}
-			});
+				else if(button == 3)
+				{
+					selectControlPanel.setInfo(putMember);
+					logicUI.getCore().getGrid().deSelectAll();
+					logicUI.getBlockControlPanel().addControlPanel(selectControlPanel);
+				}
+			}
 		}
 		EditPane getControl()
 		{
@@ -992,61 +993,153 @@ class TrackedPane extends JPanel implements SizeUpdate
 		this.removeAll();
 	}
 }
-class LogicButton extends JPanel implements MouseMotionListener, MouseListener
-{//JPanel로 버튼을 구현하는 삽질
+class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
+{
 	private static final long serialVersionUID = 1L;
-
-	LogicButton()
+	
+	private ButtonStatus status = ButtonStatus.NONE;
+	
+	private BufferedImage basicImage;
+	private BufferedImage onMouseImage;
+	private BufferedImage basicPressImage;
+	private HashMap<Integer, BufferedImage> pressImages = new HashMap<Integer, BufferedImage>();
+	
+	private BufferedImage nowImage;
+	private boolean onMouseFlag;
+	private int mouseButton = 0;
+	
+	ButtonPanel()
 	{
-		
+		this.addMouseMotionListener(this);
+		this.addMouseListener(this);
+		this.setBackground(Color.orange);
+	}
+	ButtonPanel(BufferedImage basicImage, BufferedImage onMouseImage, BufferedImage basicPressImage)
+	{
+		this.addMouseMotionListener(this);
+		this.addMouseListener(this);
+		this.basicImage = basicImage;
+		this.onMouseImage = onMouseImage;
+		this.basicPressImage = basicPressImage;
+		this.setBackground(Color.orange);
 	}
 	@Override
-	public void mouseClicked(MouseEvent e)
-	{
-		
-	}
-
+	public void mouseClicked(MouseEvent e){}
 	@Override
 	public void mouseEntered(MouseEvent e)
 	{
-		
-		
+		this.onMouseFlag = true;
+		if(!(this.status == ButtonStatus.PRESS))
+		{
+			this.status = ButtonStatus.ONMOUSE;
+		}
+		this.imageSet();
 	}
-
 	@Override
 	public void mouseExited(MouseEvent e)
 	{
-		
-		
+		this.onMouseFlag = false;
+		if(!(this.status == ButtonStatus.PRESS))
+		{
+			this.status = ButtonStatus.NONE;
+		}
+		this.imageSet();
 	}
 	@Override
 	public void mousePressed(MouseEvent e)
 	{
-		
-		
+		this.mouseButton = e.getButton();
+		this.status = ButtonStatus.PRESS;
+		this.imageSet();
 	}
-
 	@Override
 	public void mouseReleased(MouseEvent e)
 	{
-		
-		
+		if(e.getX() <= this.getWidth() && e.getY() <= this.getHeight())
+		{
+			this.pressed(e.getButton());
+		}
+		if(this.onMouseFlag)
+		{
+			this.status = ButtonStatus.ONMOUSE;
+		}
+		else
+		{
+			this.status = ButtonStatus.NONE;
+		}
+		this.imageSet();
 	}
-
 	@Override
-	public void mouseDragged(MouseEvent arg0)
-	{
-		
-		
-	}
-
+	public void mouseDragged(MouseEvent arg0){}
 	@Override
-	public void mouseMoved(MouseEvent arg0)
+	public void mouseMoved(MouseEvent arg0){}
+	@Override
+	public void paint(Graphics g)
 	{
-		
-		
+		super.paint(g);
+		if(this.nowImage != null)
+		{
+			g.drawImage(this.nowImage, 0, 0, this);
+		}
 	}
-	
+	void pressed(int button)
+	{
+		System.out.println("림");
+	}
+	void setBasicImage(BufferedImage img)
+	{
+		this.basicImage = img;
+		this.nowImage = this.basicImage;
+		this.repaint();
+	}
+	void setBasicPressImage(BufferedImage img)
+	{
+		this.basicPressImage = img;
+		this.repaint();
+	}
+	void setPressImage(int button, BufferedImage img)
+	{
+		this.pressImages.put(new Integer(button), img);
+		this.repaint();
+	}
+	void imageSet()
+	{
+		if(status == ButtonStatus.PRESS)
+		{
+			if(this.pressImages.containsKey(new Integer(this.mouseButton)))
+			{
+				this.nowImage = this.pressImages.get(new Integer(this.mouseButton));
+			}
+			else if(this.basicPressImage != null)
+			{
+				this.nowImage = this.basicPressImage;
+			}
+			else
+			{
+				this.nowImage = this.basicImage;
+			}
+		}
+		else if(status == ButtonStatus.ONMOUSE)
+		{
+			if(this.onMouseImage != null)
+			{
+				this.nowImage = this.onMouseImage;
+			}
+			else
+			{
+				this.nowImage = this.basicImage;
+			}
+		}
+		else
+		{
+			this.nowImage = this.basicImage;
+		}
+		super.repaint();
+	}
+	private enum ButtonStatus
+	{
+		NONE, PRESS, ONMOUSE;
+	}
 }
 interface SizeUpdate
 {

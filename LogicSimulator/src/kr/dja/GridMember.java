@@ -6,6 +6,8 @@ import java.awt.Graphics2D;
 import java.awt.PrintJob;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,8 +16,11 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.GroupLayout.Alignment;
 
 public abstract class GridMember implements SizeUpdate
 {
@@ -28,6 +33,7 @@ public abstract class GridMember implements SizeUpdate
 	protected final String name;
 	protected JLayeredPane layeredPane;
 	protected TaskOperator operator;
+	protected Grid grid;
 	private SelectShowPanel selectView = null;
 	private boolean placement = false;
 
@@ -40,7 +46,6 @@ public abstract class GridMember implements SizeUpdate
 		this.gridViewPane = new GridViewPane(this);
 		this.sizeUpdate();
 		this.layeredPane.add(this.gridViewPane, new Integer(0));;
-		
 	}
 	protected GridMember clone(GridMember member)
 	{
@@ -56,7 +61,7 @@ public abstract class GridMember implements SizeUpdate
 		if(this.selectView == null)
 		{
 			this.selectView = new SelectShowPanel(color[0], color[1], color[2], color[3], color[4], color[5], color[6]);
-			this.layeredPane.add(this.selectView, new Integer(2));
+			this.layeredPane.add(this.selectView, new Integer(10));
 			this.sizeUpdate();
 		}
 		else
@@ -98,11 +103,12 @@ public abstract class GridMember implements SizeUpdate
 	{
 		return UIabsSizeY;
 	}
-	void put(int absX, int absY, TaskOperator operator)
+	void put(int absX, int absY, Grid grid, TaskOperator operator)
 	{
 		this.sizeUpdate();
 		this.UIabslocationX = absX;
 		this.UIabslocationY = absY;
+		this.grid = grid;
 		this.operator = operator;
 		System.out.println("PUT: " + UIabslocationX + " " + UIabslocationY);
 		System.out.println(this.layeredPane.getSize());
@@ -119,8 +125,9 @@ public abstract class GridMember implements SizeUpdate
 	BufferedImage getSnapShot()
 	{
 		this.sizeUpdate();
+		this.gridViewPane.repaint();
 		BufferedImage img = new BufferedImage(this.gridViewPane.getWidth(), this.gridViewPane.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		this.gridViewPane.printAll(img.createGraphics());
+		this.gridViewPane.printAll(img.getGraphics());
 		return img;
 	}
 	JLayeredPane getGridViewPane()
@@ -138,7 +145,7 @@ public abstract class GridMember implements SizeUpdate
 			this.selectView.sizeUpdate();
 		}
 	}
-	class SelectShowPanel extends JPanel implements SizeUpdate
+	class SelectShowPanel extends ButtonPanel implements SizeUpdate
 	{
 		private static final long serialVersionUID = 1L;
 		int r, g, b, a, rs, gs, bs;
@@ -155,15 +162,22 @@ public abstract class GridMember implements SizeUpdate
 		@Override
 		public void paint(Graphics g)
 		{
+			gridViewPane.repaint();
 			super.paint(g);
 			g.setColor(new Color(this.rs, this.gs, this.bs));
 			g.drawRect(0, 0, this.getWidth() - 1, this.getHeight() - 1);
+			
 		}
 		@Override
 		public SelectShowPanel clone()
 		{
 			SelectShowPanel cloneShow = new SelectShowPanel(this.r, this.g, this.b, this.a, this.rs, this.gs, this.bs);
 			return cloneShow;
+		}
+		@Override
+		void pressed(int button)
+		{
+			grid.deSelect(GridMember.this);
 		}
 	}
 }
@@ -231,13 +245,13 @@ abstract class LogicBlock extends GridMember
 		return cloneMember;
 	}
 	@Override
-	void put(int absX, int absY, TaskOperator operator)
+	void put(int absX, int absY, Grid grid, TaskOperator operator)
 	{
 		absX = absX / Size.REGULAR_SIZE;
 		absY = absY / Size.REGULAR_SIZE;
 		this.blocklocationX = absX;
 		this.blocklocationY = absY;
-		super.put((this.blocklocationX * Size.REGULAR_SIZE), (this.blocklocationY * Size.REGULAR_SIZE), operator);
+		super.put((this.blocklocationX * Size.REGULAR_SIZE), (this.blocklocationY * Size.REGULAR_SIZE),grid,  operator);
 	}
 	int getBlockLocationX()
 	{
@@ -325,6 +339,26 @@ class OR extends LogicBlock
 		
 	}
 }
+class XOR extends LogicBlock
+{
+	XOR(Size size)
+	{
+		super(size, "XOR");
+	}
+	@Override
+	public XOR clone(Size size)
+	{
+		XOR cloneMember = new XOR(size);
+		super.clone(cloneMember);
+		return cloneMember;
+	}
+	@Override
+	void calculate()
+	{
+		// TODO Auto-generated method stub
+		
+	}
+}
 class NOT extends LogicBlock
 {
 	NOT(Size size)
@@ -349,11 +383,16 @@ class Button extends LogicBlock implements LogicTimerTask
 	private TimerButton btn;
 	private int basicTime = 3;
 	private int timer;
+	private JLabel timeLabel;
+	
 	Button(Size size)
 	{
 		super(size, "BTN");
-		this.btn = new TimerButton();
+		this.timeLabel.setVerticalAlignment(JTextField.CENTER);
+		this.timeLabel.setHorizontalAlignment(JTextField.CENTER);
+		super.layeredPane.add(this.timeLabel, new Integer(20));
 		super.gridViewPane.add(this.btn);
+		
 	}
 	@Override
 	public Button clone(Size size)
@@ -373,39 +412,66 @@ class Button extends LogicBlock implements LogicTimerTask
 		if(this.timer > 0)
 		{
 			this.operator.addReserveTask(this);
-			this.timer--;
+			this.timeLabel.setText(Integer.toString(timer));
 			System.out.println("Â°±ï");
+			this.timer--;
 		}
 		else
 		{
+			this.timeLabel.setText("");
 			super.setPowerStatus(Power.OFF);
+			this.btn.imageSet();
 		}
 	}
 	void setTimer(int time)
 	{
 		this.basicTime = time;
 	}
-	void pushButton()
+	void resetTimer()
 	{
-		timer = basicTime;
+		this.timer = basicTime;
 		this.operator.addReserveTask(this);
 		super.setPowerStatus(Power.ON);
+		this.timeLabel.setText(Integer.toString(timer));
+		this.btn.imageSet();
 	}
-	private class TimerButton extends JButton implements ActionListener
+	@Override
+	public void sizeUpdate()
+	{
+		super.sizeUpdate();
+		if(this.timeLabel == null)
+		{
+			this.timeLabel = new JLabel();
+		}
+		else
+		{
+			this.timeLabel.setFont(LogicCore.RES.PIXEL_FONT.deriveFont((float)(12 * super.size.getmultiple())));
+			this.timeLabel.setBounds((7 * size.getmultiple()) + super.gridViewPane.getX(), (7 * size.getmultiple()) + super.gridViewPane.getY(), 16 * size.getmultiple(), 16 * size.getmultiple());
+		}
+		if(this.btn == null)
+		{
+			this.btn = new TimerButton();
+		}
+		else
+		{
+			this.btn.setBounds(7 * size.getmultiple(), 7 * size.getmultiple(), 16 * size.getmultiple(), 16 * size.getmultiple());
+			this.btn.imageSet();
+		}
+	}
+	private class TimerButton extends ButtonPanel
 	{
 		private static final long serialVersionUID = 1L;
-		
-		TimerButton()
+		@Override
+		void pressed(int mouse)
 		{
-			this.setBounds(7 * size.getmultiple(), 7 * size.getmultiple(), 16 * size.getmultiple(), 16 * size.getmultiple());
-			this.addActionListener(this);
-			this.setPressedIcon(new ImageIcon(LogicCore.getResource().getImage("MIDDLE_BUTTON_OFF")));
-			this.setIcon(new ImageIcon(LogicCore.getResource().getImage("MIDDLE_BUTTON_OFF")));
+			resetTimer();
 		}
 		@Override
-		public void actionPerformed(ActionEvent arg0)
+		void imageSet()
 		{
-			pushButton();
+			super.setBasicImage(LogicCore.getResource().getImage(size.getTag() + "_BUTTON_" + power.getTag()));
+			super.setBasicPressImage(LogicCore.getResource().getImage(size.getTag() + "_BUTTON_PRESS_" + power.getTag()));
+			super.imageSet();
 		}
 	}
 }
@@ -426,6 +492,14 @@ class IOPanel
 	void setStatus(IOStatus status)
 	{
 		this.status = status;
+		if(status == IOStatus.TRANCE)
+		{
+			this.power = member.getPower();
+		}
+		else
+		{
+			this.power = Power.OFF;
+		}
 		this.image = LogicCore.RES.getImage(member.getSize().getTag() + "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
 		this.member.calculate();
 		this.member.getGridViewPane().repaint();
@@ -437,6 +511,7 @@ class IOPanel
 	void setOnOffStatus(Power power)
 	{
 		this.power = power;
+		this.image = LogicCore.RES.getImage(member.getSize().getTag() + "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
 		if(this.status == IOStatus.RECEIV)
 		{
 			this.member.calculate();
@@ -496,9 +571,7 @@ class LogicViewPane extends GridViewPane
 	}
 	@Override
 	public void paint(Graphics g)
-	{//ÀÓ½Ã ¶«»§¿ë
-		super.paint(g);
-		
+	{
 		g.drawImage(LogicCore.getResource().getImage(logicMember.getSize().getTag() + "_BLOCK_BACKGROUND"), 0, 0, this);
 		if(logicMember.getIO(Direction.EAST).getStatus() != IOStatus.NONE)
 		{
@@ -517,7 +590,8 @@ class LogicViewPane extends GridViewPane
 			g.drawImage(logicMember.getIO(Direction.NORTH).getImage(), 7 * member.getSize().getmultiple(), 1 * member.getSize().getmultiple(), this);
 		}
 		g.drawImage(LogicCore.getResource().getImage(logicMember.getSize().getTag() + "_BLOCK_" + logicMember.getPower().getTag()), 7 * member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), this);
-		super.paintComponents(g);
+		//super.paintComponents(g);
+		super.paintChildren(g);
 	}
 	@Override
 	public void sizeUpdate()

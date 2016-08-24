@@ -72,16 +72,16 @@ public class Grid
 			public void paintComponent(Graphics g)
 			{
 				super.paintComponent(g);
-				g.setColor(new Color(122, 138, 153));
+				g.setColor(super.lineColor);
 				g.drawLine(core.getUI().getUISize().getWidth() / 2 - 1, 0, core.getUI().getUISize().getWidth() / 2 - 1, gridSizeY * core.getUI().getUISize().getWidth() + (Size.MARGIN * 2));
-				g.setColor(new Color(180, 200, 230));
+				g.setColor(super.graduationColor);
 				for(int i = 0; i <= gridSizeY; i++)
 				{
 					if((negativeExtendY - i) % 10 == 0 && i != gridSizeY)
 					{
-						g.setColor(new Color(180, 200, 230));
+						g.setColor(super.unitColor);
 						g.fillRect(1,(i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 1 , (core.getUI().getUISize().getWidth() / 2) - 2, core.getUI().getUISize().getWidth() - 2);
-						g.setColor(new Color(180, 200, 230));
+						g.setColor(super.graduationColor);
 					}
 					g.fillRect(core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN - 1, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, 2);//(core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 2, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN);
 				}
@@ -120,16 +120,16 @@ public class Grid
 			public void paintComponent(Graphics g)
 			{
 				super.paintComponent(g);
-				g.setColor(new Color(122, 138, 153));
+				g.setColor(super.lineColor);
 				g.drawLine(0, core.getUI().getUISize().getWidth() / 2 - 1, gridSizeX * core.getUI().getUISize().getWidth() + (Size.MARGIN * 2), core.getUI().getUISize().getWidth() / 2 - 1);
-				g.setColor(Color.gray);
+				g.setColor(super.graduationColor);
 				for(int i = 0; i <= gridSizeX; i++)
 				{
 					if((negativeExtendX - i) % 10 == 0 && i != gridSizeX)
 					{
-						g.setColor(new Color(180, 200, 230));
+						g.setColor(super.unitColor);
 						g.fillRect((i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 1,1 , core.getUI().getUISize().getWidth() - 2, (core.getUI().getUISize().getWidth() / 2) - 2);
-						g.setColor(Color.gray);
+						g.setColor(super.graduationColor);
 					}
 					//g.drawLine((i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 2);
 					g.fillRect((i * core.getUI().getUISize().getWidth()) + Size.MARGIN - 1, core.getUI().getUISize().getWidth() / 4, 2, core.getUI().getUISize().getWidth() / 2);
@@ -299,7 +299,7 @@ public class Grid
 		if(absX < (this.getgridSizeX() - this.getNegativeExtendX()) * Size.REGULAR_SIZE && absY < (this.getgridSizeY() - this.getNegativeExtendY()) * Size.REGULAR_SIZE
 		&& absX > - (this.getNegativeExtendX() + 1) * Size.REGULAR_SIZE && absY > - (this.getNegativeExtendY() + 1) * Size.REGULAR_SIZE)
 		{
-			member.put(absX, absY, this.core.getTaskOperator());
+			member.put(absX, absY, this.core.getGrid(), this.core.getTaskOperator());
 			if(member instanceof LogicBlock)
 			{
 				LogicBlock block = ((LogicBlock) member);
@@ -340,9 +340,7 @@ public class Grid
 		}
 		this.members.remove(member);
 		this.gridPanel.remove(member.getGridViewPane());
-		ArrayList<GridMember> temp = new ArrayList<GridMember>();
-		temp.add(member);
-		this.deSelect(temp);
+		this.deSelect(member);
 	}
 	ArrayList<GridMember> getMembers()
 	{
@@ -423,6 +421,12 @@ public class Grid
 			this.core.getUI().getBlockControlPanel().removeControlPane();
 		}
 	}
+	void deSelect(GridMember member)
+	{
+		ArrayList<GridMember> temp = new ArrayList<GridMember>();
+		temp.add(member);
+		this.deSelect(temp);
+	}
 	boolean isSelect(GridMember member)
 	{
 		if((this.selectMembers.contains(member)) || (this.selectFocusMember == member))
@@ -454,7 +458,7 @@ public class Grid
 	}
 	void selectFocus(GridMember member)
 	{
-		this.deSelect(getMembers());
+		this.deSelect(this.getMembers());
 		this.selectFocusMember = member;
 		member.setSelectView(this.selectFocusColor);
 		EditPane editer = this.core.getUI().getPalettePanel().getControl(member);
@@ -471,6 +475,11 @@ public class Grid
 	private abstract class RulerPanel extends JPanel implements SizeUpdate
 	{
 		private static final long serialVersionUID = 1L;
+		
+		protected Color graduationColor = new Color(140, 150, 190);
+		protected Color unitColor = new Color(180, 200, 230);
+		protected Color lineColor = new Color(122, 138, 153);
+		
 		RulerPanel()
 		{
 			setLayout(null);
@@ -579,8 +588,6 @@ public class Grid
 			this.layeredPane.add(southExpansionPane, new Integer(1));
 			this.layeredPane.add(northExpansionPane, new Integer(1));
 			
-
-			
 			this.addMouseListener(new MouseAdapter()
 			{
 				@Override
@@ -655,19 +662,6 @@ public class Grid
 							&& (member.getGridViewPane().getY() < e.getY() + (int)getViewPosition().getY() && member.getGridViewPane().getY() + member.getGridViewPane().getHeight() > e.getY() + (int)getViewPosition().getY()))
 							{
 								selectFocus(member);
-							}
-						}
-					}
-					else if(e.getButton() == 3)
-					{
-						for(GridMember member : getMembers())
-						{
-							if((member.getGridViewPane().getX() < e.getX() + (int)getViewPosition().getX() && member.getGridViewPane().getX() + member.getGridViewPane().getWidth() > e.getX() + (int)getViewPosition().getX())
-							&& (member.getGridViewPane().getY() < e.getY() + (int)getViewPosition().getY() && member.getGridViewPane().getY() + member.getGridViewPane().getHeight() > e.getY() + (int)getViewPosition().getY()))
-							{
-								ArrayList<GridMember> temp = new ArrayList<GridMember>();
-								temp.add(member);
-								deSelect(temp);
 							}
 						}
 					}
