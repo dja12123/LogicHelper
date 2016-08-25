@@ -225,7 +225,7 @@ class Resource
 			
 			
 			NORMAL_FONT = Font.createFont(Font.TRUETYPE_FONT, new FileInputStream(this.getFile("/" + FONT_DIR_NAME + "/SeoulNamsanM.ttf")));
-			BAR_FONT = Font.createFont(Font.TRUETYPE_FONT, new FileInputStream(this.getFile("/" + FONT_DIR_NAME + "/gulim.ttf")));
+			BAR_FONT = Font.createFont(Font.TRUETYPE_FONT, new FileInputStream(this.getFile("/" + FONT_DIR_NAME + "/D2Coding.ttc")));
 			PIXEL_FONT = Font.createFont(Font.TRUETYPE_FONT, new FileInputStream(this.getFile("/" + FONT_DIR_NAME + "/HOOG0557.ttf")));
 		}
 		catch (Exception e)
