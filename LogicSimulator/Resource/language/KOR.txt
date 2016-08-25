@@ -1,0 +1,2 @@
+﻿LANG_TAG = "Korean"
+TITLE = "논리회로 시뮬레이터"

@@ -74,7 +74,7 @@ public class UI
 		this.toolBar = new ToolBar();
 		this.underBar = new UnderBar();
 		
-		this.mainFrame = new JFrame("³í¸®È¸·Î ½Ã¹Ä·¹ÀÌÅÍ");
+		this.mainFrame = new JFrame(LogicCore.getResource().getLocal("TITLE"));
 		this.mainFrame.setSize(1600, 900);
 		this.mainFrame.setMinimumSize(new Dimension(1131, 800));
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -357,7 +357,7 @@ class TaskOperatorPanel implements LogicUIComponent
 		
 		this.taskOperatorPanel.setLayout(null);
 		this.taskOperatorPanel.setBounds(230, 295, 165, 180);
-		this.taskOperatorPanel.setBorder(new PanelBorder("¿¬»ê"));
+		this.taskOperatorPanel.setBorder(new PanelBorder("ï¿½ï¿½ï¿½ï¿½"));
 		
 		this.graphPanel = new JPanel();
 		this.graphPanel.setBounds(8, 20, 148, 90);
@@ -437,15 +437,15 @@ class TaskOperatorPanel implements LogicUIComponent
 		public void actionPerformed(ActionEvent e)
 		{
 			if(pauseStatus)
-			{//ÀÛ¾÷ ½ÃÀÛ
+			{//ï¿½Û¾ï¿½ ï¿½ï¿½ï¿½ï¿½
 				pauseStatus = false;
-				this.setText("Á¤Áö");
+				this.setText("ï¿½ï¿½ï¿½ï¿½");
 				operator.taskStart();
 			}
 			else
-			{//ÀÛ¾÷ ÁßÁö
+			{//ï¿½Û¾ï¿½ ï¿½ï¿½ï¿½ï¿½
 				pauseStatus = true;
-				this.setText("½ÃÀÛ");
+				this.setText("ï¿½ï¿½ï¿½ï¿½");
 				operator.taskPause();
 			}
 			
@@ -466,7 +466,7 @@ class BlockControlPanel implements LogicUIComponent
 		this.defaultPane = new DefaultPane();
 		this.blockControlPanel.setLayout(null);
 		this.blockControlPanel.setBounds(5, 5, 390, 150);
-		this.blockControlPanel.setBorder(new PanelBorder("ºí·Ï ¼¼ºÎ ÆíÁý"));
+		this.blockControlPanel.setBorder(new PanelBorder("ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½"));
 		this.removeControlPane();
 	}
 	void addControlPanel(JPanel panel)
@@ -499,12 +499,12 @@ class InfoPanel implements LogicUIComponent
 		
 		this.infoPanel.setLayout(null);
 		this.infoPanel.setBounds(5, 155, 390, 140);
-		this.infoPanel.setBorder(new PanelBorder("Á¤º¸"));
+		this.infoPanel.setBorder(new PanelBorder("ï¿½ï¿½ï¿½ï¿½"));
 		
 		this.explanationArea = new JTextArea();
 		this.explanationArea.setBounds(8, 20, 373, 111);
 		this.explanationArea.setEditable(false);
-		this.explanationArea.setText("Á¤º¸ ÆÐ³Î");
+		this.explanationArea.setText("ï¿½ï¿½ï¿½ï¿½ ï¿½Ð³ï¿½");
 		this.explanationArea.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14.0f));
 		
 		this.infoPanel.add(explanationArea);
@@ -530,7 +530,7 @@ class PalettePanel implements LogicUIComponent
 		
 		this.palettePanel.setLayout(null);
 		this.palettePanel.setBounds(5, 295, 225, 180);
-		this.palettePanel.setBorder(new PanelBorder("ÆÈ·¹Æ®"));
+		this.palettePanel.setBorder(new PanelBorder("ï¿½È·ï¿½Æ®"));
 		LogicEditPane DFTLogicControl = new LogicEditPane();
 		
 		new PaletteMember(new AND(this.logicUI.getUISize()), DFTLogicControl);
@@ -630,7 +630,7 @@ class TemplatePanel implements LogicUIComponent
 		this.templatePanel = new JPanel();
 		
 		this.templatePanel.setLayout(new BorderLayout());
-		this.templatePanel.setBorder(new PanelBorder("ÅÛÇÃ¸´"));
+		this.templatePanel.setBorder(new PanelBorder("ï¿½ï¿½ï¿½Ã¸ï¿½"));
 		
 		this.templateAreaPanel = new JPanel();
 		this.templateAreaPanel.setLayout(new BorderLayout());
@@ -682,7 +682,7 @@ class TaskManagerPanel implements LogicUIComponent
 		this.taskManagerPanel = new JPanel();
 		
 		this.taskManagerPanel.setLayout(new BorderLayout());
-		this.taskManagerPanel.setBorder(new PanelBorder("ÀÛ¾÷"));
+		this.taskManagerPanel.setBorder(new PanelBorder("ï¿½Û¾ï¿½"));
 		
 		this.taskScrollPane = new JScrollPane();
 		this.taskScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -757,7 +757,7 @@ class ManySelectEditPanel extends JPanel
 		this.numberLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		this.numberLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16F));
 		this.numberLabel.setBounds(0, 0, 373, 20);
-		this.numberLabel.setText(Integer.toString(selectMembers.size()) + " °³ÀÇ ºí·Ï ¼±ÅÃ");
+		this.numberLabel.setText(Integer.toString(selectMembers.size()) + " ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
 		this.copyButton = new UIButton(66, 25, 40, 40, null, null);
 		this.cutButton = new UIButton(166, 25, 40, 40, null, null);
 		this.removeButton = new UIButton(266, 25, 40, 40, null, null);
@@ -797,7 +797,7 @@ class SelectControlPanel extends JPanel
 	}
 	void setNumber(int num)
 	{
-		this.numberLabel.setText(Integer.toString(num) + " °³ÀÇ ºí·Ï ¼±ÅÃ");
+		this.numberLabel.setText(Integer.toString(num) + " ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
 	}
 }
 class DefaultPane extends JPanel
@@ -812,7 +812,7 @@ class DefaultPane extends JPanel
 		this.text.setHorizontalAlignment(SwingConstants.CENTER);
 		this.text.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
 		this.text.setBounds(0, 40, 373, 20);
-		this.text.setText("ºí·ÏÀ» ¼±ÅÃÇÏ½Ã·Á¸é Å¬¸¯ È¤Àº µå·¹±× ÇÏ¼¼¿ä");
+		this.text.setText("ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï½Ã·ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ È¤ï¿½ï¿½ ï¿½å·¹ï¿½ï¿½ ï¿½Ï¼ï¿½ï¿½ï¿½");
 		this.add(this.text);
 	}
 }
@@ -898,16 +898,16 @@ class LogicEditPane extends EditPane
 		}
 		else
 		{
-			this.locationText.setText("¹èÄ¡µÈ ºí·ÏÀÌ ¾Æ´Ô");
+			this.locationText.setText("ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Æ´ï¿½");
 		}
 		
-		this.text.setText(super.member.getName() + " °ÔÀÌÆ® ÆíÁý");
+		this.text.setText(super.member.getName() + " ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½");
 	}
 	private class IOControlButton extends JButton implements ActionListener
 	{
 		private static final long serialVersionUID = 1L;
 		
-		int locX, locY, sizeX, sizeY; //ÆÐ³Î bounds
+		int locX, locY, sizeX, sizeY; //ï¿½Ð³ï¿½ bounds
 		Direction ext;
 		
 		IOControlButton(int locX, int locY, int sizeX, int sizeY, Direction ext)
@@ -1084,7 +1084,7 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	}
 	void pressed(int button)
 	{
-		System.out.println("¸²");
+		System.out.println("ï¿½ï¿½");
 	}
 	void setBasicImage(BufferedImage img)
 	{

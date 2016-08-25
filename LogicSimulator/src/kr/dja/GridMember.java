@@ -57,7 +57,7 @@ public abstract class GridMember implements SizeUpdate
 	}
 	public abstract GridMember clone(Size size);
 	void setSelectView(int[] color)
-	{//´Ü¼ø Ç¥½Ã¿ë
+	{//ï¿½Ü¼ï¿½ Ç¥ï¿½Ã¿ï¿½
 		if(this.selectView == null)
 		{
 			this.selectView = new SelectShowPanel(color[0], color[1], color[2], color[3], color[4], color[5], color[6]);
@@ -88,7 +88,7 @@ public abstract class GridMember implements SizeUpdate
 		return this.size;
 	}
 	int getUIabsLocationX()
-	{//±×¸®µå»ó ½ÇÁ¦ À§Ä¡´Â Àý´ë À§Ä¡¿¡ ¹è¼ö¸¦ °öÇØ¼­ »ç¿ë
+	{//ï¿½×¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ø¼ï¿½ ï¿½ï¿½ï¿½
 		return UIabslocationX;
 	}
 	int getUIabsLocationY()
@@ -381,7 +381,7 @@ class NOT extends LogicBlock
 class Button extends LogicBlock implements LogicTimerTask
 {
 	private TimerButton btn;
-	private int basicTime = 3;
+	private int basicTime = 99;
 	private int timer;
 	private JLabel timeLabel;
 	
@@ -413,7 +413,7 @@ class Button extends LogicBlock implements LogicTimerTask
 		{
 			this.operator.addReserveTask(this);
 			this.timeLabel.setText(Integer.toString(timer));
-			System.out.println("Â°±ï");
+			System.out.println("Â°ï¿½ï¿½");
 			this.timer--;
 		}
 		else
@@ -464,7 +464,15 @@ class Button extends LogicBlock implements LogicTimerTask
 		@Override
 		void pressed(int mouse)
 		{
-			resetTimer();
+			if(mouse == 1)
+			{
+				resetTimer();
+			}
+			else
+			{
+				timer = 0;
+			}
+			
 		}
 		@Override
 		void imageSet()
