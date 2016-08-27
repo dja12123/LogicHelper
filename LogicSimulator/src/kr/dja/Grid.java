@@ -25,10 +25,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 public class Grid
-{//ÆÐÅ°Áö·Î ºÐ¸® ÇÊ¿ä
+{//ï¿½ï¿½Å°ï¿½ï¿½ï¿½ï¿½ ï¿½Ð¸ï¿½ ï¿½Ê¿ï¿½
 	
-	private ArrayList<GridMember> members = new ArrayList<GridMember>();
-	private HashMap<Integer, HashMap<Integer, LogicBlock>> logicMembers = new HashMap<Integer, HashMap<Integer, LogicBlock>>();
+	ArrayList<GridMember> members = new ArrayList<GridMember>();
+	HashMap<Integer, HashMap<Integer, LogicBlock>> logicMembers = new HashMap<Integer, HashMap<Integer, LogicBlock>>();
 	
 	private ArrayList<GridMember> selectMembers = new ArrayList<GridMember>();
 	private ArrayList<GridMember> selectSignMembers = new ArrayList<GridMember>();
@@ -46,9 +46,9 @@ public class Grid
 
 	private GridMember selectFocusMember;
 
-	private int[] selectSignColor = new int[]{0, 0, 0, 0, 255, 255, 30};
-	private int[] selectColor = new int[]{50, 100, 255, 60, 100, 150, 255};
-	private int[] selectFocusColor = new int[]{50, 255, 100, 60, 50, 255, 100};
+	private Color selectSignColor = new Color(255, 255, 30, 0);
+	private Color selectColor = new Color(120, 180, 255, 50);
+	private Color selectFocusColor = new Color(120, 255, 180, 50);
 	
 	private RulerPanel horizonRulerScrollPane;
 	private RulerPanel verticalRulerScrollPane;
@@ -89,7 +89,7 @@ public class Grid
 			@Override
 			public void sizeUpdate()
 			{
-				this.removeAll();//¼öÁ¤ ÇÊ¿ä
+				this.removeAll();//ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½
 				this.setPreferredSize(new Dimension(core.getUI().getUISize().getWidth() / 2, (gridSizeY * core.getUI().getUISize().getWidth()) + (Size.MARGIN * 2)));
 				for(int i = 0; i < gridSizeY; i++)
 				{
@@ -138,7 +138,7 @@ public class Grid
 			@Override
 			public void sizeUpdate()
 			{
-				this.removeAll();//¼öÁ¤ ÇÊ¿ä
+				this.removeAll();//ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½
 				this.setPreferredSize(new Dimension((gridSizeX * core.getUI().getUISize().getWidth()) + (Size.MARGIN * 2), core.getUI().getUISize().getWidth() / 2));
 				for(int i = 0; i < gridSizeX; i++)
 				{
@@ -191,19 +191,19 @@ public class Grid
 		return this.gridSizeY;
 	}
 	void gridExtend(Direction ext, int size)
-	{//Àç ÀÛ¼º ÇÊ¿ä
+	{//ï¿½ï¿½ ï¿½Û¼ï¿½ ï¿½Ê¿ï¿½
 		if(ext == Direction.EAST)
 		{
 			if(gridSizeX + size < 1)
-			{//»çÀÌÁî ÃÖÀúÄ¡ ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½
 				size -= gridSizeX + size - 1;
 			}
 			if(Math.abs(gridSizeX + size - negativeExtendX) > MAX_ABSOLUTE + 1)
-			{//»çÀÌÁî ÃÖ´ë ¼³Á¤ ÇÑ°è ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ°ï¿½ ï¿½ï¿½ï¿½ï¿½
 				size -= Math.abs(gridSizeX + size - negativeExtendX) - MAX_ABSOLUTE - 1;
 			}
 			if(gridSizeX + size > MAX_SIZE)
-			{//»çÀÌÁî ÃÖ´ë Å©±â ÇÑ°è ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ Å©ï¿½ï¿½ ï¿½Ñ°ï¿½ ï¿½ï¿½ï¿½ï¿½
 				size -= gridSizeX + size - MAX_SIZE;
 			}
 			gridSizeX += size;
@@ -212,17 +212,17 @@ public class Grid
 		else if(ext == Direction.WEST)
 		{
 			if(gridSizeX + size < 1)
-			{//»çÀÌÁî ÃÖÀúÄ¡ ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½
 				size -= gridSizeX + size - 1;
 			}
 			if(Math.abs(size + negativeExtendX) > MAX_ABSOLUTE)
-			{//»çÀÌÁî ÃÖ´ë ¼³Á¤ ÇÑ°è ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ°ï¿½ ï¿½ï¿½ï¿½ï¿½
 				size -= Math.abs(size + negativeExtendX) - MAX_ABSOLUTE;
 			}
 			if(gridSizeX + size > MAX_SIZE)
 			{
 				size -= gridSizeX + size - MAX_SIZE;
-			}//»çÀÌÁî ÃÖ´ë Å©±â ÇÑ°è ¿¹¿Ü
+			}//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ Å©ï¿½ï¿½ ï¿½Ñ°ï¿½ ï¿½ï¿½ï¿½ï¿½
 			gridSizeX += size;
 			negativeExtendX += size;
 			viewPort.setViewPosition(new Point(0, viewPort.getViewPosition().y));
@@ -230,15 +230,15 @@ public class Grid
 		else if(ext == Direction.SOUTH)
 		{
 			if(gridSizeY + size < 1)
-			{//»çÀÌÁî ÃÖÀúÄ¡ ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½
 				size -= gridSizeY + size - 1;
 			}
 			if(Math.abs(gridSizeY + size - negativeExtendY) > MAX_ABSOLUTE + 1)
-			{//»çÀÌÁî ÃÖ´ë ¼³Á¤ ÇÑ°è ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ°ï¿½ ï¿½ï¿½ï¿½ï¿½
 				size -= Math.abs(gridSizeY + size - negativeExtendY) - MAX_ABSOLUTE - 1;
 			}
 			if(gridSizeY + size > MAX_SIZE)
-			{//»çÀÌÁî ÃÖ´ë Å©±â ÇÑ°è ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ Å©ï¿½ï¿½ ï¿½Ñ°ï¿½ ï¿½ï¿½ï¿½ï¿½
 				size -= gridSizeY + size - MAX_SIZE;
 			}
 			gridSizeY += size;
@@ -247,22 +247,22 @@ public class Grid
 		else if(ext == Direction.NORTH)
 		{
 			if(gridSizeY + size < 1)
-			{//»çÀÌÁî ÃÖÀúÄ¡ ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½
 				size -= gridSizeY + size - 1;
 			}
 			if(Math.abs(size + negativeExtendY) > MAX_ABSOLUTE)
-			{//»çÀÌÁî ÃÖ´ë ¼³Á¤ ÇÑ°è ¿¹¿Ü
+			{//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ°ï¿½ ï¿½ï¿½ï¿½ï¿½
 				size -= Math.abs(size + negativeExtendY) - MAX_ABSOLUTE;
 			}
 			if(gridSizeY + size > MAX_SIZE)
 			{
 				size -= gridSizeY + size - MAX_SIZE;
-			}//»çÀÌÁî ÃÖ´ë Å©±â ÇÑ°è ¿¹¿Ü
+			}//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ Å©ï¿½ï¿½ ï¿½Ñ°ï¿½ ï¿½ï¿½ï¿½ï¿½
 			gridSizeY += size;
 			negativeExtendY += size;
 			viewPort.setViewPosition(new Point(viewPort.getViewPosition().x, 0));
 		}
-		List<GridMember> tempMembers = new ArrayList<GridMember>(); //ConcurrentModificationException¹æÁö¿ë
+		List<GridMember> tempMembers = new ArrayList<GridMember>(); //ConcurrentModificationExceptionï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		reSize(this.core.getUI().getUISize());
 		viewPort.sizeUpdate();
 		deSelectAll();
@@ -300,51 +300,28 @@ public class Grid
 		&& absX > - (this.getNegativeExtendX() + 1) * Size.REGULAR_SIZE && absY > - (this.getNegativeExtendY() + 1) * Size.REGULAR_SIZE)
 		{
 			member.put(absX, absY, this.core.getGrid(), this.core.getTaskOperator());
-			if(member instanceof LogicBlock)
-			{
-				LogicBlock block = ((LogicBlock) member);
-				if(this.logicMembers.containsKey(new Integer(block.getBlockLocationX())) && this.logicMembers.get(new Integer(block.getBlockLocationX())).containsKey(block.getBlockLocationY()))
-				{
-					this.removeMember(this.logicMembers.get(new Integer(block.getBlockLocationX())).get(block.getBlockLocationY()));
-				}
-				if(!this.logicMembers.containsKey(new Integer(block.getBlockLocationX())))
-				{
-					this.logicMembers.put(new Integer(block.getBlockLocationX()), new HashMap<Integer, LogicBlock>());
-				}
-				this.logicMembers.get(new Integer(block.getBlockLocationX())).put(new Integer(block.getBlockLocationY()), block);
-			}
-			this.members.add(member);
-
-			for(int i = member.getGridViewPane().getComponentCount() - 1; i >= 0; i--)
-			{
-				System.out.println(member.getGridViewPane().getComponent(i).getSize());
-			}
-			member.getGridViewPane().setLocation((member.getUIabsLocationX() + (this.negativeExtendX * Size.REGULAR_SIZE)) * this.core.getUI().getUISize().getmultiple() + Size.MARGIN, (member.getUIabsLocationY() + (this.negativeExtendY * Size.REGULAR_SIZE)) * this.core.getUI().getUISize().getmultiple() + Size.MARGIN);
-			this.gridPanel.add(member.getGridViewPane());
-			this.selectFocus(member);
+			
 			System.out.println("Loc: " + ((LogicBlock) member).getBlockLocationX() + " " + ((LogicBlock) member).getBlockLocationY());
 		}
-		
 	}
 	void removeMember(GridMember member)
 	{
 		member.remove();
-		if(member instanceof LogicBlock)
-		{
-			LogicBlock block = ((LogicBlock) member);
-			logicMembers.get(new Integer(block.getBlockLocationX())).remove(new Integer(block.getBlockLocationY()), block);
-			if(logicMembers.get(new Integer(block.getBlockLocationX())).size() == 0)
-			{
-				logicMembers.remove(new Integer(block.getBlockLocationX()));
-			}
-		}
-		this.members.remove(member);
-		this.gridPanel.remove(member.getGridViewPane());
-		this.deSelect(member);
 	}
 	ArrayList<GridMember> getMembers()
 	{
 		return this.members;
+	}
+	LogicBlock getLogicBlock(int absX, int absY)
+	{
+		if(this.logicMembers.containsKey(absX))
+		{
+			if(this.logicMembers.get(new Integer(absX)).containsKey(absY))
+			{
+				return this.logicMembers.get(new Integer(absX)).get(absY);
+			}
+		}
+		return null;
 	}
 	void selectSign(ArrayList<GridMember> selectSignMembers)
 	{
@@ -491,7 +468,7 @@ public class Grid
 			super.paintComponent(g);
 		}
 	}
-	private class GridPanel extends JPanel implements SizeUpdate
+	class GridPanel extends JPanel implements SizeUpdate
 	{
 		private static final long serialVersionUID = 1L;
 		GridPanel()
@@ -502,7 +479,7 @@ public class Grid
 		}
 		@Override
 		public void paintComponent(Graphics g)
-		{//ÃÖÀûÈ­ °¡´É
+		{//ï¿½ï¿½ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½
 			super.paintComponent(g);
 			g.setColor(new Color(190, 190, 200));
 			for(int x = 0; x <= gridSizeX; x++)
@@ -596,7 +573,7 @@ public class Grid
 					removeSelecter();
 					if(e.getButton() == 1)
 					{
-						selecter = new Selector(120, 180, 255, 50, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "°³ÀÇ ºí·Ï Ãß°¡ ¼±ÅÃ")
+						selecter = new Selector(120, 180, 255, 50, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ß°ï¿½ ï¿½ï¿½ï¿½ï¿½")
 						{
 							private static final long serialVersionUID = 1L;
 							
@@ -621,7 +598,7 @@ public class Grid
 					}
 					else if(e.getButton() == 3)
 					{
-						selecter = new Selector(255, 180, 120, 50, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "°³ÀÇ ºí·Ï ¼±ÅÃ ÇØÁ¦")
+						selecter = new Selector(255, 180, 120, 50, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")
 						{
 							private static final long serialVersionUID = 1L;
 
@@ -873,18 +850,20 @@ public class Grid
 	}
 }
 enum Direction
-{//¹æÇâ °ü·Ã »ó¼ö
-	EAST("EAST", 1, 0), NORTH("NORTH", 0, -1), WEST("WEST", -1, 0),SOUTH("SOUTH", 0, 1);
+{
+	EAST("EAST", 1, 0, "WEST"), WEST("WEST", -1, 0, "EAST"), SOUTH("SOUTH", 0, 1, "NORTH"), NORTH("NORTH", 0, -1, "SOUTH");
 	
 	public final String tag;
 	public final int wayX;
 	public final int wayY;
+	public final String across;
 	
-	private Direction(String tag, int wayX, int wayY)
+	private Direction(String tag, int wayX, int wayY, String across)
 	{
 		this.tag = tag;
 		this.wayX = wayX;
 		this.wayY = wayY;
+		this.across = across;
 	}
 	public int getWayX()
 	{
@@ -897,6 +876,10 @@ enum Direction
 	public String getTag()
 	{
 		return this.tag;
+	}
+	public Direction getAcross()
+	{
+		return Direction.valueOf(this.across);
 	}
 }
 enum Size

@@ -51,6 +51,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.text.DefaultCaret;
 
 public class LogicCore
@@ -151,7 +152,6 @@ class Resource
 	public Font NORMAL_FONT;
 	public Font PIXEL_FONT;
 	public Font BAR_FONT;
-	public int ASD;
 	Properties config = new Properties();
 	
 	public Resource()
@@ -336,6 +336,8 @@ class LoadingWindow extends JFrame implements Console
 		this.setLocation(screenSize.width/2-this.getSize().width/2, screenSize.height/2-this.getSize().height/2);
 		
 		JButton closeButton = new JButton();
+		closeButton.setHorizontalAlignment(SwingConstants.CENTER);
+		closeButton.setVerticalAlignment(SwingConstants.CENTER);
 		closeButton.setBounds(370, 10, 20, 20);
 		closeButton.addActionListener(new ActionListener()
 		{
@@ -361,7 +363,8 @@ class LoadingWindow extends JFrame implements Console
 		JScrollPane consolScrollPane = new JScrollPane();
 		consolScrollPane.getViewport().setView(this.consoleArea);
 		consolScrollPane.setBorder(BorderFactory.createEmptyBorder());
-		consolScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+		consolScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		consolScrollPane.getVerticalScrollBar().setUnitIncrement(10);
 		
 		JPanel panel = new JPanel();
 		panel.setLayout(new BorderLayout());

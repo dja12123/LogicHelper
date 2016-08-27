@@ -74,7 +74,7 @@ public class UI
 		this.toolBar = new ToolBar();
 		this.underBar = new UnderBar();
 		
-		this.mainFrame = new JFrame(LogicCore.getResource().getLocal("TITLE"));
+		this.mainFrame = new JFrame(LogicCore.getResource().getLocal("TITLE") + " v" + LogicCore.VERSION);
 		this.mainFrame.setSize(1600, 900);
 		this.mainFrame.setMinimumSize(new Dimension(1131, 800));
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -820,10 +820,19 @@ class EditPane extends JPanel
 {
 	private static final long serialVersionUID = 1L;
 	
-	private UIButton copyButton = new UIButton(275, 100, 20, 20, null, null);
-	private UIButton removeButton = new UIButton(300, 100, 20, 20, null, null);
-	private UIButton disableButton = new UIButton(325, 100, 20, 20, null, null);
-	private UIButton restoreButton = new UIButton(350, 100, 20, 20, null, null);
+	private ButtonPanel copyButton = new ButtonPanel(275, 100, 20, 20);
+	private ButtonPanel removeButton = new ButtonPanel(300, 100, 20, 20)
+	{
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		void pressed(int mouse)
+		{
+			member.remove();
+		}
+	};
+	private ButtonPanel disableButton = new ButtonPanel(325, 100, 20, 20);
+	private ButtonPanel restoreButton = new ButtonPanel(350, 100, 20, 20);
 	
 	protected GridMember member;
 	
@@ -903,7 +912,7 @@ class LogicEditPane extends EditPane
 		
 		this.text.setText(super.member.getName() + " ����Ʈ ����");
 	}
-	private class IOControlButton extends JButton implements ActionListener
+	private class IOControlButton extends ButtonPanel
 	{
 		private static final long serialVersionUID = 1L;
 		
@@ -915,23 +924,11 @@ class LogicEditPane extends EditPane
 			this.locX = locX; this.locY = locY; this.sizeX = sizeX; this.sizeY = sizeY;
 			this.setBounds(locX, locY, sizeX, sizeY);
 			this.ext = ext;
-			this.addActionListener(this);
 		}
 		@Override
-		public void actionPerformed(ActionEvent e)
+		public void pressed(int mouse)
 		{
-			if(logicMember.getIO(ext).getStatus() == IOStatus.NONE)
-			{
-				logicMember.getIO(ext).setStatus(IOStatus.TRANCE);
-			}
-			else if(logicMember.getIO(ext).getStatus() == IOStatus.TRANCE)
-			{
-				logicMember.getIO(ext).setStatus(IOStatus.RECEIV);
-			}
-			else if(logicMember.getIO(ext).getStatus() == IOStatus.RECEIV)
-			{
-				logicMember.getIO(ext).setStatus(IOStatus.NONE);
-			}
+			logicMember.toggleIO(this.ext);
 		}
 	}
 }
@@ -1014,6 +1011,13 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		this.addMouseListener(this);
 		this.setBackground(Color.orange);
 	}
+	ButtonPanel(int x, int y, int width, int height)
+	{
+		this.setBounds(x, y, width, height);
+		this.addMouseMotionListener(this);
+		this.addMouseListener(this);
+		this.setBackground(Color.orange);
+	}
 	ButtonPanel(BufferedImage basicImage, BufferedImage onMouseImage, BufferedImage basicPressImage)
 	{
 		this.addMouseMotionListener(this);
@@ -1024,9 +1028,11 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		this.setBackground(Color.orange);
 	}
 	@Override
-	public void mouseClicked(MouseEvent e){}
+	public final void mouseClicked(MouseEvent e)
+	{
+	}
 	@Override
-	public void mouseEntered(MouseEvent e)
+	public final void mouseEntered(MouseEvent e)
 	{
 		this.onMouseFlag = true;
 		if(!(this.status == ButtonStatus.PRESS))
@@ -1036,7 +1042,7 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		this.imageSet();
 	}
 	@Override
-	public void mouseExited(MouseEvent e)
+	public final void mouseExited(MouseEvent e)
 	{
 		this.onMouseFlag = false;
 		if(!(this.status == ButtonStatus.PRESS))
@@ -1046,14 +1052,14 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		this.imageSet();
 	}
 	@Override
-	public void mousePressed(MouseEvent e)
+	public final void mousePressed(MouseEvent e)
 	{
 		this.mouseButton = e.getButton();
 		this.status = ButtonStatus.PRESS;
 		this.imageSet();
 	}
 	@Override
-	public void mouseReleased(MouseEvent e)
+	public final void mouseReleased(MouseEvent e)
 	{
 		if(e.getX() <= this.getWidth() && e.getY() <= this.getHeight())
 		{
@@ -1070,9 +1076,13 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		this.imageSet();
 	}
 	@Override
-	public void mouseDragged(MouseEvent arg0){}
+	public final void mouseDragged(MouseEvent arg0)
+	{
+	}
 	@Override
-	public void mouseMoved(MouseEvent arg0){}
+	public final void mouseMoved(MouseEvent arg0)
+	{
+	}
 	@Override
 	public void paint(Graphics g)
 	{
