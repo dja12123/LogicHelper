@@ -1,12 +1,16 @@
 package kr.dja;
 
+import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -14,6 +18,8 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.util.*;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
@@ -59,7 +65,6 @@ public class Grid
 		this.core = core;
 		this.gridScrollPane = new JScrollPane();
 		
-		core.getUI().getUnderBar().setGridSizeInfo(gridSizeX, gridSizeY);
 		gridScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		gridScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		gridScrollPane.getVerticalScrollBar().setUnitIncrement((int)(this.core.getUI().getUISize().getWidth() / 2.5));
@@ -83,7 +88,7 @@ public class Grid
 						g.fillRect(1,(i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 1 , (core.getUI().getUISize().getWidth() / 2) - 2, core.getUI().getUISize().getWidth() - 2);
 						g.setColor(super.graduationColor);
 					}
-					g.fillRect(core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN - 1, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, 2);//(core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 2, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN);
+					g.fillRect(core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN - 1, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, 2);
 				}
 			}
 			@Override
@@ -105,7 +110,7 @@ public class Grid
 							super.paintComponent(g2d);
 						}
 					};
-					label.setFont(LogicCore.RES.NORMAL_FONT.deriveFont((float)(core.getUI().getUISize().getWidth() / 3.5)));
+					label.setFont(LogicCore.RES.BAR_FONT.deriveFont((float)(core.getUI().getUISize().getWidth() / 3.5)));
 					label.setBounds(0, (core.getUI().getUISize().getWidth() * i) + Size.MARGIN, core.getUI().getUISize().getWidth(), core.getUI().getUISize().getWidth());
 					this.add(label);
 					this.repaint();
@@ -131,26 +136,26 @@ public class Grid
 						g.fillRect((i * core.getUI().getUISize().getWidth()) + Size.MARGIN + 1,1 , core.getUI().getUISize().getWidth() - 2, (core.getUI().getUISize().getWidth() / 2) - 2);
 						g.setColor(super.graduationColor);
 					}
-					//g.drawLine((i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 4, (i * core.getUI().getUISize().getWidth()) + Size.MARGIN, core.getUI().getUISize().getWidth() / 2);
 					g.fillRect((i * core.getUI().getUISize().getWidth()) + Size.MARGIN - 1, core.getUI().getUISize().getWidth() / 4, 2, core.getUI().getUISize().getWidth() / 2);
 				}
 			}
 			@Override
 			public void sizeUpdate()
 			{
-				this.removeAll();//���� �ʿ�
+				this.removeAll();
 				this.setPreferredSize(new Dimension((gridSizeX * core.getUI().getUISize().getWidth()) + (Size.MARGIN * 2), core.getUI().getUISize().getWidth() / 2));
 				for(int i = 0; i < gridSizeX; i++)
 				{
 					JLabel label = new JLabel(Integer.toString(i - negativeExtendX), SwingConstants.CENTER);
-					label.setFont(LogicCore.RES.NORMAL_FONT.deriveFont((float)(core.getUI().getUISize().getWidth() / 3.5)));
+					label.setFont(LogicCore.RES.BAR_FONT.deriveFont((float)(core.getUI().getUISize().getWidth() / 3.5)));
 					label.setBounds((core.getUI().getUISize().getWidth() * i) + Size.MARGIN, 0, core.getUI().getUISize().getWidth(), core.getUI().getUISize().getWidth() / 2);
 					this.add(label);
 					this.repaint();
 				}
-				
 			}
 		};
+		this.core.getUI().setGridPanel(this);
+		
 		this.side = new JPanel();
 
 		this.viewPort = new ViewPort();
@@ -159,8 +164,6 @@ public class Grid
 		
 		gridScrollPane.setViewport(viewPort);
 		
-		
-		
 		gridScrollPane.setRowHeaderView(horizonRulerScrollPane);
 		gridScrollPane.setColumnHeaderView(verticalRulerScrollPane);
 
@@ -168,11 +171,7 @@ public class Grid
 		gridScrollPane.setCorner(JScrollPane.UPPER_LEFT_CORNER, side);
 		gridScrollPane.setCorner(JScrollPane.UPPER_RIGHT_CORNER, side);
 		
-
-		
-		
 		this.reSize(core.getUI().getUISize());
-		//UI_Instance.setGridPanel(gridScrollPane);
 	}
 	int getNegativeExtendX()
 	{
@@ -299,7 +298,7 @@ public class Grid
 		if(absX < (this.getgridSizeX() - this.getNegativeExtendX()) * Size.REGULAR_SIZE && absY < (this.getgridSizeY() - this.getNegativeExtendY()) * Size.REGULAR_SIZE
 		&& absX > - (this.getNegativeExtendX() + 1) * Size.REGULAR_SIZE && absY > - (this.getNegativeExtendY() + 1) * Size.REGULAR_SIZE)
 		{
-			member.put(absX, absY, this.core.getGrid(), this.core.getTaskOperator());
+			member.put(absX, absY, this.core.getGrid());
 			
 			System.out.println("Loc: " + ((LogicBlock) member).getBlockLocationX() + " " + ((LogicBlock) member).getBlockLocationY());
 		}
@@ -479,7 +478,7 @@ public class Grid
 		}
 		@Override
 		public void paintComponent(Graphics g)
-		{//����ȭ ����
+		{
 			super.paintComponent(g);
 			g.setColor(new Color(190, 190, 200));
 			for(int x = 0; x <= gridSizeX; x++)
@@ -524,46 +523,15 @@ public class Grid
 		{
 			this.layeredPane = new JLayeredPane();
 			
-			eastExpansionPane = new ExpansionPane(Direction.EAST)
-			{
-				private static final long serialVersionUID = 1L;
-				{
-					this.setSize(Size.MARGIN - 6, Size.MARGIN * 2);
-					super.setLayout(new GridLayout(4, 1, 0, 2));
-					
-				}
-			};
-			westExpansionPane = new ExpansionPane(Direction.WEST)
-			{
-				private static final long serialVersionUID = 1L;
-				{
-					this.setSize(Size.MARGIN - 6, Size.MARGIN * 2);
-					super.setLayout(new GridLayout(4, 1, 0, 2));
-				}
-			};
+			eastExpansionPane = new ExpansionPane(Direction.EAST);
+			westExpansionPane = new ExpansionPane(Direction.WEST);
+			southExpansionPane = new ExpansionPane(Direction.SOUTH);
+			northExpansionPane = new ExpansionPane(Direction.NORTH);
 			
-			southExpansionPane = new ExpansionPane(Direction.SOUTH)
-			{
-				private static final long serialVersionUID = 1L;
-				{
-					this.setSize(Size.MARGIN * 2, Size.MARGIN - 6);
-					super.setLayout(new GridLayout(1, 4, 2, 0));
-				}
-			};
-			
-			northExpansionPane = new ExpansionPane(Direction.NORTH)
-			{
-				private static final long serialVersionUID = 1L;
-				{
-					this.setSize(Size.MARGIN * 2, Size.MARGIN - 6);
-					super.setLayout(new GridLayout(1, 4, 2, 0));
-				}
-			};
-			
-			this.layeredPane.add(eastExpansionPane, new Integer(1));
-			this.layeredPane.add(westExpansionPane, new Integer(1));
-			this.layeredPane.add(southExpansionPane, new Integer(1));
-			this.layeredPane.add(northExpansionPane, new Integer(1));
+			this.layeredPane.add(eastExpansionPane, new Integer(3));
+			this.layeredPane.add(westExpansionPane, new Integer(3));
+			this.layeredPane.add(southExpansionPane, new Integer(3));
+			this.layeredPane.add(northExpansionPane, new Integer(3));
 			
 			this.addMouseListener(new MouseAdapter()
 			{
@@ -618,7 +586,6 @@ public class Grid
 							{
 								deSelect(super.selectMember);
 							}
-						
 						};
 					}
 					
@@ -685,7 +652,7 @@ public class Grid
 		public void setView(Component p)
 		{
 			this.dftComponent = p;
-			this.layeredPane.add(this.dftComponent, new Integer(0));
+			this.layeredPane.add(this.dftComponent, new Integer(1));
 			this.sizeUpdate();
 		}
 		@Override
@@ -787,64 +754,50 @@ public class Grid
 			abstract void selectAction(GridMember member);
 			abstract void actionFinal();
 		}
-		private abstract class ExpansionPane extends JPanel
+		private class ExpansionPane extends JPanel
 		{
 			private static final long serialVersionUID = 1L;
 			
-			protected UIButton expButton;
-			protected UIButton expMButton;
-			protected UIButton redButton;
-			protected UIButton redMButton;
+			private final Direction ext;
 			
 			ExpansionPane(Direction ext)
 			{
 				super();
+				this.ext = ext;
+				this.setLayout(new BoxLayout(this, Math.abs(ext.getWayY())));
+				JPanel inRedPanel = new JPanel();
+				inRedPanel.setLayout(new BoxLayout(inRedPanel, Math.abs(ext.getWayX())));
+				JPanel inExtPanel = new JPanel();
+				inExtPanel.setLayout(new BoxLayout(inExtPanel, Math.abs(ext.getWayX())));
+				this.setSize((Math.abs(ext.getWayY()) + 1) * 44, (Math.abs(ext.getWayX()) + 1) * 44);
 				
-				this.setBackground(new Color(200, 200, 200));
-				this.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-				this.setLayout(null);
+				inExtPanel.add(new SizeEditButton("GRID_EXTEND", this.ext, 1));
+				inExtPanel.add(new SizeEditButton("GRID_EXTEND_PLUS", this.ext, 10));
 				
-				this.expButton = new UIButton(20, 20, null, null);
-				this.expMButton = new UIButton(20, 20, null, null);
-				this.redButton = new UIButton(20, 20, null, null);
-				this.redMButton = new UIButton(20, 20, null, null);
+				inRedPanel.add(new SizeEditButton("GRID_EXTEND", this.ext.getAcross(), -1));
+				inRedPanel.add(new SizeEditButton("GRID_EXTEND_PLUS", this.ext.getAcross(), -10));
+				this.add(ext.getWayX() + ext.getWayY() >= 0 ? inRedPanel : inExtPanel);
+				this.add(ext.getWayX() + ext.getWayY() >= 0 ? inExtPanel : inRedPanel);
+			}
+			private class SizeEditButton extends ButtonPanel
+			{
+				private static final long serialVersionUID = 1L;
+				private final int editSize;
+				private final Direction tagExt;
 				
-				this.expButton.addActionListener(new ActionListener()
+				SizeEditButton(String imgTag, Direction ext, int size)
 				{
-					@Override
-					public void actionPerformed(ActionEvent e)
-					{
-						gridExtend(ext, 1);
-					}
-				});
-				this.expMButton.addActionListener(new ActionListener()
+					this.editSize = size;
+					this.tagExt = ext;
+					super.setBasicImage(LogicCore.getResource().getImage(imgTag + "_" + tagExt.getTag()));
+					super.setOnMouseImage(LogicCore.getResource().getImage(imgTag + "_SELECT_" + tagExt.getTag()));
+					super.setBasicPressImage(LogicCore.getResource().getImage(imgTag + "_PUSH_" + tagExt.getTag()));
+				}
+				@Override
+				void pressed(int mouse)
 				{
-					@Override
-					public void actionPerformed(ActionEvent e)
-					{
-						gridExtend(ext, 10);
-					}
-				});
-				this.redButton.addActionListener(new ActionListener()
-				{
-					@Override
-					public void actionPerformed(ActionEvent e)
-					{
-						gridExtend(ext, -10);
-					}
-				});
-				this.redMButton.addActionListener(new ActionListener()
-				{
-					@Override
-					public void actionPerformed(ActionEvent e)
-					{
-						gridExtend(ext, -1);
-					}
-				});
-				this.add(expButton);
-				this.add(expMButton);
-				this.add(redButton);
-				this.add(redMButton);
+					gridExtend(ext, editSize);
+				}
 			}
 		}
 	}

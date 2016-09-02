@@ -1,9 +1,11 @@
 package kr.dja;
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class TaskOperator
@@ -14,7 +16,7 @@ public class TaskOperator
 	private int taskTick = 500;
 	public final int MAX_TASK_TICK = 5000;
 	public final int MIN_TASK_TICK = 3;
-	private JPanel graphPanel;
+	private GraphViewPanel graphPanel;
 	
 	private volatile ArrayList<LogicBlock> reserveTask = new ArrayList<LogicBlock>();
 	private volatile HashMap<LogicBlock, HashMap<Direction, Power>> check = new HashMap<LogicBlock, HashMap<Direction, Power>>();
@@ -22,8 +24,9 @@ public class TaskOperator
 	TaskOperator(LogicCore core)
 	{
 		this.core = core;
-		
-		this.graphPanel = new JPanel();
+		this.graphPanel = new GraphViewPanel();
+		this.graphPanel.setLayout(null);
+		core.getUI().getTaskOperatorPanel().setOperator(this);
 	}
 	void addReserveTask(LogicBlock member)
 	{
@@ -33,9 +36,7 @@ public class TaskOperator
 		}
 	}
 	void checkAroundAndReserveTask(LogicBlock block)
-	{//최적화 필요
-		System.out.println(this.core.getGrid().getMembers().contains(block));
-		System.out.println("Check");		
+	{//최적화 필요	
 		if(this.core.getGrid().getMembers().contains(block))
 		{
 			for(Direction ext : Direction.values())
@@ -51,7 +52,6 @@ public class TaskOperator
 						}
 						else if(extBlock.getIOStatus(ext.getAcross()) != IOStatus.TRANCE)
 						{
-							System.out.println("Po!!!werOFF "+ extBlock.getBlockLocationX() +" " + extBlock.getBlockLocationY()+" "+ ext.getAcross());
 							block.setIOResivePower(ext, Power.OFF);
 						}
 					}
@@ -119,7 +119,7 @@ public class TaskOperator
 	}
 	private void doTask()
 	{
-		System.out.println("doTask");
+		long taskStartTime = System.currentTimeMillis();
 		for(LogicBlock member : this.check.keySet())
 		{
 			for(Direction ext : this.check.get(member).keySet())
@@ -135,11 +135,17 @@ public class TaskOperator
 		{
 			this.reserveTask.remove(member);
 			member.ping();
-			recursiveTask(member);
+			recursiveTask(member, new ArrayList<LogicBlock>());
+		}
+		if(this.reserveTask.size() != 0)
+		{
+			this.graphPanel.setGraph(this.taskTick, System.currentTimeMillis() - taskStartTime);
 		}
 	}
-	private void recursiveTask(LogicBlock block)
+	@SuppressWarnings("unchecked")
+	private void recursiveTask(LogicBlock block, ArrayList<LogicBlock> taskList)
 	{
+		boolean copyTaskFlag = false;
 		for(Direction ext : block.getIOTrance())
 		{
 			LogicBlock outputExtBlock = this.core.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
@@ -155,7 +161,16 @@ public class TaskOperator
 						if(power != outputExtBlock.getPower())
 						{
 							System.out.println("Task");
-							recursiveTask(outputExtBlock);
+							if(!taskList.contains(outputExtBlock))
+							{
+								taskList.add(outputExtBlock);
+								recursiveTask(outputExtBlock, copyTaskFlag ? (ArrayList<LogicBlock>) taskList.clone() : taskList);
+								copyTaskFlag = true;
+							}
+							else
+							{
+								System.out.println("회로가 통구이가 되었습니다" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
+							}
 						}
 					}
 				}
@@ -215,9 +230,44 @@ public class TaskOperator
 		}
 	}
 }
-class GraphPanel extends JPanel
+class GraphViewPanel extends JPanel
 {
-	
+	private ArrayList<JLabel> multipleLabel = new ArrayList<JLabel>();
+	private ArrayList<Integer> graphBar = new ArrayList<Integer>();
+	private int graphLocX = 20, graphLocY = 5, graphSizeX = 123, graphSizeY = 80;
+	private int multiple = 2;
+	GraphViewPanel()
+	{
+		this.setMultipleLabel();
+	}
+	@Override
+	public void paint(Graphics g)
+	{
+		super.paint(g);
+		g.drawRect(this.graphLocX, this.graphLocY, this.graphSizeX, this.graphSizeY);
+		for(int i = 0; i < this.graphBar.size(); i++)
+		{
+			g.drawLine(i + graphLocX, graphLocY + graphSizeY - 1, i + graphLocX, this.graphBar.get(i) + graphLocY + graphSizeY - 1);
+		}
+	}
+	void setGraph(int stdTime, long time)
+	{
+		System.out.println(time);
+		this.graphBar.add((int)time);
+		this.repaint();
+		if(this.graphBar.size() > this.graphSizeX)
+		{
+			this.graphBar.remove(0);
+		}
+	}
+	private void setMultipleLabel()
+	{
+		JLabel label = new JLabel("x1");
+		label.setFont(LogicCore.RES.BAR_FONT.deriveFont(10.0F));
+		label.setBounds(5, 5, 20, 20);
+		this.add(label);
+		this.multipleLabel.add(label);
+	}
 }
 interface LogicWire
 {

@@ -1,5 +1,6 @@
 package kr.dja;
 
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -7,8 +8,11 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.HeadlessException;
 import java.awt.Image;
+import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,6 +40,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
@@ -90,7 +95,7 @@ public class UI
 			}
 		});
 
-		this.taskOperatorPanel = new TaskOperatorPanel(this.core.getTaskOperator());
+		this.taskOperatorPanel = new TaskOperatorPanel();
 		this.palettePanel = new PalettePanel(this);
 		this.infoPanel = new InfoPanel();
 		this.blockControlPanel = new BlockControlPanel();
@@ -139,11 +144,35 @@ public class UI
 						Point loc = core.getGrid().getGridScrollPanel().getViewport().getViewPosition().getLocation();
 						trackedPane.addMemberOnGrid((int)((compX + loc.getX()) - Size.MARGIN) / getUISize().getmultiple(), (int)((compY + loc.getY()) - Size.MARGIN) / getUISize().getmultiple());
 						removeTrackedPane(trackedPane);
-						
 					}
 				}
 			}
 		});
+		this.staticControlView.add(this.blockControlPanel.getComponent());
+		this.staticControlView.add(this.infoPanel.getComponent());
+		this.staticControlView.add(this.palettePanel.getComponent());
+		this.staticControlView.add(this.taskOperatorPanel.getComponent());
+		
+		this.moveControlView.add(this.taskManagerPanel.getComponent(), BorderLayout.CENTER);
+		this.moveControlView.add(this.templatePanel.getComponent(), BorderLayout.SOUTH);
+		
+		this.controlView.add(moveControlView, BorderLayout.CENTER);
+		this.controlView.add(staticControlView, BorderLayout.NORTH);
+		
+		this.mainFrame.add(this.toolBar.getComponent(), BorderLayout.NORTH);
+		this.mainFrame.add(this.underBar.getComponent(), BorderLayout.SOUTH);
+		this.mainFrame.add(this.controlView, BorderLayout.EAST);
+
+		this.mainFrame.setVisible(true);
+	}
+	void setGridPanel(Grid grid)
+	{
+		this.mainFrame.add(grid.getGridScrollPanel(), BorderLayout.CENTER);
+		core.getUI().getUnderBar().setGridSizeInfo(grid.getgridSizeX(), grid.getgridSizeY());
+	}
+	TaskOperatorPanel getTaskOperatorPanel()
+	{
+		return this.taskOperatorPanel;
 	}
 	Size getUISize()
 	{
@@ -178,26 +207,6 @@ public class UI
 	PalettePanel getPalettePanel()
 	{
 		return this.palettePanel;
-	}
-	void doLayout()
-	{
-		this.staticControlView.add(this.blockControlPanel.getComponent());
-		this.staticControlView.add(this.infoPanel.getComponent());
-		this.staticControlView.add(this.palettePanel.getComponent());
-		this.staticControlView.add(this.taskOperatorPanel.getComponent());
-		
-		this.moveControlView.add(this.taskManagerPanel.getComponent(), BorderLayout.CENTER);
-		this.moveControlView.add(this.templatePanel.getComponent(), BorderLayout.SOUTH);
-		
-		this.controlView.add(moveControlView, BorderLayout.CENTER);
-		this.controlView.add(staticControlView, BorderLayout.NORTH);
-		
-		this.mainFrame.add(this.core.getGrid().getGridScrollPanel(), BorderLayout.CENTER);
-		this.mainFrame.add(this.toolBar.getComponent(), BorderLayout.NORTH);
-		this.mainFrame.add(this.underBar.getComponent(), BorderLayout.SOUTH);
-		this.mainFrame.add(this.controlView, BorderLayout.EAST);
-
-		this.mainFrame.setVisible(true);
 	}
 }
 class ToolBar implements LogicUIComponent
@@ -349,19 +358,13 @@ class TaskOperatorPanel implements LogicUIComponent
 	private JLabel msLabel;
 	private TaskOperator operator;
 	
-	TaskOperatorPanel(TaskOperator operator)
+	TaskOperatorPanel()
 	{
 		this.taskOperatorPanel = new JPanel();
-	
-		this.operator = operator;
 		
 		this.taskOperatorPanel.setLayout(null);
 		this.taskOperatorPanel.setBounds(230, 295, 165, 180);
 		this.taskOperatorPanel.setBorder(new PanelBorder("����"));
-		
-		this.graphPanel = new JPanel();
-		this.graphPanel.setBounds(8, 20, 148, 90);
-		this.graphPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
 		
 		this.pauseButton = new PauseButton(8, 145, 148, 25);
 		
@@ -372,14 +375,13 @@ class TaskOperatorPanel implements LogicUIComponent
 		this.addTime10Button = new TimeSetButton(124, 120, 15, 20, null, null, 10);
 		this.addTime100Button = new TimeSetButton(141, 120, 15, 20, null, null, 100);
 		
-		this.taskIntervalLabel = new JLabel(Integer.toString(this.operator.getTaskTick()));
+		this.taskIntervalLabel = new JLabel();
 		this.taskIntervalLabel.setHorizontalAlignment(JLabel.RIGHT);
 		this.taskIntervalLabel.setBounds(56, 120, 30, 20);
 		
 		this.msLabel = new JLabel("ms");
 		this.msLabel.setBounds(87, 120, 30, 20);
 		
-		this.taskOperatorPanel.add(this.graphPanel);
 		this.taskOperatorPanel.add(this.pauseButton);
 		this.taskOperatorPanel.add(this.subTime1Button);
 		this.taskOperatorPanel.add(this.subTime10Button);
@@ -389,6 +391,15 @@ class TaskOperatorPanel implements LogicUIComponent
 		this.taskOperatorPanel.add(this.addTime100Button);
 		this.taskOperatorPanel.add(this.taskIntervalLabel);
 		this.taskOperatorPanel.add(this.msLabel);
+	}
+	void setOperator(TaskOperator operator)
+	{
+		this.operator = operator;
+		this.graphPanel = operator.getGraphPanel();
+		this.graphPanel.setBounds(8, 20, 148, 90);
+		this.graphPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
+		this.taskOperatorPanel.add(this.graphPanel);
+		this.taskIntervalLabel.setText(Integer.toString(operator.getTaskTick()));
 	}
 	@Override
 	public Component getComponent()
@@ -531,13 +542,13 @@ class PalettePanel implements LogicUIComponent
 		this.palettePanel.setLayout(null);
 		this.palettePanel.setBounds(5, 295, 225, 180);
 		this.palettePanel.setBorder(new PanelBorder("�ȷ�Ʈ"));
-		LogicEditPane DFTLogicControl = new LogicEditPane();
+		LogicTREditPane DFTLogicControl = new LogicTREditPane();
 		
-		new PaletteMember(new AND(this.logicUI.getUISize()), DFTLogicControl);
-		new PaletteMember(new OR(this.logicUI.getUISize()), DFTLogicControl);
-		new PaletteMember(new NOT(this.logicUI.getUISize()), DFTLogicControl);
-		new PaletteMember(new Button(this.logicUI.getUISize()), DFTLogicControl);
-		new PaletteMember(new XOR(this.logicUI.getUISize()), DFTLogicControl);
+		new PaletteMember(new AND(this.logicUI.getCore()), DFTLogicControl);
+		new PaletteMember(new OR(this.logicUI.getCore()), DFTLogicControl);
+		new PaletteMember(new NOT(this.logicUI.getCore()), DFTLogicControl);
+		new PaletteMember(new Button(this.logicUI.getCore()), DFTLogicControl);
+		new PaletteMember(new XOR(this.logicUI.getCore()), DFTLogicControl);
 		System.out.println(paletteMembers.keySet().size());
 		int i = 0, j = 0;
 		for(String str : paletteMembers.keySet())
@@ -582,7 +593,7 @@ class PalettePanel implements LogicUIComponent
 		
 		private GridMember putMember;
 		private EditPane selectControlPanel;
-		PaletteMember(GridMember member, LogicEditPane control)
+		PaletteMember(GridMember member, LogicTREditPane control)
 		{
 			paletteMembers.put(member.getName(), this);
 			this.selectControlPanel = control;
@@ -595,7 +606,7 @@ class PalettePanel implements LogicUIComponent
 				if(button == 1)
 				{
 					ArrayList<GridMember> list = new ArrayList<GridMember>();
-					list.add(putMember.clone(logicUI.getUISize()));
+					list.add(GridMember.Factory(logicUI.getCore(), putMember.getData(new HashMap<String, String>())));
 					logicUI.addTrackedPane(new TrackedPane(list, logicUI));
 				}
 				else if(button == 3)
@@ -849,28 +860,18 @@ class EditPane extends JPanel
 		this.member = member;
 	}
 }
-class LogicEditPane extends EditPane
+class LogicTREditPane extends EditPane
 {
 	private static final long serialVersionUID = 1L;
 	
 	private JLabel text = new JLabel();
 	private JLabel locationText = new JLabel();
 	private LogicBlock logicMember;
+	private ArrayList<IOControlButton> IOEditButton = new ArrayList<IOControlButton>();
 	
 	private JPanel editViewPanel = new JPanel()
 	{
 		private static final long serialVersionUID = 1L;
-		IOControlButton eastIOEditButton = new IOControlButton(100, 28, 16, 64, Direction.EAST);
-		IOControlButton westIOEditButton = new IOControlButton(4, 28, 16, 64, Direction.WEST);
-		IOControlButton southIOEditButton = new IOControlButton(28, 100, 64, 16, Direction.SOUTH);
-		IOControlButton northIOEditButton = new IOControlButton(28, 4, 64, 16, Direction.NORTH);
-		{
-			this.setLayout(null);
-			this.add(eastIOEditButton);
-			this.add(westIOEditButton);
-			this.add(southIOEditButton);
-			this.add(northIOEditButton);
-		}
 		@Override
 		public void paint(Graphics g)
 		{
@@ -879,8 +880,19 @@ class LogicEditPane extends EditPane
 		}
 	};
 	
-	LogicEditPane()
+	LogicTREditPane()
 	{
+		this.IOEditButton.add(new IOControlButton(100, 28, 16, 64, Direction.EAST));
+		this.IOEditButton.add(new IOControlButton(4, 28, 16, 64, Direction.WEST));
+		this.IOEditButton.add(new IOControlButton(28, 100, 64, 16, Direction.SOUTH));
+		this.IOEditButton.add(new IOControlButton(28, 4, 64, 16, Direction.NORTH));
+		
+		this.editViewPanel.setLayout(null);
+		for(IOControlButton btn : this.IOEditButton)
+		{
+			this.editViewPanel.add(btn);
+		}
+		
 		this.text.setHorizontalAlignment(SwingConstants.CENTER);
 		this.text.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
 		this.text.setBounds(135, 0, 223, 20);
@@ -909,14 +921,17 @@ class LogicEditPane extends EditPane
 		{
 			this.locationText.setText("��ġ�� ����� �ƴ�");
 		}
-		
 		this.text.setText(super.member.getName() + " ����Ʈ ����");
+		for(IOControlButton btn : this.IOEditButton)
+		{
+			btn.setImage();
+		}
 	}
 	private class IOControlButton extends ButtonPanel
 	{
 		private static final long serialVersionUID = 1L;
 		
-		int locX, locY, sizeX, sizeY; //�г� bounds
+		int locX, locY, sizeX, sizeY;
 		Direction ext;
 		
 		IOControlButton(int locX, int locY, int sizeX, int sizeY, Direction ext)
@@ -929,6 +944,12 @@ class LogicEditPane extends EditPane
 		public void pressed(int mouse)
 		{
 			logicMember.toggleIO(this.ext);
+			this.setImage();
+		}
+		void setImage()
+		{
+			super.setBasicImage(LogicCore.getResource().getImage("TR_BLOCK_EDIT_" + logicMember.getIOStatus(ext).getTag() + "_BASIC_" + ext));
+			super.setBasicPressImage(LogicCore.getResource().getImage("TR_BLOCK_EDIT_" + logicMember.getIOStatus(ext).getTag() + "_PUSH_" + ext));
 		}
 	}
 }
@@ -1002,7 +1023,6 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	private HashMap<Integer, BufferedImage> pressImages = new HashMap<Integer, BufferedImage>();
 	
 	private BufferedImage nowImage;
-	private boolean onMouseFlag;
 	private int mouseButton = 0;
 	
 	ButtonPanel()
@@ -1034,7 +1054,6 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	@Override
 	public final void mouseEntered(MouseEvent e)
 	{
-		this.onMouseFlag = true;
 		if(!(this.status == ButtonStatus.PRESS))
 		{
 			this.status = ButtonStatus.ONMOUSE;
@@ -1044,7 +1063,6 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	@Override
 	public final void mouseExited(MouseEvent e)
 	{
-		this.onMouseFlag = false;
 		if(!(this.status == ButtonStatus.PRESS))
 		{
 			this.status = ButtonStatus.NONE;
@@ -1061,12 +1079,18 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	@Override
 	public final void mouseReleased(MouseEvent e)
 	{
-		if(e.getX() <= this.getWidth() && e.getY() <= this.getHeight())
+		if((e.getX() <= this.getWidth() && e.getY() <= this.getHeight()))
 		{
 			this.pressed(e.getButton());
-		}
-		if(this.onMouseFlag)
-		{
+			try 
+			{//TODO 좌표 꼬이는 버그 해결용 일단두시오
+				new Robot().mouseMove((int)MouseInfo.getPointerInfo().getLocation().getX() + 1, (int)MouseInfo.getPointerInfo().getLocation().getY() + 1);
+				new Robot().mouseMove((int)MouseInfo.getPointerInfo().getLocation().getX() - 1, (int)MouseInfo.getPointerInfo().getLocation().getY() - 1);
+			}
+			catch(Exception e1)
+			{
+				e1.printStackTrace();
+			}
 			this.status = ButtonStatus.ONMOUSE;
 		}
 		else
@@ -1112,6 +1136,12 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		this.pressImages.put(new Integer(button), img);
 		this.repaint();
 	}
+	void setOnMouseImage(BufferedImage image)
+	{
+		this.onMouseImage = image;
+		this.repaint();
+		
+	}
 	void imageSet()
 	{
 		if(status == ButtonStatus.PRESS)
@@ -1150,6 +1180,7 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	{
 		NONE, PRESS, ONMOUSE;
 	}
+
 }
 interface SizeUpdate
 {

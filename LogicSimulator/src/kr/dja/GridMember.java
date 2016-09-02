@@ -20,33 +20,47 @@ public abstract class GridMember implements SizeUpdate
 	protected int UIabslocationY = 0;
 	protected int UIabsSizeX = 1;
 	protected int UIabsSizeY = 1;
-	protected GridViewPane gridViewPane;
-	protected Size size;
-	protected final String name;
+	protected LogicCore core;
+	protected String name;
 	protected GridLayeredPane layeredPane;
-	protected TaskOperator operator;
+	protected GridViewPane gridViewPane;
 	protected Grid grid;
 	private boolean placement = false;
 
-	protected GridMember(Size size, String name)
+	protected GridMember(LogicCore core, String name)
 	{
+		this.core = core;
 		this.name = name;
-		this.size = size;
-		
 		this.layeredPane = new GridLayeredPane();
 		this.gridViewPane = new GridViewPane(this);
-		this.sizeUpdate();
-		this.layeredPane.add(this.gridViewPane, new Integer(1));;
+		this.layeredPane.add(this.gridViewPane, new Integer(1));
 	}
-	protected GridMember clone(GridMember member)
+	void setData(HashMap<String, String> dataMap)
 	{
-		member.UIabslocationX = this.UIabslocationX;
-		member.UIabslocationY = this.UIabslocationY;
-		member.UIabsSizeX = this.UIabsSizeX;
-		member.UIabsSizeX = this.UIabsSizeY;
-		return member;
+		this.name = dataMap.get("name");
+		this.UIabslocationX = new Integer(dataMap.get("UIabslocationX"));
+		this.UIabslocationY = new Integer(dataMap.get("UIabslocationY"));
+		this.UIabsSizeX = new Integer(dataMap.get("UIabsSizeX"));
+		this.UIabsSizeY = new Integer(dataMap.get("UIabsSizeY"));
 	}
-	public abstract GridMember clone(Size size);
+	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	{
+		dataMap.put("ClassName", this.getClass().getName());
+		dataMap.put("name", this.name);
+		dataMap.put("UIabslocationX", Integer.toString(this.UIabslocationX));
+		dataMap.put("UIabslocationY", Integer.toString(this.UIabslocationY));
+		dataMap.put("UIabsSizeX", Integer.toString(this.UIabsSizeX));
+		dataMap.put("UIabsSizeY", Integer.toString(this.UIabsSizeY));
+		return dataMap;
+	}
+	LogicCore getCore()
+	{
+		return this.core;
+	}
+	void setCore(LogicCore core)
+	{
+		this.core = core;
+	}
 	void setSelectView(Color color)
 	{
 		this.layeredPane.selectShow(color);
@@ -58,10 +72,6 @@ public abstract class GridMember implements SizeUpdate
 	String getName()
 	{
 		return this.name;
-	}
-	Size getSize()
-	{
-		return this.size;
 	}
 	int getUIabsLocationX()
 	{
@@ -79,13 +89,12 @@ public abstract class GridMember implements SizeUpdate
 	{
 		return UIabsSizeY;
 	}
-	void put(int absX, int absY, Grid grid, TaskOperator operator)
+	void put(int absX, int absY, Grid grid)
 	{
 		this.sizeUpdate();
 		this.UIabslocationX = absX;
 		this.UIabslocationY = absY;
 		this.grid = grid;
-		this.operator = operator;
 		this.grid.members.add(this);
 		System.out.println("PUT: " + UIabslocationX + " " + UIabslocationY);
 		System.out.println(this.layeredPane.getSize());
@@ -121,7 +130,7 @@ public abstract class GridMember implements SizeUpdate
 	public void sizeUpdate()
 	{
 		this.gridViewPane.sizeUpdate();
-		this.layeredPane.setSize(UIabsSizeX * size.getmultiple(), UIabsSizeY * size.getmultiple());
+		this.layeredPane.setSize(UIabsSizeX * core.getUI().getUISize().getmultiple(), UIabsSizeY * core.getUI().getUISize().getmultiple());
 	}
 	class GridLayeredPane extends JLayeredPane
 	{
@@ -186,33 +195,33 @@ public abstract class GridMember implements SizeUpdate
 			}
 		}
 	}
+	static GridMember Factory(LogicCore core, HashMap<String, String> info)
+	{
+		GridMember member = null;
+		try
+		{//리플렉션
+			member = (GridMember)Class.forName(info.get("ClassName")).getDeclaredConstructor(new Class[]{LogicCore.class}).newInstance(core);
+			member.setData(info);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		return member;
+	}
 }
 class Partition extends GridMember
 {
-	Partition(Size size)
+	Partition(LogicCore core)
 	{
-		super(size, "Partition");
-	}
-	@Override
-	public Partition clone(Size size)
-	{
-		Partition cloneMember = new Partition(size);
-		super.clone(cloneMember);
-		return cloneMember;
+		super(core, "Partition");
 	}
 }
 class Tag extends GridMember
 {
-	Tag(Size size)
+	Tag(LogicCore core)
 	{
-		super(size, "Partition");
-	}
-	@Override
-	public Tag clone(Size size)
-	{
-		Tag cloneMember = new Tag(size);
-		super.clone(cloneMember);
-		return cloneMember;
+		super(core, "Partition");
 	}
 }
 abstract class LogicBlock extends GridMember
@@ -223,9 +232,9 @@ abstract class LogicBlock extends GridMember
 	protected HashMap<Direction, IOPanel> io = new HashMap<Direction, IOPanel>();
 	private int timer = 0;
 	
-	protected LogicBlock(Size size, String name)
+	protected LogicBlock(LogicCore core, String name)
 	{
-		super(size, name);
+		super(core, name);
 		super.UIabsSizeX = 32;
 		super.UIabsSizeY = 32;
 		super.layeredPane.removeAll();
@@ -237,6 +246,35 @@ abstract class LogicBlock extends GridMember
 		this.io.put(Direction.NORTH, new IOPanel(this, Direction.NORTH));
 	}
 	@Override
+	void setData(HashMap<String, String> dataMap)
+	{
+		super.setData(dataMap);
+		this.blocklocationX = new Integer(dataMap.get("blocklocationX"));
+		this.blocklocationY = new Integer(dataMap.get("blocklocationY"));
+		this.power = Power.valueOf(Power.OFF.toString());
+		for(Direction ext : Direction.values())
+		{
+			String data = dataMap.get("io_" + ext);
+			IOPanel ioPanel = new IOPanel(this, ext);
+			ioPanel.setStatus(IOStatus.valueOf(data.split("_")[0]));
+			ioPanel.setOnOffStatus(Power.valueOf(data.split("_")[1]));
+			this.io.put(ext, ioPanel);
+		}
+	}
+	@Override
+	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	{
+		super.getData(dataMap);
+		dataMap.put("blocklocationX", Integer.toString(this.blocklocationX));
+		dataMap.put("blocklocationY", Integer.toString(this.blocklocationY));
+		dataMap.put("power", power.toString());
+		for(Direction ext : Direction.values())
+		{
+			dataMap.put("io_" + ext, this.io.get(ext).getStatus().toString() + "_" + this.io.get(ext).getOnOffStatus().toString());
+		}
+		return dataMap;
+	}
+	/*@Override
 	protected LogicBlock clone(GridMember member)
 	{
 		super.clone(member);
@@ -250,11 +288,10 @@ abstract class LogicBlock extends GridMember
 		cloneMember.io.put(Direction.SOUTH, this.io.get(Direction.SOUTH).clone(cloneMember));
 		cloneMember.io.put(Direction.NORTH, this.io.get(Direction.NORTH).clone(cloneMember));
 		return cloneMember;
-	}
+	}*/
 	@Override
-	void put(int absX, int absY, Grid grid, TaskOperator operator)
+	void put(int absX, int absY, Grid grid)
 	{
-		
 		absX = absX / Size.REGULAR_SIZE;
 		absY = absY / Size.REGULAR_SIZE;
 		this.blocklocationX = absX;
@@ -264,18 +301,18 @@ abstract class LogicBlock extends GridMember
 		{
 			grid.removeMember(grid.logicMembers.get(new Integer(this.getBlockLocationX())).get(this.getBlockLocationY()));
 		}
-		super.put((this.blocklocationX * Size.REGULAR_SIZE), (this.blocklocationY * Size.REGULAR_SIZE),grid,  operator);
+		super.put((this.blocklocationX * Size.REGULAR_SIZE), (this.blocklocationY * Size.REGULAR_SIZE),grid);
 		if(!grid.logicMembers.containsKey(new Integer(this.getBlockLocationX())))
 		{
 			grid.logicMembers.put(new Integer(this.getBlockLocationX()), new HashMap<Integer, LogicBlock>());
 		}
 		grid.logicMembers.get(new Integer(this.getBlockLocationX())).put(new Integer(this.getBlockLocationY()), this);
-		this.operator.checkAroundAndReserveTask(this);
+		super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		System.out.println("ADDMEMBER");
-		super.getGridViewPane().setLocation((this.getUIabsLocationX() + (grid.getNegativeExtendX() * Size.REGULAR_SIZE)) * super.getSize().getmultiple() + Size.MARGIN, (super.getUIabsLocationY() + (grid.getNegativeExtendY() * Size.REGULAR_SIZE)) * super.getSize().getmultiple() + Size.MARGIN);
+		super.getGridViewPane().setLocation((super.getUIabsLocationX() + (grid.getNegativeExtendX() * Size.REGULAR_SIZE)) * super.core.getUI().getUISize().getmultiple() + Size.MARGIN
+										  , (super.getUIabsLocationY() + (grid.getNegativeExtendY() * Size.REGULAR_SIZE)) * super.core.getUI().getUISize().getmultiple() + Size.MARGIN);
 		grid.getGridPanel().add(super.getGridViewPane());
 		grid.selectFocus(this);
-		
 	}
 	@Override
 	protected void remove()
@@ -286,9 +323,9 @@ abstract class LogicBlock extends GridMember
 		{
 			grid.logicMembers.remove(new Integer(this.getBlockLocationX()));
 		}
-		this.operator.removeReserveTask(this);
+		super.core.getTaskOperator().removeReserveTask(this);
 		System.out.println("REMOVEMEMBER");
-		this.operator.checkAroundAndReserveTask(this);
+		super.core.getTaskOperator().checkAroundAndReserveTask(this);
 	}
 	int getBlockLocationX()
 	{
@@ -341,7 +378,7 @@ abstract class LogicBlock extends GridMember
 		super.layeredPane.repaint();
 		if(super.isPlacement())
 		{
-			this.getOperator().checkAroundAndReserveTask(this);
+			super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		}
 	}
 	protected void doToggleIO(Direction ext)
@@ -392,7 +429,7 @@ abstract class LogicBlock extends GridMember
 	{
 		if(this.timer > 0)
 		{
-			this.operator.addReserveTask(this);
+			this.core.getTaskOperator().addReserveTask(this);
 
 			this.activeTimer();
 			this.timer--;
@@ -424,23 +461,12 @@ abstract class LogicBlock extends GridMember
 		return this.power;
 	}
 	void calculate(){}
-	TaskOperator getOperator()
-	{
-		return this.operator;
-	}
 }
 class AND extends LogicBlock
 {
-	AND(Size size)
+	AND(LogicCore core)
 	{
-		super(size, "AND");
-	}
-	@Override
-	public AND clone(Size size)
-	{
-		AND cloneMember = new AND(size);
-		super.clone(cloneMember);
-		return cloneMember;
+		super(core, "AND");
 	}
 	@Override
 	void calculate()
@@ -469,21 +495,13 @@ class AND extends LogicBlock
 	protected void operatorPing()
 	{
 		
-		
 	}
 }
 class OR extends LogicBlock
 {
-	OR(Size size)
+	OR(LogicCore core)
 	{
-		super(size, "OR");
-	}
-	@Override
-	public OR clone(Size size)
-	{
-		OR cloneMember = new OR(size);
-		super.clone(cloneMember);
-		return cloneMember;
+		super(core, "OR");
 	}
 	@Override
 	void calculate()
@@ -500,16 +518,9 @@ class OR extends LogicBlock
 }
 class XOR extends LogicBlock
 {
-	XOR(Size size)
+	XOR(LogicCore core)
 	{
-		super(size, "XOR");
-	}
-	@Override
-	public XOR clone(Size size)
-	{
-		XOR cloneMember = new XOR(size);
-		super.clone(cloneMember);
-		return cloneMember;
+		super(core, "XOR");
 	}
 	@Override
 	void calculate()
@@ -526,33 +537,22 @@ class XOR extends LogicBlock
 }
 class NOT extends LogicBlock
 {
-	NOT(Size size)
+	NOT(LogicCore core)
 	{
-		super(size, "NOT");
-	}
-	@Override
-	public NOT clone(Size size)
-	{
-		NOT cloneMember = new NOT(size);
-		super.clone(cloneMember);
-		return cloneMember;
+		super(core, "NOT");
 	}
 	@Override
 	protected void doToggleIO(Direction ext)
 	{
 		if(super.getIOResiveCount() > 0)
 		{
-			if(this.getIOStatus(ext) == IOStatus.NONE)
+			if(super.getIOStatus(ext) == IOStatus.NONE)
 			{
-				this.io.get(ext).setStatus(IOStatus.TRANCE);
-			}
-			else if(this.getIOStatus(ext) == IOStatus.TRANCE)
-			{
-				this.io.get(ext).setStatus(IOStatus.NONE);
+				super.io.get(ext).setStatus(IOStatus.TRANCE);
 			}
 			else
 			{
-				this.io.get(ext).setStatus(IOStatus.NONE);
+				super.io.get(ext).setStatus(IOStatus.NONE);
 			}
 		}
 		else
@@ -585,9 +585,11 @@ class Button extends LogicBlock
 	private JLabel timeLabel;
 	private int basicTime = 30;
 	
-	Button(Size size)
+	Button(LogicCore core)
 	{
-		super(size, "BTN");
+		super(core, "BTN");
+		this.btn = new TimerButton();
+		this.timeLabel = new JLabel();
 		this.timeLabel.setVerticalAlignment(JTextField.CENTER);
 		this.timeLabel.setHorizontalAlignment(JTextField.CENTER);
 		super.layeredPane.add(this.timeLabel, new Integer(20));
@@ -595,20 +597,27 @@ class Button extends LogicBlock
 		
 	}
 	@Override
-	public Button clone(Size size)
+	void setData(HashMap<String, String> dataMap)
 	{
-		Button cloneMember = new Button(size);
-		super.clone(cloneMember);
-		return cloneMember;
+		super.setData(dataMap);
+		this.basicTime = new Integer(dataMap.get("basicTime"));
+	}
+	@Override
+	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	{
+		super.getData(dataMap);
+		dataMap.put("basicTime", Integer.toString(this.basicTime));
+		return dataMap;
 	}
 	@Override
 	protected void doToggleIO(Direction ext)
 	{
+		System.out.println(this.getIOStatus(ext));
 		if(this.getIOStatus(ext) == IOStatus.NONE)
 		{
 			this.io.get(ext).setStatus(IOStatus.TRANCE);
 		}
-		else if(this.getIOStatus(ext) == IOStatus.TRANCE)
+		else
 		{
 			this.io.get(ext).setStatus(IOStatus.NONE);
 		}
@@ -616,7 +625,7 @@ class Button extends LogicBlock
 	void resetTimer()
 	{
 		super.setTimer(basicTime);
-		this.operator.addReserveTask(this);
+		super.core.getTaskOperator().addReserveTask(this);
 		super.setPowerStatus(Power.ON);
 		this.timeLabel.setText(Integer.toString(super.getTimer()));
 		this.btn.imageSet();
@@ -643,8 +652,9 @@ class Button extends LogicBlock
 		}
 		else
 		{
-			this.timeLabel.setFont(LogicCore.RES.PIXEL_FONT.deriveFont((float)(12 * super.size.getmultiple())));
-			this.timeLabel.setBounds((7 * size.getmultiple()) + super.gridViewPane.getX(), (7 * size.getmultiple()) + super.gridViewPane.getY(), 16 * size.getmultiple(), 16 * size.getmultiple());
+			this.timeLabel.setFont(LogicCore.RES.PIXEL_FONT.deriveFont((float)(12 * super.core.getUI().getUISize().getmultiple())));
+			this.timeLabel.setBounds((7 * super.core.getUI().getUISize().getmultiple()) + super.gridViewPane.getX(), (7 * super.core.getUI().getUISize().getmultiple()) + super.gridViewPane.getY()
+					, 16 * super.core.getUI().getUISize().getmultiple(), 16 * super.core.getUI().getUISize().getmultiple());
 		}
 		if(this.btn == null)
 		{
@@ -652,7 +662,8 @@ class Button extends LogicBlock
 		}
 		else
 		{
-			this.btn.setBounds(7 * size.getmultiple(), 7 * size.getmultiple(), 16 * size.getmultiple(), 16 * size.getmultiple());
+			this.btn.setBounds(7 * super.core.getUI().getUISize().getmultiple(), 7 * super.core.getUI().getUISize().getmultiple()
+					, 16 * super.core.getUI().getUISize().getmultiple(), 16 * super.core.getUI().getUISize().getmultiple());
 			this.btn.imageSet();
 		}
 	}
@@ -674,8 +685,8 @@ class Button extends LogicBlock
 		@Override
 		void imageSet()
 		{
-			super.setBasicImage(LogicCore.getResource().getImage(size.getTag() + "_BUTTON_" + power.getTag()));
-			super.setBasicPressImage(LogicCore.getResource().getImage(size.getTag() + "_BUTTON_PRESS_" + power.getTag()));
+			super.setBasicImage(LogicCore.getResource().getImage(core.getUI().getUISize().getTag() + "_BUTTON_" + power.getTag()));
+			super.setBasicPressImage(LogicCore.getResource().getImage(core.getUI().getUISize().getTag() + "_BUTTON_PRESS_" + power.getTag()));
 			super.imageSet();
 		}
 	}
@@ -688,7 +699,7 @@ class Button extends LogicBlock
 }
 class IOPanel
 {
-	private IOStatus status;
+	private IOStatus status = IOStatus.NONE;
 	private Power power = Power.OFF;
 	private final Direction ext;
 	private final LogicBlock member;
@@ -697,10 +708,10 @@ class IOPanel
 	{
 		this.member = logicMember;
 		this.ext = ext;
-		this.setStatus(IOStatus.NONE);
 	}
 	void setStatus(IOStatus status)
 	{
+		System.out.println("setStatus");
 		this.status = status;
 		if(status == IOStatus.TRANCE)
 		{
@@ -709,9 +720,10 @@ class IOPanel
 		else
 		{
 			this.power = Power.OFF;
+			this.member.calculate();
 		}
-		this.member.calculate();
-		this.image = LogicCore.RES.getImage(member.getSize().getTag() + "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
+		
+		this.image = LogicCore.RES.getImage(member.getCore().getUI().getUISize().getTag() + "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
 	}
 	IOStatus getStatus()
 	{
@@ -720,7 +732,7 @@ class IOPanel
 	void setOnOffStatus(Power power)
 	{
 		this.power = power;
-		this.image = LogicCore.RES.getImage(member.getSize().getTag() + "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
+		this.image = LogicCore.RES.getImage(member.getCore().getUI().getUISize().getTag() + "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
 	}
 	Power getOnOffStatus()
 	{
@@ -757,7 +769,9 @@ class GridViewPane extends JPanel implements SizeUpdate
 	@Override
 	public void sizeUpdate()
 	{
-		this.setSize(member.getUIabsSizeX() * member.getSize().getmultiple(), member.getUIabsSizeX() * member.getSize().getmultiple());
+		System.out.println(this.member.getCore().getGrid().getgridSizeX());
+		this.setSize(this.member.getUIabsSizeX() * this.member.getCore().getUI().getUISize().getmultiple()
+				, this.member.getUIabsSizeX() * this.member.getCore().getUI().getUISize().getmultiple());
 	}
 }
 class LogicViewPane extends GridViewPane
@@ -773,35 +787,38 @@ class LogicViewPane extends GridViewPane
 	@Override
 	public void paint(Graphics g)
 	{
-		g.drawImage(LogicCore.getResource().getImage(logicMember.getSize().getTag() + "_BLOCK_BACKGROUND"), 0, 0, this);
+		g.drawImage(LogicCore.getResource().getImage(super.member.getCore().getUI().getUISize().getTag() + "_BLOCK_BACKGROUND"), 0, 0, this);
 		if(logicMember.getIOStatus(Direction.EAST) != IOStatus.NONE)
 		{
-			g.drawImage(logicMember.getIOImage(Direction.EAST), 25 * member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), this);
+			g.drawImage(logicMember.getIOImage(Direction.EAST), 25 * super.member.getCore().getUI().getUISize().getmultiple(), 7 * super.member.getCore().getUI().getUISize().getmultiple(), this);
 		}
 		if(logicMember.getIOStatus(Direction.WEST) != IOStatus.NONE)
 		{
-			g.drawImage(logicMember.getIOImage(Direction.WEST), 1 * member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), this);
+			g.drawImage(logicMember.getIOImage(Direction.WEST), 1 * super.member.getCore().getUI().getUISize().getmultiple(), 7 * super.member.getCore().getUI().getUISize().getmultiple(), this);
 		}
 		if(logicMember.getIOStatus(Direction.SOUTH) != IOStatus.NONE)
 		{
-			g.drawImage(logicMember.getIOImage(Direction.SOUTH), 7 * member.getSize().getmultiple(), 25 * member.getSize().getmultiple(), this);
+			g.drawImage(logicMember.getIOImage(Direction.SOUTH), 7 * super.member.getCore().getUI().getUISize().getmultiple(), 25 * super.member.getCore().getUI().getUISize().getmultiple(), this);
 		}
 		if(logicMember.getIOStatus(Direction.NORTH) != IOStatus.NONE)
 		{
-			g.drawImage(logicMember.getIOImage(Direction.NORTH), 7 * member.getSize().getmultiple(), 1 * member.getSize().getmultiple(), this);
+			g.drawImage(logicMember.getIOImage(Direction.NORTH), 7 *super.member.getCore().getUI().getUISize().getmultiple(), 1 * super.member.getCore().getUI().getUISize().getmultiple(), this);
 		}
-		g.drawImage(LogicCore.getResource().getImage(logicMember.getSize().getTag() + "_BLOCK_" + logicMember.getPower().getTag()), 7 * member.getSize().getmultiple(), 7 * member.getSize().getmultiple(), this);
+		g.drawImage(LogicCore.getResource().getImage(super.member.getCore().getUI().getUISize().getTag() + "_BLOCK_" + logicMember.getPower().getTag())
+				, 7 * super.member.getCore().getUI().getUISize().getmultiple(), 7 * super.member.getCore().getUI().getUISize().getmultiple(), this);
 		super.paintChildren(g);
 	}
 	@Override
 	public void sizeUpdate()
 	{
-		this.setBounds(member.getSize().getmultiple(), member.getSize().getmultiple(), member.getUIabsSizeX() * member.getSize().getmultiple() - (member.getSize().getmultiple() * 2), member.getUIabsSizeX() * member.getSize().getmultiple() - (member.getSize().getmultiple() * 2));
+		this.setBounds(super.member.getCore().getUI().getUISize().getmultiple(), super.member.getCore().getUI().getUISize().getmultiple()
+				, member.getUIabsSizeX() * super.member.getCore().getUI().getUISize().getmultiple() - (super.member.getCore().getUI().getUISize().getmultiple() * 2)
+				, member.getUIabsSizeX() * super.member.getCore().getUI().getUISize().getmultiple() - (super.member.getCore().getUI().getUISize().getmultiple() * 2));
 	}
 }
 enum IOStatus
 {
-	NONE("RECEIV"), RECEIV("RECEIV"), TRANCE("TRANCE");
+	NONE("NO"), RECEIV("RECEIV"), TRANCE("TRANCE");
 	public final String tag;
 
 	private IOStatus(String tag)

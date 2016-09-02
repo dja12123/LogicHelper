@@ -6,10 +6,18 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
+import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -115,11 +123,10 @@ public class LogicCore
 	}
 	private LogicCore()
 	{
+		this.logicUI = new UI(this);
 		this.taskManager = new TaskManager(this);
 		this.taskOperator = new TaskOperator(this);
-		this.logicUI = new UI(this);
 		this.grid = new Grid(this);
-		this.logicUI.doLayout();
 	}
 	TaskManager getTaskManager()
 	{
@@ -178,7 +185,19 @@ class Resource
 			}
 			for(String imgFile : this.getFileList(IMG_DIR_NAME))
 			{
-				images.put(imgFile.split("[.]")[0], ImageIO.read(this.getFile("/" + IMG_DIR_NAME + "/" + imgFile)));
+				BufferedImage img = ImageIO.read(this.getFile("/" + IMG_DIR_NAME + "/" + imgFile));
+				if(imgFile.contains("_DIRECTION."))
+				{
+					images.put(imgFile.split("[.]")[0].replace("DIRECTION", Direction.EAST.getTag()), this.getRotatedImage(img, Math.PI / 2, img.getHeight(), 0));
+					images.put(imgFile.split("[.]")[0].replace("DIRECTION", Direction.WEST.getTag()), this.getRotatedImage(img, -Math.PI / 2, 0, img.getWidth()));
+					images.put(imgFile.split("[.]")[0].replace("DIRECTION", Direction.SOUTH.getTag()), this.getRotatedImage(img, Math.PI, img.getWidth(), img.getHeight()));
+					images.put(imgFile.split("[.]")[0].replace("DIRECTION", Direction.NORTH.getTag()), img);
+				}
+				else
+				{
+					images.put(imgFile.split("[.]")[0], img);
+				}
+				
 			}
 			BufferedReader in;
 			in = new BufferedReader(new FileReader(this.getFile("/" + LANG_DIR_NAME + "/" + LANG_DFT_TAG_FILE_NAME)));
@@ -232,6 +251,13 @@ class Resource
 		{
 			LogicCore.putConsole(e.toString());
 		}
+	}
+	private BufferedImage getRotatedImage(BufferedImage img, double angle, int startX, int startY)
+	{
+		AffineTransform transform = AffineTransform.getTranslateInstance(startX, startY);
+		transform.rotate(angle);
+	    AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+	    return op.filter(img, null);
 	}
 	String getConfig(String key)
 	{
