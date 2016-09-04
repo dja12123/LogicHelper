@@ -71,9 +71,8 @@ public class LogicCore
 	
 	public static Resource RES;
 	
-	private TaskManager taskManager;
+	private SessionManager session;
 	private TaskOperator taskOperator;
-	private Grid grid;
 	private UI logicUI;
 	
 	public static void main(String[] args)
@@ -124,21 +123,16 @@ public class LogicCore
 	private LogicCore()
 	{
 		this.logicUI = new UI(this);
-		this.taskManager = new TaskManager(this);
+		this.session = new SessionManager(this);
 		this.taskOperator = new TaskOperator(this);
-		this.grid = new Grid(this);
 	}
-	TaskManager getTaskManager()
+	SessionManager getSession()
 	{
-		return this.taskManager;
+		return this.session;
 	}
 	TaskOperator getTaskOperator()
 	{
 		return this.taskOperator;
-	}
-	Grid getGrid()
-	{
-		return this.grid;
 	}
 	UI getUI()
 	{
@@ -241,8 +235,6 @@ class Resource
 					}
 				}
 			}
-			
-			
 			NORMAL_FONT = Font.createFont(Font.TRUETYPE_FONT, new FileInputStream(this.getFile("/" + FONT_DIR_NAME + "/SeoulNamsanM.ttf")));
 			BAR_FONT = Font.createFont(Font.TRUETYPE_FONT, new FileInputStream(this.getFile("/" + FONT_DIR_NAME + "/D2Coding.ttc")));
 			PIXEL_FONT = Font.createFont(Font.TRUETYPE_FONT, new FileInputStream(this.getFile("/" + FONT_DIR_NAME + "/HOOG0557.ttf")));

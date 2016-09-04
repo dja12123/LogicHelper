@@ -10,7 +10,6 @@ import javax.swing.JPanel;
 
 public class TaskOperator
 {
-	private LogicCore core;
 	private Signaller signaller;
 	
 	private int taskTick = 500;
@@ -23,7 +22,6 @@ public class TaskOperator
 	
 	TaskOperator(LogicCore core)
 	{
-		this.core = core;
 		this.graphPanel = new GraphViewPanel();
 		this.graphPanel.setLayout(null);
 		core.getUI().getTaskOperatorPanel().setOperator(this);
@@ -37,11 +35,11 @@ public class TaskOperator
 	}
 	void checkAroundAndReserveTask(LogicBlock block)
 	{//최적화 필요	
-		if(this.core.getGrid().getMembers().contains(block))
+		if(block.isPlacement())
 		{
 			for(Direction ext : Direction.values())
 			{
-				LogicBlock extBlock = this.core.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
+				LogicBlock extBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
 				if(extBlock != null)
 				{
 					if(block.getIOStatus(ext) == IOStatus.RECEIV)
@@ -60,7 +58,7 @@ public class TaskOperator
 		}
 		for(Direction ext : Direction.values())
 		{
-			LogicBlock extBlock = this.core.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
+			LogicBlock extBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
 			if(extBlock != null)
 			{
 				if(block.getIOStatus(ext) == IOStatus.TRANCE)
@@ -81,7 +79,7 @@ public class TaskOperator
 				{
 					this.checkHashPut(extBlock, ext.getAcross(), Power.OFF);
 				}
-				if(!this.core.getGrid().getMembers().contains(block))
+				if(!block.isPlacement())
 				{
 					this.checkHashPut(extBlock, ext.getAcross(), Power.OFF);
 				}
@@ -148,7 +146,7 @@ public class TaskOperator
 		boolean copyTaskFlag = false;
 		for(Direction ext : block.getIOTrance())
 		{
-			LogicBlock outputExtBlock = this.core.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
+			LogicBlock outputExtBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
 			if(outputExtBlock != null)
 			{
 				if(outputExtBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV)

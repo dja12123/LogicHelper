@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.MouseInfo;
@@ -22,11 +23,13 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -39,10 +42,15 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
+import javax.swing.JViewport;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import kr.dja.Grid.GridPanel;
 
 public class UI
 {
@@ -50,6 +58,7 @@ public class UI
 	
 	private Size UI_Size;
 	
+	private GridArea gridArea;
 	private ToolBar toolBar;
 	private UnderBar underBar;
 	private TaskOperatorPanel taskOperatorPanel;
@@ -95,6 +104,7 @@ public class UI
 			}
 		});
 
+		this.gridArea = new GridArea(this);
 		this.taskOperatorPanel = new TaskOperatorPanel();
 		this.palettePanel = new PalettePanel(this);
 		this.infoPanel = new InfoPanel();
@@ -138,10 +148,9 @@ public class UI
 					int compY = (int)(e.getY() - pointComp.getLocation().getY() - pointComp1.getLocation().getY());
 					Component pointComp2 = pointComp1.getComponentAt(compX, compY);
 					Component panelComp = pointComp2.getComponentAt(compX, compY);
-					if(panelComp == core.getGrid().getGridPanel())
+					if(panelComp == getGridArea().getGrid().getGridPanel())
 					{
-						System.out.println("push");
-						Point loc = core.getGrid().getGridScrollPanel().getViewport().getViewPosition().getLocation();
+						Point loc = gridArea.getViewPosition().getLocation();
 						trackedPane.addMemberOnGrid((int)((compX + loc.getX()) - Size.MARGIN) / getUISize().getmultiple(), (int)((compY + loc.getY()) - Size.MARGIN) / getUISize().getmultiple());
 						removeTrackedPane(trackedPane);
 					}
@@ -159,20 +168,24 @@ public class UI
 		this.controlView.add(moveControlView, BorderLayout.CENTER);
 		this.controlView.add(staticControlView, BorderLayout.NORTH);
 		
+		this.mainFrame.add(this.gridArea.getComponent(), BorderLayout.CENTER);
 		this.mainFrame.add(this.toolBar.getComponent(), BorderLayout.NORTH);
 		this.mainFrame.add(this.underBar.getComponent(), BorderLayout.SOUTH);
 		this.mainFrame.add(this.controlView, BorderLayout.EAST);
 
 		this.mainFrame.setVisible(true);
 	}
-	void setGridPanel(Grid grid)
+	GridArea getGridArea()
 	{
-		this.mainFrame.add(grid.getGridScrollPanel(), BorderLayout.CENTER);
-		core.getUI().getUnderBar().setGridSizeInfo(grid.getgridSizeX(), grid.getgridSizeY());
+		return this.gridArea;
 	}
 	TaskOperatorPanel getTaskOperatorPanel()
 	{
 		return this.taskOperatorPanel;
+	}
+	TaskManagerPanel getTaskManagerPanel()
+	{
+		return this.taskManagerPanel;
 	}
 	Size getUISize()
 	{
@@ -207,6 +220,488 @@ public class UI
 	PalettePanel getPalettePanel()
 	{
 		return this.palettePanel;
+	}
+}
+class GridArea implements LogicUIComponent, SizeUpdate
+{
+	private UI logicUI;
+	
+	private Grid grid;
+	
+	private JScrollPane gridScrollPane;
+	private ViewPort viewPort;
+	private RulerPanel horizonRulerScrollPane;
+	private RulerPanel verticalRulerScrollPane;
+	private JPanel side;
+	
+	GridArea(UI ui)
+	{
+		this.logicUI = ui;
+		
+		this.gridScrollPane = new JScrollPane();
+		
+		this.gridScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		this.gridScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+		this.gridScrollPane.getVerticalScrollBar().setUnitIncrement((int)(this.logicUI.getUISize().getWidth() / 2.5));
+		this.gridScrollPane.getHorizontalScrollBar().setUnitIncrement((int)(this.logicUI.getUISize().getWidth() / 2.5));
+		
+		this.horizonRulerScrollPane = new RulerPanel()
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			public void paintComponent(Graphics g)
+			{
+				super.paintComponent(g);
+				if(grid != null)
+				{
+					g.setColor(super.lineColor);
+					g.drawLine(logicUI.getUISize().getWidth() / 2 - 1, 0, logicUI.getUISize().getWidth() / 2 - 1, grid.getGridSize().getY() * logicUI.getUISize().getWidth() + (Size.MARGIN * 2));
+					g.setColor(super.graduationColor);
+					for(int i = 0; i <= grid.getGridSize().getY(); i++)
+					{
+						if((grid.getGridSize().getNY() - i) % 10 == 0 && i != grid.getGridSize().getY())
+						{
+							g.setColor(super.unitColor);
+							g.fillRect(1,(i * logicUI.getUISize().getWidth()) + Size.MARGIN + 1 , (logicUI.getUISize().getWidth() / 2) - 2, logicUI.getUISize().getWidth() - 2);
+							g.setColor(super.graduationColor);
+						}
+						g.fillRect(logicUI.getUISize().getWidth() / 4, (i * logicUI.getUISize().getWidth()) + Size.MARGIN - 1, (i * logicUI.getUISize().getWidth()) + Size.MARGIN, 2);
+					}
+				}
+			}
+			@Override
+			public void sizeUpdate()
+			{
+				this.removeAll();
+				this.setPreferredSize(new Dimension(logicUI.getUISize().getWidth() / 2, (grid.getGridSize().getY() * logicUI.getUISize().getWidth()) + (Size.MARGIN * 2)));
+				for(int i = 0; i < grid.getGridSize().getY(); i++)
+				{
+					JLabel label = new JLabel(Integer.toString(i - grid.getGridSize().getNY()), SwingConstants.CENTER)
+					{
+						private static final long serialVersionUID = 1L;
+						@Override
+						protected void paintComponent(Graphics g)
+						{
+							Graphics2D g2d = (Graphics2D) g.create();
+							g2d.translate(-getSize().getHeight() / 4, getSize().getWidth());
+							g2d.transform(AffineTransform.getQuadrantRotateInstance(-1));
+							super.paintComponent(g2d);
+						}
+					};
+					label.setFont(LogicCore.RES.BAR_FONT.deriveFont((float)(logicUI.getUISize().getWidth() / 3.5)));
+					label.setBounds(0, (logicUI.getUISize().getWidth() * i) + Size.MARGIN, logicUI.getUISize().getWidth(), logicUI.getUISize().getWidth());
+					this.add(label);
+					this.repaint();
+				}
+			}
+		};
+		this.verticalRulerScrollPane = new RulerPanel()
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			public void paintComponent(Graphics g)
+			{
+				super.paintComponent(g);
+				if(grid != null)
+				{
+					g.setColor(super.lineColor);
+					g.drawLine(0, logicUI.getUISize().getWidth() / 2 - 1, grid.getGridSize().getX() * logicUI.getUISize().getWidth() + (Size.MARGIN * 2), logicUI.getUISize().getWidth() / 2 - 1);
+					g.setColor(super.graduationColor);
+					for(int i = 0; i <= grid.getGridSize().getX(); i++)
+					{
+						if((grid.getGridSize().getNX() - i) % 10 == 0 && i != grid.getGridSize().getX())
+						{
+							g.setColor(super.unitColor);
+							g.fillRect((i * logicUI.getUISize().getWidth()) + Size.MARGIN + 1, 1, logicUI.getUISize().getWidth() - 2, (logicUI.getUISize().getWidth() / 2) - 2);
+							g.setColor(super.graduationColor);
+						}
+						g.fillRect((i * logicUI.getUISize().getWidth()) + Size.MARGIN - 1, logicUI.getUISize().getWidth() / 4, 2, logicUI.getUISize().getWidth() / 2);
+					}
+				}
+			}
+			@Override
+			public void sizeUpdate()
+			{
+				this.removeAll();
+				this.setPreferredSize(new Dimension((grid.getGridSize().getX() * logicUI.getUISize().getWidth()) + (Size.MARGIN * 2), logicUI.getUISize().getWidth() / 2));
+				for(int i = 0; i < grid.getGridSize().getX(); i++)
+				{
+					JLabel label = new JLabel(Integer.toString(i - grid.getGridSize().getNX()), SwingConstants.CENTER);
+					label.setFont(LogicCore.RES.BAR_FONT.deriveFont((float)(logicUI.getUISize().getWidth() / 3.5)));
+					label.setBounds((logicUI.getUISize().getWidth() * i) + Size.MARGIN, 0, logicUI.getUISize().getWidth(), logicUI.getUISize().getWidth() / 2);
+					this.add(label);
+					this.repaint();
+				}
+			}
+		};
+		this.side = new JPanel();
+
+		this.viewPort = new ViewPort();
+		
+		this.gridScrollPane.setViewport(viewPort);
+		
+		this.gridScrollPane.setRowHeaderView(this.horizonRulerScrollPane);
+		this.gridScrollPane.setColumnHeaderView(this.verticalRulerScrollPane);
+
+		this.gridScrollPane.setCorner(JScrollPane.LOWER_LEFT_CORNER, this.side);
+		this.gridScrollPane.setCorner(JScrollPane.UPPER_LEFT_CORNER, this.side);
+		this.gridScrollPane.setCorner(JScrollPane.UPPER_RIGHT_CORNER, this.side);
+	}
+	void setGrid(Grid grid)
+	{
+		this.grid = grid;
+		this.viewPort.setView(this.grid.getGridPanel());
+		this.logicUI.getUnderBar().setGridSizeInfo(this.grid.getGridSize());
+		this.sizeUpdate();
+	}
+	Grid getGrid()
+	{
+		return this.grid;
+	}
+	Point getViewPosition()
+	{
+		return this.viewPort.getViewPosition();
+	}
+	void setViewPosition(Point p)
+	{
+		this.viewPort.setViewPosition(p);
+	}
+	@Override
+	public Component getComponent()
+	{
+		return this.gridScrollPane;
+	}
+	private abstract class RulerPanel extends JPanel implements SizeUpdate
+	{
+		private static final long serialVersionUID = 1L;
+		
+		protected Color graduationColor = new Color(140, 150, 190);
+		protected Color unitColor = new Color(180, 200, 230);
+		protected Color lineColor = new Color(122, 138, 153);
+		
+		RulerPanel()
+		{
+			setLayout(null);
+			setBackground(new Color(200, 220, 250));
+		}
+		@Override
+		public void paintComponent(Graphics g)
+		{
+			super.paintComponent(g);
+		}
+	}
+	private class ViewPort extends JViewport implements SizeUpdate
+	{
+		private static final long serialVersionUID = 1L;
+		
+		private JLayeredPane layeredPane;
+
+		private ExpansionPane eastExpansionPane;
+		private ExpansionPane westExpansionPane;
+		private ExpansionPane southExpansionPane;
+		private ExpansionPane northExpansionPane;
+		
+		private Component dftComponent;
+		
+		private Selector selecter;
+		
+		ViewPort()
+		{
+			this.layeredPane = new JLayeredPane();
+			
+			eastExpansionPane = new ExpansionPane(Direction.EAST);
+			westExpansionPane = new ExpansionPane(Direction.WEST);
+			southExpansionPane = new ExpansionPane(Direction.SOUTH);
+			northExpansionPane = new ExpansionPane(Direction.NORTH);
+			
+			this.layeredPane.add(eastExpansionPane, new Integer(3));
+			this.layeredPane.add(westExpansionPane, new Integer(3));
+			this.layeredPane.add(southExpansionPane, new Integer(3));
+			this.layeredPane.add(northExpansionPane, new Integer(3));
+			
+			this.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mousePressed(MouseEvent e)
+				{
+					removeSelecter();
+					if(e.getButton() == 1)
+					{
+						selecter = new Selector(120, 180, 255, 50, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "���� ��� �߰� ����")
+						{
+							private static final long serialVersionUID = 1L;
+							
+							@Override
+							void selectAction(GridMember member)
+							{
+								if(!grid.isSelect(member) || grid.isFocusSelect(member))
+								{											
+									if(!super.selectMember.contains(member))
+									{
+										super.selectMember.add(member);
+									}
+								}
+							}
+							@Override
+							void actionFinal()
+							{
+								grid.select(super.selectMember);
+							}
+						};
+						
+					}
+					else if(e.getButton() == 3)
+					{
+						selecter = new Selector(255, 180, 120, 50, e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY(), "���� ��� ���� ����")
+						{
+							private static final long serialVersionUID = 1L;
+
+							@Override
+							void selectAction(GridMember member)
+							{
+								if(grid.isSelect(member))
+								{											
+									if(!super.selectMember.contains(member))
+									{
+										super.selectMember.add(member);
+									}
+								}
+							}
+							@Override
+							void actionFinal()
+							{
+								grid.deSelect(super.selectMember);
+							}
+						};
+					}
+					
+				}
+				@Override
+				public void mouseReleased(MouseEvent e)
+				{
+					removeSelecter();
+				}
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					if(e.getButton() == 1)
+					{
+						for(UUID memberID : grid.getMembers().keySet())
+						{
+							GridMember member = grid.getMembers().get(memberID);
+							if((member.getGridViewPane().getX() < e.getX() + (int)getViewPosition().getX() && member.getGridViewPane().getX() + member.getGridViewPane().getWidth() > e.getX() + (int)getViewPosition().getX())
+							&& (member.getGridViewPane().getY() < e.getY() + (int)getViewPosition().getY() && member.getGridViewPane().getY() + member.getGridViewPane().getHeight() > e.getY() + (int)getViewPosition().getY()))
+							{
+								grid.selectFocus(member);
+							}
+						}
+					}
+				}
+			});
+			this.addMouseMotionListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseDragged(MouseEvent e)
+				{
+					if(selecter != null)
+					{
+						selecter.action(e.getX(), e.getY(), (int)getViewPosition().getX(), (int)getViewPosition().getY());
+					}
+					
+				}
+			});
+			this.addChangeListener(new ChangeListener(){
+
+				@Override
+				public void stateChanged(ChangeEvent arg0)
+				{
+					if(selecter != null)
+					{
+						selecter.action((int)getViewPosition().getX(), (int)getViewPosition().getY());
+					}
+
+				}
+				
+			});
+			super.setView(layeredPane);
+		}
+		void removeSelecter()
+		{
+			if(selecter != null)
+			{
+				selecter.actionFinal();
+				layeredPane.remove(selecter);
+				selecter = null;
+				layeredPane.repaint();
+			}
+		}
+		@Override
+		public void setView(Component p)
+		{
+			if(this.dftComponent != null)
+			{
+				this.layeredPane.remove(this.dftComponent);
+			}
+			this.dftComponent = p;
+			this.layeredPane.add(this.dftComponent, new Integer(1));
+			this.sizeUpdate();
+		}
+		@Override
+		public void setViewPosition(Point p)
+		{
+			super.setViewPosition(p);
+			if(grid != null)
+			{
+				eastExpansionPane.setLocation(dftComponent.getWidth() - eastExpansionPane.getWidth() - 3, (this.getHeight() / 2) + p.y - (eastExpansionPane.getHeight() / 2));
+				westExpansionPane.setLocation(3, (this.getHeight() / 2) + p.y - (westExpansionPane.getHeight() / 2));
+				southExpansionPane.setLocation((this.getWidth() / 2) + p.x - (southExpansionPane.getWidth() / 2), dftComponent.getHeight() - southExpansionPane.getHeight() - 3);
+				northExpansionPane.setLocation((this.getWidth() / 2) + p.x - (southExpansionPane.getWidth() / 2), 3);
+				if((this.getSize().width - grid.getGridPanel().getSize().width) > 0)
+				{
+					eastExpansionPane.setLocation(eastExpansionPane.getLocation().x + (this.getSize().width - grid.getGridPanel().getSize().width), eastExpansionPane.getLocation().y);
+				}
+				if((this.getSize().height - grid.getGridPanel().getSize().height) > 0)
+				{
+					southExpansionPane.setLocation(southExpansionPane.getLocation().x , southExpansionPane.getLocation().y + (this.getSize().height - grid.getGridPanel().getSize().height));
+				}
+			}
+		}
+		@Override
+		public void sizeUpdate()
+		{
+			this.layeredPane.setPreferredSize(new Dimension(this.dftComponent.getWidth(), this.dftComponent.getHeight()));
+		}
+		private abstract class Selector extends JPanel
+		{
+			private static final long serialVersionUID = 1L;
+			
+			private int r, g, b;
+			private int startX, startY, startViewX, startViewY;
+			private int mouseX, mouseY;
+			protected ArrayList<GridMember> selectMember;
+			private SelectControlPanel selectControlPanel;
+			private String text;
+
+			Selector(int r, int g, int b, int a, int startX, int startY, int startViewX, int startViewY, String text)
+			{
+				this.r = r;
+				this.g = g;
+				this.b = b;
+				this.startX = startX;
+				this.startY = startY;
+				this.mouseX = startX;
+				this.mouseY = startY;
+				this.startViewX = startViewX;
+				this.startViewY = startViewY;
+				this.text = text;
+				this.setBackground(new Color(r, g, b, a));
+				this.setSize(0, 0);
+				this.action(startX, startY, startViewX, startViewY);
+				layeredPane.add(this, new Integer(2));
+			}
+			private void action(int mouseX, int mouseY, int viewX, int viewY)
+			{
+				this.mouseX = mouseX;
+				this.mouseY = mouseY;
+				this.setSize(Math.abs(this.mouseX - this.startX + ((int)getViewPosition().getX() - startViewX)), 
+					    Math.abs(this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)));
+				this.setLocation((this.mouseX - this.startX + ((int)getViewPosition().getX() - startViewX)) > 0 ? this.getX() : (int)this.startX + startViewX - Math.abs(this.mouseX - this.startX + ((int)getViewPosition().getX() - startViewX)), 
+						    (this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)) > 0 ? this.getY() : (int)this.startY + startViewY - Math.abs(this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)));
+				layeredPane.repaint();
+				this.selectMember = new ArrayList<GridMember>();
+				for(UUID memberID : grid.getMembers().keySet())
+				{
+					GridMember member = grid.getMembers().get(memberID);
+					if((this.getX() < member.getGridViewPane().getX() && this.getX() + this.getWidth() > member.getGridViewPane().getX() + member.getGridViewPane().getWidth())
+					 && this.getY() < member.getGridViewPane().getY() && this.getY() + this.getHeight() > member.getGridViewPane().getY() + member.getGridViewPane().getHeight())
+					{
+						selectAction(member);
+					}
+					else
+					{
+						if(this.selectMember.contains(member))
+						{
+							this.selectMember.remove(member);
+						}
+					}
+				}
+				if(this.selectMember.size() > 0 && this.selectControlPanel == null)
+				{
+					this.selectControlPanel = new SelectControlPanel(text, logicUI.getBlockControlPanel());
+				}
+				if(this.selectControlPanel != null)
+				{
+					this.selectControlPanel.setNumber(this.selectMember.size());
+				}
+				grid.selectSign(this.selectMember);
+			}
+			void action(int viewX, int viewY)
+			{
+				this.action(mouseX, mouseY, viewX, viewY);
+			}
+			@Override
+			public void paint(Graphics g)
+			{
+				g.setColor(new Color(this.r, this.g, this.b));
+				g.drawRect(0, 0, this.getWidth() - 1, this.getHeight() - 1);
+				super.paint(g);
+			}
+			abstract void selectAction(GridMember member);
+			abstract void actionFinal();
+		}
+		private class ExpansionPane extends JPanel
+		{
+			private static final long serialVersionUID = 1L;
+			
+			private final Direction ext;
+			
+			ExpansionPane(Direction ext)
+			{
+				super();
+				this.ext = ext;
+				this.setLayout(new BoxLayout(this, Math.abs(ext.getWayY())));
+				JPanel inRedPanel = new JPanel();
+				inRedPanel.setLayout(new BoxLayout(inRedPanel, Math.abs(ext.getWayX())));
+				JPanel inExtPanel = new JPanel();
+				inExtPanel.setLayout(new BoxLayout(inExtPanel, Math.abs(ext.getWayX())));
+				this.setSize((Math.abs(ext.getWayY()) + 1) * 44, (Math.abs(ext.getWayX()) + 1) * 44);
+				
+				inExtPanel.add(new SizeEditButton("GRID_EXTEND", this.ext, 1));
+				inExtPanel.add(new SizeEditButton("GRID_EXTEND_PLUS", this.ext, 10));
+				
+				inRedPanel.add(new SizeEditButton("GRID_EXTEND", this.ext.getAcross(), -1));
+				inRedPanel.add(new SizeEditButton("GRID_EXTEND_PLUS", this.ext.getAcross(), -10));
+				this.add(ext.getWayX() + ext.getWayY() >= 0 ? inRedPanel : inExtPanel);
+				this.add(ext.getWayX() + ext.getWayY() >= 0 ? inExtPanel : inRedPanel);
+			}
+			private class SizeEditButton extends ButtonPanel
+			{
+				private static final long serialVersionUID = 1L;
+				private final int editSize;
+				private final Direction tagExt;
+				
+				SizeEditButton(String imgTag, Direction ext, int size)
+				{
+					this.editSize = size;
+					this.tagExt = ext;
+					super.setBasicImage(LogicCore.getResource().getImage(imgTag + "_" + tagExt.getTag()));
+					super.setOnMouseImage(LogicCore.getResource().getImage(imgTag + "_SELECT_" + tagExt.getTag()));
+					super.setBasicPressImage(LogicCore.getResource().getImage(imgTag + "_PUSH_" + tagExt.getTag()));
+				}
+				@Override
+				void pressed(int mouse)
+				{
+					grid.gridResize(ext, editSize);
+				}
+			}
+		}
+	}
+	public void sizeUpdate()
+	{
+		this.grid.getGridPanel().sizeUpdate();
+		this.viewPort.sizeUpdate();
+		this.horizonRulerScrollPane.sizeUpdate();
+		this.verticalRulerScrollPane.sizeUpdate();
 	}
 }
 class ToolBar implements LogicUIComponent
@@ -331,9 +826,9 @@ class UnderBar implements LogicUIComponent
 		this.underbar.add(leftSidePanel, BorderLayout.WEST);
 		this.underbar.add(rightSidePanel, BorderLayout.EAST);
 	}
-	void setGridSizeInfo(int x, int y)
+	void setGridSizeInfo(SizeInfo info)
 	{
-		this.sizeLabel.setText("X: " + x + "  Y: " + y);
+		this.sizeLabel.setText("X: " + info.getX() + "  Y: " + info.getY());
 		this.underbar.repaint();
 	}
 	@Override
@@ -399,6 +894,7 @@ class TaskOperatorPanel implements LogicUIComponent
 		this.graphPanel.setBounds(8, 20, 148, 90);
 		this.graphPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
 		this.taskOperatorPanel.add(this.graphPanel);
+		this.taskOperatorPanel.repaint();
 		this.taskIntervalLabel.setText(Integer.toString(operator.getTaskTick()));
 	}
 	@Override
@@ -612,7 +1108,7 @@ class PalettePanel implements LogicUIComponent
 				else if(button == 3)
 				{
 					selectControlPanel.setInfo(putMember);
-					logicUI.getCore().getGrid().deSelectAll();
+					logicUI.getGridArea().getGrid().deSelectAll();
 					logicUI.getBlockControlPanel().addControlPanel(selectControlPanel);
 				}
 			}
@@ -623,7 +1119,6 @@ class PalettePanel implements LogicUIComponent
 		}
 	}
 }
-
 class TemplatePanel implements LogicUIComponent
 {
 	private JPanel templatePanel;
@@ -695,10 +1190,6 @@ class TaskManagerPanel implements LogicUIComponent
 		this.taskManagerPanel.setLayout(new BorderLayout());
 		this.taskManagerPanel.setBorder(new PanelBorder("�۾�"));
 		
-		this.taskScrollPane = new JScrollPane();
-		this.taskScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		this.taskScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-		
 		this.buttonAreaPanel = new JPanel();
 		this.buttonAreaPanel.setPreferredSize(new Dimension(30, 0));
 		this.buttonAreaPanel.setLayout(null);
@@ -709,9 +1200,17 @@ class TaskManagerPanel implements LogicUIComponent
 		this.buttonAreaPanel.add(this.TaskUndoButton);
 		this.buttonAreaPanel.add(this.TaskRedoButton);
 		
+		this.taskScrollPane = new JScrollPane();
+		this.taskScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		this.taskScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+		
 		this.taskManagerPanel.add(this.taskScrollPane, BorderLayout.CENTER);
 		this.taskManagerPanel.add(this.buttonAreaPanel, BorderLayout.EAST);
-		
+	}
+	void setManager(TaskManager manager)
+	{
+		this.taskScrollPane.setViewportView(manager.getPanel());
+		this.taskScrollPane.revalidate();
 	}
 	@Override
 	public Component getComponent()
@@ -839,7 +1338,7 @@ class EditPane extends JPanel
 		@Override
 		void pressed(int mouse)
 		{
-			member.remove();
+			member.getGrid().removeMember(member.getUUID());
 		}
 	};
 	private ButtonPanel disableButton = new ButtonPanel(325, 100, 20, 20);
@@ -997,15 +1496,15 @@ class TrackedPane extends JPanel implements SizeUpdate
 	}
 	void addMemberOnGrid(int absX, int absY)
 	{
-		int stdX = absX - ((this.getWidth() / 2) / this.logicUI.getUISize().getmultiple()) - (this.logicUI.getCore().getGrid().getNegativeExtendX() * Size.REGULAR_SIZE);
-		int stdY = absY - ((this.getHeight() / 2) / this.logicUI.getUISize().getmultiple()) - (this.logicUI.getCore().getGrid().getNegativeExtendY() * Size.REGULAR_SIZE);
+		int stdX = absX - ((this.getWidth() / 2) / this.logicUI.getUISize().getmultiple()) - (this.logicUI.getGridArea().getGrid().getGridSize().getNX() * Size.REGULAR_SIZE);
+		int stdY = absY - ((this.getHeight() / 2) / this.logicUI.getUISize().getmultiple()) - (this.logicUI.getGridArea().getGrid().getGridSize().getNY() * Size.REGULAR_SIZE);
 		stdX = stdX > 0 ? stdX + (Size.REGULAR_SIZE / 2) : stdX - (Size.REGULAR_SIZE / 2);
 		stdY = stdY > 0 ? stdY + (Size.REGULAR_SIZE / 2) : stdY - (Size.REGULAR_SIZE / 2);
 		stdX = (stdX / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
 		stdY = (stdY / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
 		for(GridMember member : members)
 		{
-			this.logicUI.getCore().getGrid().addMember(member, stdX, stdY);
+			this.logicUI.getGridArea().getGrid().addMember(member, stdX, stdY);
 			//TODO
 		}
 		this.removeAll();
@@ -1181,6 +1680,32 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		NONE, PRESS, ONMOUSE;
 	}
 
+}
+enum Size
+{
+	SMALL(1, "SMALL"), MIDDLE(2, "MIDDLE"), BIG(4, "BIG");
+	public static final int REGULAR_SIZE = 32;
+	public static final int MARGIN = 50;
+	
+	public final int multiple;
+	public final String tag;
+	private Size(int multiple, String tag)
+	{
+		this.multiple = multiple;
+		this.tag = tag;
+	}
+	public int getmultiple()
+	{
+		return multiple;
+	}
+	public int getWidth()
+	{
+		return REGULAR_SIZE * multiple;
+	}
+	public String getTag()
+	{
+		return this.tag;
+	}
 }
 interface SizeUpdate
 {
