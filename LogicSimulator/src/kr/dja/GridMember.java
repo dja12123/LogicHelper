@@ -56,6 +56,8 @@ public abstract class GridMember implements SizeUpdate
 		dataMap.put("UIabslocationY", Integer.toString(this.UIabslocationY));
 		dataMap.put("UIabsSizeX", Integer.toString(this.UIabsSizeX));
 		dataMap.put("UIabsSizeY", Integer.toString(this.UIabsSizeY));
+		dataMap.put("placement", Boolean.toString(this.placement));
+		System.out.println(this.placement);
 		if(this.grid != null)
 		{
 			dataMap.put("grid", this.grid.getID().toString());
@@ -119,7 +121,6 @@ public abstract class GridMember implements SizeUpdate
 	void remove()
 	{
 		this.placement = false;
-		this.grid = null;
 	}
 	boolean isPlacement()
 	{

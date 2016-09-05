@@ -58,7 +58,8 @@ public class TaskOperator
 		}
 		for(Direction ext : Direction.values())
 		{
-			LogicBlock extBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
+			LogicBlock extBlock = block.getGrid() != null ? block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX()
+					, block.getBlockLocationY() + ext.getWayY()) : null;
 			if(extBlock != null)
 			{
 				if(block.getIOStatus(ext) == IOStatus.TRANCE)
@@ -146,30 +147,27 @@ public class TaskOperator
 		boolean copyTaskFlag = false;
 		for(Direction ext : block.getIOTrance())
 		{
-			LogicBlock outputExtBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
-			if(outputExtBlock != null)
+			LogicBlock outputExtBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX()
+					, block.getBlockLocationY() + ext.getWayY());
+	
+			if(outputExtBlock != null && outputExtBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV
+					&& block.getPower() != outputExtBlock.getIOPower(ext.getAcross()))
 			{
-				if(outputExtBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV)
+				Power power = outputExtBlock.getPower();
+				System.out.println("isResive" + power);
+				outputExtBlock.setIOResivePower(ext.getAcross(), block.getPower());
+				if(power != outputExtBlock.getPower())
 				{
-					if(block.getPower() != outputExtBlock.getIOPower(ext.getAcross()))
+					System.out.println("Task");
+					if(!taskList.contains(outputExtBlock))
 					{
-						Power power = outputExtBlock.getPower();
-						System.out.println("isResive" + power);
-						outputExtBlock.setIOResivePower(ext.getAcross(), block.getPower());
-						if(power != outputExtBlock.getPower())
-						{
-							System.out.println("Task");
-							if(!taskList.contains(outputExtBlock))
-							{
-								taskList.add(outputExtBlock);
-								recursiveTask(outputExtBlock, copyTaskFlag ? (ArrayList<LogicBlock>) taskList.clone() : taskList);
-								copyTaskFlag = true;
-							}
-							else
-							{
-								System.out.println("회로가 통구이가 되었습니다" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
-							}
-						}
+						taskList.add(outputExtBlock);
+						recursiveTask(outputExtBlock, copyTaskFlag ? (ArrayList<LogicBlock>) taskList.clone() : taskList);
+						copyTaskFlag = true;
+					}
+					else
+					{
+						System.out.println("회로가 통구이가 되었습니다" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
 					}
 				}
 			}

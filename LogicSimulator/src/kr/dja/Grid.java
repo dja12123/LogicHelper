@@ -7,8 +7,11 @@ import java.util.*;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.UndoableEdit;
 
-public class Grid
+public class Grid implements UndoableEdit
 {
 	static int count = 0;
 	
@@ -137,24 +140,29 @@ public class Grid
 			if((gridPanel.getWidth() - Size.MARGIN < member.getGridViewPane().getX() + member.getGridViewPane().getWidth() || Size.MARGIN > member.getGridViewPane().getX())
 			|| (gridPanel.getHeight() - Size.MARGIN < member.getGridViewPane().getY() + member.getGridViewPane().getHeight() || Size.MARGIN > member.getGridViewPane().getY()))
 			{
-				removeMember(member.getUUID());
+				removeMember(member.getUUID(), true);
 			}
 		}
+		this.session.getTaskManager().setTask().setData(this, true);
 		this.session.getCore().getUI().getUnderBar().setGridSizeInfo(this.gridSize);
 	}
-	void gridResize(SizeInfo size)
+	void gridResize(SizeInfo size, boolean record)
 	{
+		System.out.println("size");
 		this.gridSize.setData(size);
-		this.session.getCore().getUI().getGridArea().sizeUpdate();
 		this.deSelectAll();
 		this.session.getCore().getUI().getUnderBar().setGridSizeInfo(this.gridSize);
-		this.gridPanel.sizeUpdate();
+		this.session.getCore().getUI().getGridArea().sizeUpdate();
+		if(record)
+		{
+			this.session.getTaskManager().setTask().setData(this, true);
+		}
 	}
 	GridPanel getGridPanel()
 	{
 		return this.gridPanel;
 	}
-	void addMember(GridMember member, int absX, int absY)
+	void addMember(GridMember member, int absX, int absY, boolean record)
 	{
 		if(absX < (this.gridSize.getX() - this.gridSize.getNX()) * Size.REGULAR_SIZE && absY < (this.gridSize.getY() - this.gridSize.getNY()) * Size.REGULAR_SIZE
 		&& absX > - (this.gridSize.getNX() + 1) * Size.REGULAR_SIZE && absY > - (this.gridSize.getNY() + 1) * Size.REGULAR_SIZE)
@@ -167,7 +175,7 @@ public class Grid
 				LogicBlock logicMember = (LogicBlock)member;
 				if(this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX())) && this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).containsKey(logicMember.getBlockLocationY()))
 				{
-					this.removeMember(this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).get(logicMember.getBlockLocationY()).getUUID());
+					this.removeMember(this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).get(logicMember.getBlockLocationY()).getUUID(), true);
 				}
 				if(!this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX())))
 				{
@@ -178,9 +186,13 @@ public class Grid
 			}
 			this.getGridPanel().add(member.getGridViewPane());
 			this.selectFocus(member);
+			if(record)
+			{
+				this.session.getTaskManager().setTask().setData(member);
+			}
 		}
 	}
-	void removeMember(UUID id)
+	void removeMember(UUID id, boolean record)
 	{
 		System.out.println("removeMember " + id.toString());
 		GridMember removeMember = this.members.get(id);
@@ -200,8 +212,12 @@ public class Grid
 			this.session.getCore().getTaskOperator().removeReserveTask(removeBlock);
 			this.session.getCore().getTaskOperator().checkAroundAndReserveTask(removeBlock);
 		}
+		if(record)
+		{
+			this.session.getTaskManager().setTask().setData(removeMember);
+		}
 	}
-	void recover(HashMap<HashMap<String, String>, Boolean> dataMap, SizeInfo sizeInfo, boolean back)
+	/*void recover(HashMap<HashMap<String, String>, Boolean> dataMap, SizeInfo sizeInfo, boolean back)
 	{
 		this.gridResize(sizeInfo);
 		for(HashMap<String, String> data : dataMap.keySet())
@@ -218,7 +234,7 @@ public class Grid
 				this.removeMember(UUID.fromString(data.get("id")));
 			}
 		}
-	}
+	}*/
 	HashMap<UUID, GridMember> getMembers()
 	{
 		return this.members;
@@ -402,6 +418,61 @@ public class Grid
 			}
 			this.repaint();
 		}
+	}
+	@Override
+	public boolean addEdit(UndoableEdit arg0) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public boolean canRedo() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public boolean canUndo() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public void die() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public String getPresentationName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String getRedoPresentationName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String getUndoPresentationName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public boolean isSignificant() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public void redo() throws CannotRedoException {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public boolean replaceEdit(UndoableEdit arg0) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public void undo() throws CannotUndoException {
+		// TODO Auto-generated method stub
+		
 	}
 }
 class SizeInfo

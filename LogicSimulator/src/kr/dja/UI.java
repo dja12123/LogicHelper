@@ -17,6 +17,8 @@ import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -39,6 +41,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
@@ -1158,9 +1161,9 @@ class TemplatePanel implements LogicUIComponent
 		this.clipBoardPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
 		
 		this.templateScrollPane = new JScrollPane();
+		this.templateScrollPane.setPreferredSize(new Dimension(0, 200));
 		this.templateScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		this.templateScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-		
 		this.templateAreaPanel.add(this.templateScrollPane, BorderLayout.CENTER);
 		this.templateAreaPanel.add(this.clipBoardPanel, BorderLayout.NORTH);
 		
@@ -1182,6 +1185,7 @@ class TaskManagerPanel implements LogicUIComponent
 	private JPanel buttonAreaPanel;
 	private UIButton TaskUndoButton;
 	private UIButton TaskRedoButton;
+
 	
 	TaskManagerPanel()
 	{
@@ -1201,8 +1205,10 @@ class TaskManagerPanel implements LogicUIComponent
 		this.buttonAreaPanel.add(this.TaskRedoButton);
 		
 		this.taskScrollPane = new JScrollPane();
+		this.taskScrollPane.setPreferredSize(new Dimension(0, 200));
 		this.taskScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		this.taskScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+		this.taskScrollPane.getVerticalScrollBar().setUnitIncrement(8);
 		
 		this.taskManagerPanel.add(this.taskScrollPane, BorderLayout.CENTER);
 		this.taskManagerPanel.add(this.buttonAreaPanel, BorderLayout.EAST);
@@ -1210,7 +1216,8 @@ class TaskManagerPanel implements LogicUIComponent
 	void setManager(TaskManager manager)
 	{
 		this.taskScrollPane.setViewportView(manager.getPanel());
-		this.taskScrollPane.revalidate();
+		JScrollBar vertical = this.taskScrollPane.getVerticalScrollBar();
+		vertical.setValue(manager.getPanel().getHeight());
 	}
 	@Override
 	public Component getComponent()
@@ -1338,7 +1345,7 @@ class EditPane extends JPanel
 		@Override
 		void pressed(int mouse)
 		{
-			member.getGrid().removeMember(member.getUUID());
+			member.getGrid().removeMember(member.getUUID(), true);
 		}
 	};
 	private ButtonPanel disableButton = new ButtonPanel(325, 100, 20, 20);
@@ -1504,7 +1511,7 @@ class TrackedPane extends JPanel implements SizeUpdate
 		stdY = (stdY / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
 		for(GridMember member : members)
 		{
-			this.logicUI.getGridArea().getGrid().addMember(member, stdX, stdY);
+			this.logicUI.getGridArea().getGrid().addMember(member, stdX, stdY, true);
 			//TODO
 		}
 		this.removeAll();

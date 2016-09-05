@@ -37,13 +37,17 @@ class Session
 	{
 		
 	}
-	void loadData(String location)
+	void Session(String location)
 	{
 		
 	}
 	void close()
 	{
 		
+	}
+	TaskManager getTaskManager()
+	{
+		return this.manager;
 	}
 	LogicCore getCore()
 	{
