@@ -11,7 +11,7 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 
-public class Grid implements UndoableEdit
+public class Grid
 {
 	static int count = 0;
 	
@@ -27,8 +27,8 @@ public class Grid implements UndoableEdit
 
 	private GridPanel gridPanel;
 	private SizeInfo gridSize;
-	public final int MAX_SIZE = 100;
-	public final int MAX_ABSOLUTE = 150;
+	private int MAX_SIZE = 100;
+	private int MAX_ABSOLUTE = 150;
 	
 	private GridMember selectFocusMember;
 
@@ -50,7 +50,25 @@ public class Grid implements UndoableEdit
 		label.setBounds(0, 0, 200, 30);
 		this.gridPanel.add(label);
 	}
-	UUID getID()
+	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	{
+		dataMap.put("gridSizeX", Integer.toString(this.gridSize.getX()));
+		dataMap.put("gridSizeY", Integer.toString(this.gridSize.getY()));
+		dataMap.put("gridSizeNX", Integer.toString(this.gridSize.getNX()));
+		dataMap.put("gridSizeNY", Integer.toString(this.gridSize.getNY()));
+		dataMap.put("MAX_SIZE", Integer.toString(this.MAX_SIZE));
+		dataMap.put("MAX_ABSOLUTE", Integer.toString(this.MAX_ABSOLUTE));
+		return dataMap;
+	}
+	void setData(HashMap<String, String> dataMap)
+	{
+		SizeInfo size = new SizeInfo(new Integer(dataMap.get("gridSizeX")), new Integer(dataMap.get("gridSizeY"))
+		, new Integer(dataMap.get("gridSizeNX")), new Integer(dataMap.get("gridSizeNY")));
+		this.gridResize(size, false);
+		this.MAX_SIZE = new Integer(dataMap.get("MAX_SIZE"));
+		this.MAX_ABSOLUTE = new Integer(dataMap.get("MAX_ABSOLUTE"));
+	}
+	UUID getUUID()
 	{
 		return this.id;
 	}
@@ -418,61 +436,6 @@ public class Grid implements UndoableEdit
 			}
 			this.repaint();
 		}
-	}
-	@Override
-	public boolean addEdit(UndoableEdit arg0) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	@Override
-	public boolean canRedo() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	@Override
-	public boolean canUndo() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	@Override
-	public void die() {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public String getPresentationName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public String getRedoPresentationName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public String getUndoPresentationName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public boolean isSignificant() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	@Override
-	public void redo() throws CannotRedoException {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public boolean replaceEdit(UndoableEdit arg0) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	@Override
-	public void undo() throws CannotUndoException {
-		// TODO Auto-generated method stub
-		
 	}
 }
 class SizeInfo

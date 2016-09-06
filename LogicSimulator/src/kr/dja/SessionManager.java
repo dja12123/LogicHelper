@@ -37,7 +37,7 @@ class Session
 	{
 		
 	}
-	void Session(String location)
+	void Session(String fileLocation)
 	{
 		
 	}

@@ -54,6 +54,7 @@ public class TaskManager
 	{
 		this.lastCheckTime = (int)System.currentTimeMillis() / 1000;
 		TaskSnapShot nowCreateSnapShot = new TaskSnapShot(this, this.getLastSnapShot());
+
 		nowCreateSnapShot.getView().setLocation(WGAP, this.snapShots.size() * (nowCreateSnapShot.getView().getHeight() + HGAP));
 		this.taskPanel.add(nowCreateSnapShot.getView());
 		if(this.getLastSnapShot() != null)
@@ -88,17 +89,13 @@ public class TaskManager
 		this.snapShots.remove(snap);
 		this.reSizeTaskPanel();
 	}
-	void checkSnapShotCount()
+	private void checkSnapShotCount()
 	{
 		int i = this.snapShots.size() - this.maxSnapShot - 1;
 		while(i > 0)
 		{
 			TaskSnapShot removeSnapShot = this.snapShots.get(i);
 			this.taskPanel.remove(removeSnapShot.getView());
-			if(removeSnapShot.getAfterLinkedSnapShot() != null)
-			{
-				removeSnapShot.getAfterLinkedSnapShot().removeBeforeLinkedSnapShot();
-			}
 			this.snapShots.remove(removeSnapShot);
 		}
 	}
@@ -111,18 +108,117 @@ public class TaskManager
 		return this.session;
 	}
 }
+class TaskUnit
+{
+	private TaskSnapShot beforeSnapShot;
+	private TaskSnapShot afterSnapShot;
+	
+	private TaskButton snapShotView;
+	private JLabel stateLabel;
+	
+	TaskUnit()
+	{
+		this.beforeSnapShot = new TaskSnapShot();
+		this.afterSnapShot = new TaskSnapShot();
+		this.snapShotView = new TaskButton();
+		this.stateLabel = new JLabel();
+		this.stateLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
+		this.stateLabel.setBounds(5, 0, 200, 30);
+	}
+	void addEditBefore(GridMember member)
+	{
+		if(!this.beforeSnapShot.editSnapMembers.containsKey(member.getUUID()))
+		{
+			this.beforeSnapShot.editSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+		}
+	}
+	void addEditAfter(GridMember member)
+	{
+		this.afterSnapShot.editSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+	}
+	void addCreate(GridMember member)
+	{
+		if(!this.beforeSnapShot.removeSnapMembers.contains(member.getUUID()))
+		{
+			this.beforeSnapShot.removeSnapMembers.add(member.getUUID());
+		}
+		this.afterSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+	}
+	void addRemove(GridMember member)
+	{
+		this.beforeSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+		if(!this.afterSnapShot.removeSnapMembers.contains(member.getUUID()))
+		{
+			this.afterSnapShot.removeSnapMembers.add(member.getUUID());
+		}
+	}
+	void addEditBefore(Grid grid)
+	{
+		if(!this.beforeSnapShot.editSnapGrids.containsKey(grid.getUUID()))
+		{
+			this.beforeSnapShot.editSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+		}
+	}
+	void addEditAfter(Grid grid)
+	{
+		this.afterSnapShot.editSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+	}
+	void addCreate(Grid grid)
+	{
+		if(!this.beforeSnapShot.removeSnapGrids.contains(grid.getUUID()))
+		{
+			this.beforeSnapShot.removeSnapGrids.add(grid.getUUID());
+		}
+		this.afterSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+	}
+	void addRemove(Grid grid)
+	{
+		this.beforeSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+		if(!this.afterSnapShot.removeSnapGrids.contains(grid.getUUID()))
+		{
+			this.afterSnapShot.removeSnapGrids.add(grid.getUUID());
+		}
+	}
+	void setLabel(String str)
+	{
+		this.stateLabel.setText(str);
+	}
+	TaskButton getView()
+	{
+		return this.snapShotView;
+	}
+	class TaskButton extends ButtonPanel
+	{
+		private static final long serialVersionUID = 1L;
+		
+		TaskButton()
+		{
+			this.setSize(TaskManager.COMPW, 30);
+			this.setLayout(null); 
+		}
+		@Override
+		void pressed(int button)
+		{
+			
+		}
+	}
+}
 class TaskSnapShot
 {
-	private HashMap<UUID, HashMap<String, String>> snapMembers = new HashMap<UUID, HashMap<String, String>>();
-	private HashMap<UUID, GridData> snapGrids = new HashMap<UUID, GridData>(); //한 세션에 여러 그리드 대응
+	HashMap<UUID, HashMap<String, String>> editSnapMembers = new HashMap<UUID, HashMap<String, String>>();
+	HashMap<UUID, HashMap<String, String>> createSnapMembers = new HashMap<UUID, HashMap<String, String>>();
+	ArrayList<UUID> removeSnapMembers = new ArrayList<UUID>();
+	HashMap<UUID, HashMap<String, String>> editSnapGrids = new HashMap<UUID, HashMap<String, String>>();
+	HashMap<UUID, HashMap<String, String>> createSnapGrids = new HashMap<UUID, HashMap<String, String>>();
+	ArrayList<UUID> removeSnapGrids = new ArrayList<UUID>();
 	
-	private TaskSnapShot beforeLinkedSnapShot;
+
+	/*private TaskSnapShot beforeLinkedSnapShot;
 	private TaskSnapShot afterLinkedSnapShot;
 	
 	private TaskManager manager;
 	
-	private TaskButton snapShotView;
-	private JLabel stateLabel;
+
 	
 	private boolean isEdit = false;
 	
@@ -161,10 +257,6 @@ class TaskSnapShot
 		this.stateLabel.setText("그리드 편집");
 		this.isEdit = true;
 	}
-	TaskButton getView()
-	{
-		return this.snapShotView;
-	}
 	void reStore()
 	{
 		if(this.afterLinkedSnapShot != null)
@@ -193,39 +285,6 @@ class TaskSnapShot
 	boolean isEdit()
 	{
 		return this.isEdit;
-	}
-	class TaskButton extends ButtonPanel
-	{
-		private static final long serialVersionUID = 1L;
-		
-		TaskButton()
-		{
-			this.setSize(TaskManager.COMPW, 30);
-			this.setLayout(null); 
-		}
-		@Override
-		void pressed(int button)
-		{
-			reStore();
-		}
-	}
-}
-class GridData
-{
-	private final SizeInfo size;
-	private final boolean active;
-	
-	GridData(SizeInfo size, boolean active)
-	{
-		this.size = size;
-		this.active = active;
-	}
-	SizeInfo getSize()
-	{
-		return this.size;
-	}
-	boolean isActive()
-	{
-		return this.active;
-	}
+	}*/
+
 }
