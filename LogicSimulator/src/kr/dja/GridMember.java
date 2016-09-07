@@ -28,6 +28,7 @@ public abstract class GridMember implements SizeUpdate
 	protected Grid grid;
 	private UUID id;
 	private boolean placement = false;
+	private TaskUnit taskUnit = null;
 
 	protected GridMember(LogicCore core, String name)
 	{
@@ -60,9 +61,26 @@ public abstract class GridMember implements SizeUpdate
 		System.out.println(this.placement);
 		if(this.grid != null)
 		{
-			dataMap.put("grid", this.grid.getID().toString());
+			dataMap.put("grid", this.grid.getUUID().toString());
 		}
 		return dataMap;
+	}
+	protected void setChangeStateBefore()
+	{
+		if(this.placement)
+		{
+			this.taskUnit = this.grid.getSession().getTaskManager().setTask();
+			this.taskUnit.addEditBefore(this);
+		}
+	}
+	protected void setChangeStateAfter()
+	{
+		if(this.placement)
+		{
+			this.taskUnit.setFirstLabel("(" + this.UIabslocationX + ", " + this.UIabslocationY + ")");
+			this.taskUnit.addEditAfter(this);
+			this.taskUnit = null;
+		}
 	}
 	LogicCore getCore()
 	{
@@ -277,6 +295,10 @@ abstract class LogicBlock extends GridMember
 			ioPanel.setOnOffStatus(Power.valueOf(data.split("_")[1]));
 			this.io.put(ext, ioPanel);
 		}
+		if(super.isPlacement())
+		{
+			super.core.getTaskOperator().checkAroundAndReserveTask(this);
+		}
 	}
 	@Override
 	HashMap<String, String> getData(HashMap<String, String> dataMap)
@@ -355,12 +377,14 @@ abstract class LogicBlock extends GridMember
 
 	final void toggleIO(Direction ext)
 	{
+		super.setChangeStateBefore();
 		this.doToggleIO(ext);
 		super.layeredPane.repaint();
 		if(super.isPlacement())
 		{
 			super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		}
+		super.setChangeStateAfter();
 	}
 	protected void doToggleIO(Direction ext)
 	{

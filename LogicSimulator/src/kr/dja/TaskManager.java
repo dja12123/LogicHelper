@@ -4,7 +4,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -19,29 +21,33 @@ public class TaskManager
 	
 	private int maxSnapShot = 20;
 	private int checkTime = 3;
-	private int lastCheckTime = 0;
+	private long lastCheckTime;
+	
+	private int focusUnit;
 	
 	private JPanel taskPanel;
 	public static final int HGAP = 1;
 	public static final int WGAP = 1;
 	public static final int COMPW = 325;
 	
-	private ArrayList<TaskSnapShot> snapShots = new ArrayList<TaskSnapShot>();
+	private ArrayList<TaskUnit> snapShots = new ArrayList<TaskUnit>();
 	
 	TaskManager(Session session)
 	{
 		this.session = session;
-		
 		this.taskPanel = new JPanel();
 		this.taskPanel.setLayout(null);
-
 		this.createSnapShot();
+		TaskUnit task = this.getLastSnapShot();
+		task.setFirstLabel("초기");
+		task.setEdit();
+		this.lastCheckTime = 0;
 	}
-	TaskManager(HashMap<String, String> data)
+	TaskManager(Session session, HashMap<String, String> data)
 	{
-		
+		this(session);
 	}
-	private TaskSnapShot getLastSnapShot()
+	private TaskUnit getLastSnapShot()
 	{
 		return snapShots.size() > 0 ? this.snapShots.get(snapShots.size() - 1) : null;
 	}
@@ -52,16 +58,12 @@ public class TaskManager
 	}
 	void createSnapShot()
 	{
-		this.lastCheckTime = (int)System.currentTimeMillis() / 1000;
-		TaskSnapShot nowCreateSnapShot = new TaskSnapShot(this, this.getLastSnapShot());
+		this.lastCheckTime = System.currentTimeMillis() / 1000;
+		TaskUnit nowCreateTaskUnit = new TaskUnit(this);
 
-		nowCreateSnapShot.getView().setLocation(WGAP, this.snapShots.size() * (nowCreateSnapShot.getView().getHeight() + HGAP));
-		this.taskPanel.add(nowCreateSnapShot.getView());
-		if(this.getLastSnapShot() != null)
-		{
-			this.getLastSnapShot().setAfterLinkedSnapShot(nowCreateSnapShot);
-		}
-		this.snapShots.add(nowCreateSnapShot);
+		nowCreateTaskUnit.getView().setLocation(WGAP, this.snapShots.size() * (nowCreateTaskUnit.getView().getHeight() + HGAP));
+		this.taskPanel.add(nowCreateTaskUnit.getView());
+		this.snapShots.add(nowCreateTaskUnit);
 		this.reSizeTaskPanel();
 	}
 	private void reSizeTaskPanel()
@@ -74,27 +76,33 @@ public class TaskManager
 		this.taskPanel.setPreferredSize(new Dimension(0, height));
 		this.session.getCore().getUI().getTaskManagerPanel().setManager(this);
 	}
-	TaskSnapShot setTask()
+	TaskUnit setTask()
 	{
-		if(this.lastCheckTime + checkTime < (int)System.currentTimeMillis() / 1000 && this.getLastSnapShot().isEdit())
+		if(this.lastCheckTime + checkTime < System.currentTimeMillis() / 1000 && this.getLastSnapShot().isEdit())
 		{
 			this.createSnapShot();
 		}
-		this.lastCheckTime = (int)System.currentTimeMillis() / 1000;
-		return this.getLastSnapShot();
+		TaskUnit returnTaskUnit = this.getLastSnapShot();
+		this.lastCheckTime = System.currentTimeMillis() / 1000;
+		returnTaskUnit.setEdit();
+		return returnTaskUnit;
 	}
-	void removeSnapShot(TaskSnapShot snap)
+	void removeSnapShot(TaskUnit snap)
 	{
 		this.taskPanel.remove(snap.getView());
 		this.snapShots.remove(snap);
 		this.reSizeTaskPanel();
+	}
+	void recover(TaskUnit unit)
+	{
+		int startIndex = this.snapShots.indexOf(unit);
 	}
 	private void checkSnapShotCount()
 	{
 		int i = this.snapShots.size() - this.maxSnapShot - 1;
 		while(i > 0)
 		{
-			TaskSnapShot removeSnapShot = this.snapShots.get(i);
+			TaskUnit removeSnapShot = this.snapShots.get(i);
 			this.taskPanel.remove(removeSnapShot.getView());
 			this.snapShots.remove(removeSnapShot);
 		}
@@ -110,20 +118,50 @@ public class TaskManager
 }
 class TaskUnit
 {
+	private TaskManager manager;
+	
 	private TaskSnapShot beforeSnapShot;
 	private TaskSnapShot afterSnapShot;
 	
 	private TaskButton snapShotView;
 	private JLabel stateLabel;
+	private JLabel timeLabel;
+	private HashMap<String, Integer> labels = new HashMap<String, Integer>();
+	private String firstLabel = new String("");
 	
-	TaskUnit()
+	private boolean editFlag = false;
+	
+	TaskUnit(TaskManager manager)
 	{
+		this.manager = manager;
 		this.beforeSnapShot = new TaskSnapShot();
 		this.afterSnapShot = new TaskSnapShot();
 		this.snapShotView = new TaskButton();
 		this.stateLabel = new JLabel();
-		this.stateLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
-		this.stateLabel.setBounds(5, 0, 200, 30);
+		this.stateLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(12f));
+		this.stateLabel.setBounds(5, 0, TaskManager.COMPW - 10, 30);
+		this.timeLabel = new JLabel();
+		this.timeLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+		this.timeLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(9f));
+		this.timeLabel.setBounds(TaskManager.COMPW - 42, 20, 40, 10);
+		this.snapShotView.add(this.stateLabel);
+		this.snapShotView.add(this.timeLabel);
+	}
+	TaskUnit(TaskManager manager, HashMap<String, String> dataMap)
+	{
+		this(manager);
+	}
+	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	{
+		return dataMap;
+	}
+	boolean isEdit()
+	{
+		return this.editFlag;
+	}
+	void setEdit()
+	{
+		this.editFlag = true;
 	}
 	void addEditBefore(GridMember member)
 	{
@@ -135,6 +173,7 @@ class TaskUnit
 	void addEditAfter(GridMember member)
 	{
 		this.afterSnapShot.editSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+		this.setLabel("편집", this.afterSnapShot.editSnapMembers.size());
 	}
 	void addCreate(GridMember member)
 	{
@@ -143,6 +182,7 @@ class TaskUnit
 			this.beforeSnapShot.removeSnapMembers.add(member.getUUID());
 		}
 		this.afterSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+		this.setLabel("생성", this.afterSnapShot.createSnapMembers.size());
 	}
 	void addRemove(GridMember member)
 	{
@@ -151,6 +191,7 @@ class TaskUnit
 		{
 			this.afterSnapShot.removeSnapMembers.add(member.getUUID());
 		}
+		this.setLabel("삭제", this.afterSnapShot.removeSnapMembers.size());
 	}
 	void addEditBefore(Grid grid)
 	{
@@ -162,6 +203,7 @@ class TaskUnit
 	void addEditAfter(Grid grid)
 	{
 		this.afterSnapShot.editSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+		this.setLabel("그리드 편집", this.afterSnapShot.editSnapGrids.size());
 	}
 	void addCreate(Grid grid)
 	{
@@ -170,6 +212,7 @@ class TaskUnit
 			this.beforeSnapShot.removeSnapGrids.add(grid.getUUID());
 		}
 		this.afterSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+		this.setLabel("그리드 생성", this.afterSnapShot.createSnapGrids.size());
 	}
 	void addRemove(Grid grid)
 	{
@@ -178,6 +221,7 @@ class TaskUnit
 		{
 			this.afterSnapShot.removeSnapGrids.add(grid.getUUID());
 		}
+		this.setLabel("그리드 삭제", this.afterSnapShot.removeSnapGrids.size());
 	}
 	void setLabel(String str)
 	{
@@ -186,6 +230,26 @@ class TaskUnit
 	TaskButton getView()
 	{
 		return this.snapShotView;
+	}
+	private void setLabel(String str, int num)
+	{
+		this.labels.put(str, num);
+		this.setLabelText();
+	}
+	void setFirstLabel(String str)
+	{
+		this.firstLabel = str;
+		this.setLabelText();
+	}
+	private void setLabelText()
+	{
+		String set = new String(this.firstLabel);
+		for(String arrStr : this.labels.keySet())
+		{
+			set = new String(set + " " + arrStr + "(" + this.labels.get(arrStr) + ")");
+		}
+		this.stateLabel.setText(set);
+		this.timeLabel.setText(new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime()));
 	}
 	class TaskButton extends ButtonPanel
 	{
@@ -199,7 +263,7 @@ class TaskUnit
 		@Override
 		void pressed(int button)
 		{
-			
+			manager.recover(TaskUnit.this);
 		}
 	}
 }
@@ -211,80 +275,13 @@ class TaskSnapShot
 	HashMap<UUID, HashMap<String, String>> editSnapGrids = new HashMap<UUID, HashMap<String, String>>();
 	HashMap<UUID, HashMap<String, String>> createSnapGrids = new HashMap<UUID, HashMap<String, String>>();
 	ArrayList<UUID> removeSnapGrids = new ArrayList<UUID>();
-	
-
-	/*private TaskSnapShot beforeLinkedSnapShot;
-	private TaskSnapShot afterLinkedSnapShot;
-	
-	private TaskManager manager;
-	
-
-	
-	private boolean isEdit = false;
-	
-	TaskSnapShot(TaskManager manager, TaskSnapShot beforeLinkedSnapShot)
+	TaskSnapShot(){};
+	TaskSnapShot(HashMap<String, String> dataMap)
 	{
-		this.manager = manager;
-		this.beforeLinkedSnapShot = beforeLinkedSnapShot;
-		this.snapShotView = new TaskButton();
-		this.stateLabel = new JLabel();
-		this.stateLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
-		this.stateLabel.setText("편집중..");
-		this.stateLabel.setBounds(5, 0, 200, 30);
-		this.snapShotView.add(this.stateLabel);
+		
 	}
-	void setAfterLinkedSnapShot(TaskSnapShot snap)
+	HashMap<String, String> getData(HashMap<String, String> dataMap)
 	{
-		this.afterLinkedSnapShot = snap;
+		return dataMap;
 	}
-	void removeBeforeLinkedSnapShot()
-	{
-		this.beforeLinkedSnapShot = null;
-	}
-	TaskSnapShot getAfterLinkedSnapShot()
-	{
-		return this.afterLinkedSnapShot;
-	}
-	void setData(GridMember member)
-	{
-		this.snapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
-		this.stateLabel.setText(this.snapMembers.size() + " 개의 멤버 편집");
-		this.isEdit = true;
-	}
-	void setData(Grid grid, boolean isActive)
-	{
-		this.snapGrids.put(grid.getID(), new GridData(grid.getGridSize(), isActive));
-		this.stateLabel.setText("그리드 편집");
-		this.isEdit = true;
-	}
-	void reStore()
-	{
-		if(this.afterLinkedSnapShot != null)
-		{
-			this.afterLinkedSnapShot.reStore();
-		}
-		if(this.snapGrids.size() > 0)
-		{
-			manager.getSession().getGrid().gridResize(this.snapGrids.get(manager.getSession().getGrid().getID()).getSize(), false);
-		}
-		for(UUID id : this.snapMembers.keySet())
-		{
-			HashMap<String, String> data = this.snapMembers.get(id);
-			if(data.get("placement").equals("true"))
-			{
-				
-				GridMember member = GridMember.Factory(this.manager.getSession().getCore(), data);
-				manager.getSession().getGrid().addMember(member, member.getUIabsLocationX(), member.getUIabsLocationY(), false);
-			}
-			else
-			{
-				manager.getSession().getGrid().removeMember(UUID.fromString(data.get("id")), false);
-			}
-		}
-	}
-	boolean isEdit()
-	{
-		return this.isEdit;
-	}*/
-
 }

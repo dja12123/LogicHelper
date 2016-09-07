@@ -60,6 +60,10 @@ public class Grid
 		dataMap.put("MAX_ABSOLUTE", Integer.toString(this.MAX_ABSOLUTE));
 		return dataMap;
 	}
+	Session getSession()
+	{
+		return this.session;
+	}
 	void setData(HashMap<String, String> dataMap)
 	{
 		SizeInfo size = new SizeInfo(new Integer(dataMap.get("gridSizeX")), new Integer(dataMap.get("gridSizeY"))
@@ -78,6 +82,8 @@ public class Grid
 	}
 	void gridResize(Direction ext, int size)
 	{//�� �ۼ� �ʿ�
+		TaskUnit task = this.session.getTaskManager().setTask();
+		task.addEditBefore(this);
 		if(ext == Direction.EAST)
 		{
 			if(gridSize.getX() + size < 1)
@@ -161,19 +167,24 @@ public class Grid
 				removeMember(member.getUUID(), true);
 			}
 		}
-		this.session.getTaskManager().setTask().setData(this, true);
+		task.addEditAfter(this);
 		this.session.getCore().getUI().getUnderBar().setGridSizeInfo(this.gridSize);
 	}
 	void gridResize(SizeInfo size, boolean record)
 	{
-		System.out.println("size");
+		TaskUnit task = null;
+		if(record)
+		{
+			task = this.session.getTaskManager().setTask();
+			task.addEditBefore(this);
+		}
 		this.gridSize.setData(size);
 		this.deSelectAll();
 		this.session.getCore().getUI().getUnderBar().setGridSizeInfo(this.gridSize);
 		this.session.getCore().getUI().getGridArea().sizeUpdate();
 		if(record)
 		{
-			this.session.getTaskManager().setTask().setData(this, true);
+			task.addEditAfter(this);
 		}
 	}
 	GridPanel getGridPanel()
@@ -206,7 +217,9 @@ public class Grid
 			this.selectFocus(member);
 			if(record)
 			{
-				this.session.getTaskManager().setTask().setData(member);
+				TaskUnit task = this.session.getTaskManager().setTask();
+				task.addCreate(member);
+				task.setFirstLabel("(" + member.getUIabsLocationX() + ", " + member.getUIabsLocationY() + ")");
 			}
 		}
 	}
@@ -232,7 +245,9 @@ public class Grid
 		}
 		if(record)
 		{
-			this.session.getTaskManager().setTask().setData(removeMember);
+			TaskUnit task = this.session.getTaskManager().setTask();
+			task.addRemove(removeMember);
+			task.setFirstLabel("(" + removeMember.getUIabsLocationX() + ", " + removeMember.getUIabsLocationY() + ")");
 		}
 	}
 	/*void recover(HashMap<HashMap<String, String>, Boolean> dataMap, SizeInfo sizeInfo, boolean back)
