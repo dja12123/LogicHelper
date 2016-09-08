@@ -1585,7 +1585,7 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	@Override
 	public final void mouseReleased(MouseEvent e)
 	{
-		if((e.getX() <= this.getWidth() && e.getY() <= this.getHeight()))
+		if((e.getX() >= 0 && e.getY() >= 0) && (e.getX() <= this.getWidth() && e.getY() <= this.getHeight()))
 		{
 			this.pressed(e.getButton());
 			try 
@@ -1621,10 +1621,10 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		{
 			g.drawImage(this.nowImage, 0, 0, this);
 		}
+		super.paintChildren(g);
 	}
 	void pressed(int button)
 	{
-		System.out.println("��");
 	}
 	void setBasicImage(BufferedImage img)
 	{

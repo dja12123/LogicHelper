@@ -191,7 +191,6 @@ class Resource
 				{
 					images.put(imgFile.split("[.]")[0], img);
 				}
-				
 			}
 			BufferedReader in;
 			in = new BufferedReader(new FileReader(this.getFile("/" + LANG_DIR_NAME + "/" + LANG_DFT_TAG_FILE_NAME)));
@@ -365,7 +364,6 @@ class LoadingWindow extends JFrame implements Console
 				System.exit(0);
 			}
 		});
-		
 		JLabel titleLabel = new JLabel("논리회로 시뮬레이터 v" + LogicCore.VERSION);
 		titleLabel.setOpaque(true);
 		titleLabel.setBackground(backgroundColor);

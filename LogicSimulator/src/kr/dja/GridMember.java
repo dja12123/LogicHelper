@@ -291,9 +291,10 @@ abstract class LogicBlock extends GridMember
 		{
 			String data = dataMap.get("io_" + ext);
 			IOPanel ioPanel = new IOPanel(this, ext);
+			this.io.put(ext, ioPanel);
 			ioPanel.setStatus(IOStatus.valueOf(data.split("_")[0]));
 			ioPanel.setOnOffStatus(Power.valueOf(data.split("_")[1]));
-			this.io.put(ext, ioPanel);
+			
 		}
 		if(super.isPlacement())
 		{

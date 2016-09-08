@@ -196,15 +196,20 @@ public class Grid
 		if(absX < (this.gridSize.getX() - this.gridSize.getNX()) * Size.REGULAR_SIZE && absY < (this.gridSize.getY() - this.gridSize.getNY()) * Size.REGULAR_SIZE
 		&& absX > - (this.gridSize.getNX() + 1) * Size.REGULAR_SIZE && absY > - (this.gridSize.getNY() + 1) * Size.REGULAR_SIZE)
 		{
-			member.setUUID();
+			if(record)
+			{
+				member.setUUID();
+			}
 			this.getMembers().put(member.getUUID(), member);
 			member.put(absX, absY, this);
 			if(member instanceof LogicBlock)
 			{
 				LogicBlock logicMember = (LogicBlock)member;
-				if(this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX())) && this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).containsKey(logicMember.getBlockLocationY()))
+				if(this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX()))
+						&& this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).containsKey(logicMember.getBlockLocationY()))
 				{
-					this.removeMember(this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).get(logicMember.getBlockLocationY()).getUUID(), true);
+					System.out.println("삭제콜");
+					this.removeMember(this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).get(logicMember.getBlockLocationY()).getUUID(), record);
 				}
 				if(!this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX())))
 				{
@@ -214,9 +219,10 @@ public class Grid
 				this.session.getCore().getTaskOperator().checkAroundAndReserveTask(logicMember);
 			}
 			this.getGridPanel().add(member.getGridViewPane());
-			this.selectFocus(member);
+			member.getGridViewPane().repaint();
 			if(record)
 			{
+				this.selectFocus(member);
 				TaskUnit task = this.session.getTaskManager().setTask();
 				task.addCreate(member);
 				task.setFirstLabel("(" + member.getUIabsLocationX() + ", " + member.getUIabsLocationY() + ")");
@@ -226,6 +232,7 @@ public class Grid
 	void removeMember(UUID id, boolean record)
 	{
 		System.out.println("removeMember " + id.toString());
+
 		GridMember removeMember = this.members.get(id);
 		removeMember.remove();
 		this.members.remove(id);
@@ -249,6 +256,7 @@ public class Grid
 			task.addRemove(removeMember);
 			task.setFirstLabel("(" + removeMember.getUIabsLocationX() + ", " + removeMember.getUIabsLocationY() + ")");
 		}
+		
 	}
 	/*void recover(HashMap<HashMap<String, String>, Boolean> dataMap, SizeInfo sizeInfo, boolean back)
 	{
