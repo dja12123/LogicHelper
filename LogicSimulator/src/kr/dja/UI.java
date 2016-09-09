@@ -28,7 +28,7 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -88,7 +88,7 @@ public class UI
 		this.core = core;
 		
 		this.UI_Size = Size.MIDDLE;
-		this.toolBar = new ToolBar();
+		this.toolBar = new ToolBar(this.core);
 		this.underBar = new UnderBar();
 		
 		this.mainFrame = new JFrame(LogicCore.getResource().getLocal("TITLE") + " v" + LogicCore.VERSION);
@@ -709,12 +709,13 @@ class GridArea implements LogicUIComponent, SizeUpdate
 }
 class ToolBar implements LogicUIComponent
 {
+	private LogicCore core;
 	private JToolBar toolbar;
 	private JPanel leftSidePanel;
 	private JPanel toolBarPanel;
 	private JPanel rightSidePanel;
 	private JLabel titleLabel;
-	private UIButton saveButton;
+	private ButtonPanel saveButton;
 	private UIButton optionSaveButton;
 	private UIButton loadButton;
 	private UIButton createNewfileButton;
@@ -726,8 +727,10 @@ class ToolBar implements LogicUIComponent
 	private UIButton newInstanceButton;
 	private UIButton controlOpenButton;
 	
-	ToolBar()
+	ToolBar(LogicCore core)
 	{
+		this.core = core;
+		
 		this.toolbar = new JToolBar();
 		
 		this.toolbar.setPreferredSize(new Dimension(0, 30));
@@ -750,7 +753,16 @@ class ToolBar implements LogicUIComponent
 		this.titleLabel = new JLabel("FileName");
 		this.titleLabel.setHorizontalAlignment(JLabel.CENTER);
 		
-		this.saveButton = new UIButton(20, 20, null, null);
+		this.saveButton = new ButtonPanel(20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+			
+			@Override
+			void pressed(int button)
+			{
+				core.getSession().getFocusSession().saveData();
+			}
+		};
 		this.optionSaveButton = new UIButton(20, 20, null, null);
 		this.loadButton = new UIButton(20, 20, null, null);
 		this.createNewfileButton = new UIButton(20, 20, null, null);
@@ -1030,7 +1042,7 @@ class PalettePanel implements LogicUIComponent
 	
 	private JPanel palettePanel;
 
-	private HashMap<String, PaletteMember> paletteMembers = new HashMap<String, PaletteMember>();
+	private LinkedHashMap<String, PaletteMember> paletteMembers = new LinkedHashMap<String, PaletteMember>();
 	
 	PalettePanel(UI logicUI)
 	{
@@ -1105,7 +1117,7 @@ class PalettePanel implements LogicUIComponent
 				if(button == 1)
 				{
 					ArrayList<GridMember> list = new ArrayList<GridMember>();
-					list.add(GridMember.Factory(logicUI.getCore(), putMember.getData(new HashMap<String, String>())));
+					list.add(GridMember.Factory(logicUI.getCore(), putMember.getData(new LinkedHashMap<String, String>())));
 					logicUI.addTrackedPane(new TrackedPane(list, logicUI));
 				}
 				else if(button == 3)
@@ -1526,7 +1538,7 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	private BufferedImage basicImage;
 	private BufferedImage onMouseImage;
 	private BufferedImage basicPressImage;
-	private HashMap<Integer, BufferedImage> pressImages = new HashMap<Integer, BufferedImage>();
+	private LinkedHashMap<Integer, BufferedImage> pressImages = new LinkedHashMap<Integer, BufferedImage>();
 	
 	private BufferedImage nowImage;
 	private int mouseButton = 0;
@@ -1539,19 +1551,21 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	}
 	ButtonPanel(int x, int y, int width, int height)
 	{
+		this();
 		this.setBounds(x, y, width, height);
-		this.addMouseMotionListener(this);
-		this.addMouseListener(this);
-		this.setBackground(Color.orange);
 	}
 	ButtonPanel(BufferedImage basicImage, BufferedImage onMouseImage, BufferedImage basicPressImage)
 	{
-		this.addMouseMotionListener(this);
-		this.addMouseListener(this);
+		this();
 		this.basicImage = basicImage;
 		this.onMouseImage = onMouseImage;
 		this.basicPressImage = basicPressImage;
-		this.setBackground(Color.orange);
+	}
+	ButtonPanel(int x, int y)
+	{
+		this();
+		this.setSize(x, y);
+		this.setPreferredSize(new Dimension(x, y));
 	}
 	@Override
 	public final void mouseClicked(MouseEvent e)

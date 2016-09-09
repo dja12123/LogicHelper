@@ -7,7 +7,7 @@ import java.awt.Point;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
 import javax.swing.BoxLayout;
@@ -40,9 +40,14 @@ public class TaskManager
 		this.createNoneUint();
 		this.lastCheckTime = 0;
 	}
-	TaskManager(Session session, HashMap<String, String> data)
+	TaskManager(Session session, LinkedHashMap<String, String> data)
 	{
 		this(session);
+	}
+	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	{
+		
+		return dataMap;
 	}
 	private TaskUnit getLastSnapShot()
 	{
@@ -61,6 +66,7 @@ public class TaskManager
 		this.taskPanel.add(nowCreateTaskUnit.getView());
 		this.snapShots.add(nowCreateTaskUnit);
 		this.reSizeTaskPanel();
+		this.setFocus(nowCreateTaskUnit);
 	}
 	private void createNoneUint()
 	{
@@ -104,14 +110,13 @@ public class TaskManager
 			this.lastCheckTime = System.currentTimeMillis() / 1000;
 		}
 		TaskUnit returnTaskUnit = this.getLastSnapShot();
-		this.setFocus(this.snapShots.size() - 1);
 		returnTaskUnit.setEdit();
 		return returnTaskUnit;
 	}
 	void recover(TaskUnit unit)
 	{
 		int oldFocusIndex = this.focusUnit != null ? this.snapShots.indexOf(this.focusUnit) : 0;
-		this.setFocus(this.snapShots.indexOf(unit));
+		this.setFocus(unit);
 		int nowFocusIndex = this.snapShots.indexOf(this.focusUnit);
 		int startIndex = this.snapShots.indexOf(unit);
 		for(TaskUnit task : this.snapShots)
@@ -132,13 +137,26 @@ public class TaskManager
 		{
 			TaskUnit task = this.snapShots.get(i);
 			System.out.println("REDO " + i);
+			for(UUID gridID : task.afterSnapShot.removeSnapGrids)
+			{//다중 레이어일시 구현하시오
+				
+			}
+			for(UUID gridID : task.afterSnapShot.createSnapGrids.keySet())
+			{//다중 레이어일시 구현하시오
+				
+			}
+			for(UUID gridID : task.afterSnapShot.editSnapGrids.keySet())
+			{//다중 레이어일시 수정 필요
+				Grid grid = this.session.getGrid();
+				grid.setData(task.afterSnapShot.editSnapGrids.get(gridID));
+			}
 			for(UUID memberID : task.afterSnapShot.removeSnapMembers)
 			{
 				this.session.getGrid().removeMember(memberID, false);
 			}
 			for(UUID memberID : task.afterSnapShot.createSnapMembers.keySet())
 			{
-				HashMap<String, String> memberData = task.afterSnapShot.createSnapMembers.get(memberID);
+				LinkedHashMap<String, String> memberData = task.afterSnapShot.createSnapMembers.get(memberID);
 				GridMember member = GridMember.Factory(session.getCore(), memberData);
 				this.session.getGrid().addMember(member, member.getUIabsLocationX(), member.getUIabsLocationY(), false);
 			}
@@ -146,16 +164,28 @@ public class TaskManager
 			{
 				if(this.session.getGrid().getMembers().containsKey(memberID))
 				{
-					HashMap<String, String> memberData = task.afterSnapShot.editSnapMembers.get(memberID);
+					LinkedHashMap<String, String> memberData = task.afterSnapShot.editSnapMembers.get(memberID);
 					this.session.getGrid().getMembers().get(memberID).setData(memberData);
 				}
 			}
-			
 		}
 		for(int i = oldFocusIndex; i > nowFocusIndex; i--)
 		{
 			TaskUnit task = this.snapShots.get(i);
 			System.out.println("UNDO " + this.snapShots.indexOf(task));
+			for(UUID gridID : task.beforeSnapShot.removeSnapGrids)
+			{//다중 레이어일시 구현하시오
+				
+			}
+			for(UUID gridID : task.beforeSnapShot.createSnapGrids.keySet())
+			{//다중 레이어일시 구현하시오
+				
+			}
+			for(UUID gridID : task.beforeSnapShot.editSnapGrids.keySet())
+			{//다중 레이어일시 수정 필요
+				Grid grid = this.session.getGrid();
+				grid.setData(task.beforeSnapShot.editSnapGrids.get(gridID));
+			}
 			for(UUID memberID : task.beforeSnapShot.removeSnapMembers)
 			{
 				if(this.session.getGrid().getMembers().containsKey(memberID))
@@ -165,7 +195,7 @@ public class TaskManager
 			}
 			for(UUID memberID : task.beforeSnapShot.createSnapMembers.keySet())
 			{
-				HashMap<String, String> memberData = task.beforeSnapShot.createSnapMembers.get(memberID);
+				LinkedHashMap<String, String> memberData = task.beforeSnapShot.createSnapMembers.get(memberID);
 				this.session.getGrid().addMember(GridMember.Factory(session.getCore(), memberData)
 						, new Integer(memberData.get("UIabslocationX")), new Integer(memberData.get("UIabslocationY")), false);
 			}
@@ -173,7 +203,7 @@ public class TaskManager
 			{
 				if(this.session.getGrid().getMembers().containsKey(memberID))
 				{
-					HashMap<String, String> memberData = task.beforeSnapShot.editSnapMembers.get(memberID);
+					LinkedHashMap<String, String> memberData = task.beforeSnapShot.editSnapMembers.get(memberID);
 					this.session.getGrid().getMembers().get(memberID).setData(memberData);
 				}
 			}
@@ -193,15 +223,15 @@ public class TaskManager
 			this.snapShots.remove(removeSnapShot);
 		}
 	}
-	private void setFocus(int index)
+	private void setFocus(TaskUnit unit)
 	{
-		if(this.snapShots.size() > index && index >= 0)
+		if(this.snapShots.contains(unit))
 		{
 			if(this.focusUnit != null)
 			{
 				this.focusUnit.getView().setFocus(false);
 			}
-			this.focusUnit = this.snapShots.get(index);
+			this.focusUnit = unit;
 			this.focusUnit.getView().setFocus(true);
 		}
 	}
@@ -232,7 +262,7 @@ class TaskUnit
 	private TaskButton snapShotView;
 	private JLabel stateLabel;
 	private JLabel timeLabel;
-	private HashMap<String, Integer> labels = new HashMap<String, Integer>();
+	private LinkedHashMap<String, Integer> labels = new LinkedHashMap<String, Integer>();
 	private String firstLabel = new String("");
 	
 	private boolean editFlag = false;
@@ -253,11 +283,11 @@ class TaskUnit
 		this.snapShotView.add(this.stateLabel);
 		this.snapShotView.add(this.timeLabel);
 	}
-	TaskUnit(TaskManager manager, HashMap<String, String> dataMap)
+	TaskUnit(TaskManager manager, LinkedHashMap<String, String> dataMap)
 	{
 		this(manager);
 	}
-	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
 	{
 		return dataMap;
 	}
@@ -273,12 +303,12 @@ class TaskUnit
 	{
 		if(!this.beforeSnapShot.editSnapMembers.containsKey(member.getUUID()))
 		{
-			this.beforeSnapShot.editSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+			this.beforeSnapShot.editSnapMembers.put(member.getUUID(), member.getData(new LinkedHashMap<String, String>()));
 		}
 	}
 	void addEditAfter(GridMember member)
 	{
-		this.afterSnapShot.editSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+		this.afterSnapShot.editSnapMembers.put(member.getUUID(), member.getData(new LinkedHashMap<String, String>()));
 		this.setLabel("편집", this.afterSnapShot.editSnapMembers.size());
 	}
 	void addCreate(GridMember member)
@@ -287,14 +317,14 @@ class TaskUnit
 		{
 			this.beforeSnapShot.removeSnapMembers.add(member.getUUID());
 		}
-		this.afterSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+		this.afterSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new LinkedHashMap<String, String>()));
 		this.setLabel("생성", this.afterSnapShot.createSnapMembers.size());
 	}
 	void addRemove(GridMember member)
 	{
 		if(!this.afterSnapShot.createSnapMembers.containsKey(member.getUUID()))
 		{
-			this.beforeSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new HashMap<String, String>()));
+			this.beforeSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new LinkedHashMap<String, String>()));
 			if(!this.afterSnapShot.removeSnapMembers.contains(member.getUUID()))
 			{
 				this.afterSnapShot.removeSnapMembers.add(member.getUUID());
@@ -311,12 +341,12 @@ class TaskUnit
 	{
 		if(!this.beforeSnapShot.editSnapGrids.containsKey(grid.getUUID()))
 		{
-			this.beforeSnapShot.editSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+			this.beforeSnapShot.editSnapGrids.put(grid.getUUID(), grid.getData(new LinkedHashMap<String, String>()));
 		}
 	}
 	void addEditAfter(Grid grid)
 	{
-		this.afterSnapShot.editSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+		this.afterSnapShot.editSnapGrids.put(grid.getUUID(), grid.getData(new LinkedHashMap<String, String>()));
 		this.setLabel("그리드 편집", this.afterSnapShot.editSnapGrids.size());
 	}
 	void addCreate(Grid grid)
@@ -325,14 +355,14 @@ class TaskUnit
 		{
 			this.beforeSnapShot.removeSnapGrids.add(grid.getUUID());
 		}
-		this.afterSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+		this.afterSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new LinkedHashMap<String, String>()));
 		this.setLabel("그리드 생성", this.afterSnapShot.createSnapGrids.size());
 	}
 	void addRemove(Grid grid)
 	{
 		if(!this.afterSnapShot.createSnapGrids.containsKey(grid.getUUID()))
 		{
-			this.beforeSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new HashMap<String, String>()));
+			this.beforeSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new LinkedHashMap<String, String>()));
 			if(!this.afterSnapShot.removeSnapGrids.contains(grid.getUUID()))
 			{
 				this.afterSnapShot.removeSnapGrids.add(grid.getUUID());
@@ -416,18 +446,18 @@ class TaskUnit
 }
 class TaskSnapShot
 {
-	HashMap<UUID, HashMap<String, String>> editSnapMembers = new HashMap<UUID, HashMap<String, String>>();
-	HashMap<UUID, HashMap<String, String>> createSnapMembers = new HashMap<UUID, HashMap<String, String>>();
+	LinkedHashMap<UUID, LinkedHashMap<String, String>> editSnapMembers = new LinkedHashMap<UUID, LinkedHashMap<String, String>>();
+	LinkedHashMap<UUID, LinkedHashMap<String, String>> createSnapMembers = new LinkedHashMap<UUID, LinkedHashMap<String, String>>();
 	ArrayList<UUID> removeSnapMembers = new ArrayList<UUID>();
-	HashMap<UUID, HashMap<String, String>> editSnapGrids = new HashMap<UUID, HashMap<String, String>>();
-	HashMap<UUID, HashMap<String, String>> createSnapGrids = new HashMap<UUID, HashMap<String, String>>();
+	LinkedHashMap<UUID, LinkedHashMap<String, String>> editSnapGrids = new LinkedHashMap<UUID, LinkedHashMap<String, String>>();
+	LinkedHashMap<UUID, LinkedHashMap<String, String>> createSnapGrids = new LinkedHashMap<UUID, LinkedHashMap<String, String>>();
 	ArrayList<UUID> removeSnapGrids = new ArrayList<UUID>();
 	TaskSnapShot(){};
-	TaskSnapShot(HashMap<String, String> dataMap)
+	TaskSnapShot(LinkedHashMap<String, String> dataMap)
 	{
 		
 	}
-	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
 	{
 		return dataMap;
 	}

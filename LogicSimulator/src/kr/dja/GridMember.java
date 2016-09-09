@@ -6,7 +6,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
 import javax.swing.JLabel;
@@ -15,7 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 
-public abstract class GridMember implements SizeUpdate
+public abstract class GridMember implements DataIO, SizeUpdate
 {
 	protected int UIabslocationX = 0;
 	protected int UIabslocationY = 0;
@@ -39,7 +39,8 @@ public abstract class GridMember implements SizeUpdate
 		this.gridViewPane = new GridViewPane(this);
 		this.layeredPane.add(this.gridViewPane, new Integer(1));
 	}
-	void setData(HashMap<String, String> dataMap)
+	@Override
+	public void setData(LinkedHashMap<String, String> dataMap)
 	{
 		this.id = UUID.fromString(dataMap.get("id"));
 		this.name = dataMap.get("name");
@@ -48,7 +49,8 @@ public abstract class GridMember implements SizeUpdate
 		this.UIabsSizeX = new Integer(dataMap.get("UIabsSizeX"));
 		this.UIabsSizeY = new Integer(dataMap.get("UIabsSizeY"));
 	}
-	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	@Override
+	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
 	{
 		dataMap.put("ClassName", this.getClass().getName());
 		dataMap.put("id", this.id.toString());
@@ -230,7 +232,7 @@ public abstract class GridMember implements SizeUpdate
 			}
 		}
 	}
-	static GridMember Factory(LogicCore core, HashMap<String, String> info)
+	static GridMember Factory(LogicCore core, LinkedHashMap<String, String> info)
 	{
 		GridMember member = null;
 		try
@@ -264,7 +266,7 @@ abstract class LogicBlock extends GridMember
 	protected int blocklocationX = 0;
 	protected int blocklocationY = 0;
 	protected Power power = Power.OFF;
-	protected HashMap<Direction, IOPanel> io = new HashMap<Direction, IOPanel>();
+	protected LinkedHashMap<Direction, IOPanel> io = new LinkedHashMap<Direction, IOPanel>();
 	private int timer = 0;
 	
 	protected LogicBlock(LogicCore core, String name)
@@ -281,7 +283,7 @@ abstract class LogicBlock extends GridMember
 		this.io.put(Direction.NORTH, new IOPanel(this, Direction.NORTH));
 	}
 	@Override
-	void setData(HashMap<String, String> dataMap)
+	public void setData(LinkedHashMap<String, String> dataMap)
 	{
 		super.setData(dataMap);
 		this.blocklocationX = new Integer(dataMap.get("blocklocationX"));
@@ -302,7 +304,7 @@ abstract class LogicBlock extends GridMember
 		}
 	}
 	@Override
-	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
 	{
 		super.getData(dataMap);
 		dataMap.put("blocklocationX", Integer.toString(this.blocklocationX));
@@ -510,8 +512,23 @@ class OR extends LogicBlock
 	@Override
 	void calculate()
 	{
-		// TODO Auto-generated method stub
-		
+		ArrayList<Power> cal = super.getResiveIOPower();
+		boolean powerActive = false;
+		for(Power power : cal)
+		{
+			if(power.getBool())
+			{
+				powerActive = true;
+			}
+		}
+		if(powerActive)
+		{
+			super.setPowerStatus(Power.ON);
+		}
+		else
+		{
+			super.setPowerStatus(Power.OFF);
+		}
 	}
 	@Override
 	protected void operatorPing()
@@ -601,13 +618,13 @@ class Button extends LogicBlock
 		
 	}
 	@Override
-	void setData(HashMap<String, String> dataMap)
+	public void setData(LinkedHashMap<String, String> dataMap)
 	{
 		super.setData(dataMap);
 		this.basicTime = new Integer(dataMap.get("basicTime"));
 	}
 	@Override
-	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
 	{
 		super.getData(dataMap);
 		dataMap.put("basicTime", Integer.toString(this.basicTime));

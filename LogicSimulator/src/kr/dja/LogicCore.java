@@ -66,6 +66,8 @@ public class LogicCore
 {
 	public static final String VERSION = "0.0.1";
 	
+	public static final String JARLOC = System.getProperty("user.dir");
+	
 	private static ArrayList<LogicCore> Task;
 	private static ArrayList<Console> Consols;
 	
@@ -153,7 +155,8 @@ class Resource
 	public Font NORMAL_FONT;
 	public Font PIXEL_FONT;
 	public Font BAR_FONT;
-	Properties config = new Properties();
+	
+	private Properties config = new Properties();
 	
 	public Resource()
 	{

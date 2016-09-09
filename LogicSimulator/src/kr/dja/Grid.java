@@ -11,14 +11,14 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 
-public class Grid
+public class Grid implements DataIO
 {
 	static int count = 0;
 	
 	private UUID id;
 	
-	private HashMap<UUID, GridMember> members = new HashMap<UUID, GridMember>();
-	private HashMap<Integer, HashMap<Integer, LogicBlock>> logicMembers = new HashMap<Integer, HashMap<Integer, LogicBlock>>();
+	private LinkedHashMap<UUID, GridMember> members = new LinkedHashMap<UUID, GridMember>();
+	private LinkedHashMap<Integer, LinkedHashMap<Integer, LogicBlock>> logicMembers = new LinkedHashMap<Integer, LinkedHashMap<Integer, LogicBlock>>();
 	
 	private ArrayList<GridMember> selectMembers = new ArrayList<GridMember>();
 	private ArrayList<GridMember> selectSignMembers = new ArrayList<GridMember>();
@@ -50,8 +50,21 @@ public class Grid
 		label.setBounds(0, 0, 200, 30);
 		this.gridPanel.add(label);
 	}
-	HashMap<String, String> getData(HashMap<String, String> dataMap)
+	Grid(LinkedHashMap<String, String> dataMap, Session session)
 	{
+		this(session, new SizeInfo(new Integer(dataMap.get("gridSizeX")), new Integer(dataMap.get("gridSizeY"))
+		, new Integer(dataMap.get("gridSizeNX")), new Integer(dataMap.get("gridSizeNY"))), UUID.fromString(dataMap.get("id")));
+		this.MAX_SIZE = new Integer(dataMap.get("MAX_SIZE"));
+		this.MAX_ABSOLUTE = new Integer(dataMap.get("MAX_ABSOLUTE"));
+	}
+	Session getSession()
+	{
+		return this.session;
+	}
+	@Override
+	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	{
+		dataMap.put("id", this.id.toString());
 		dataMap.put("gridSizeX", Integer.toString(this.gridSize.getX()));
 		dataMap.put("gridSizeY", Integer.toString(this.gridSize.getY()));
 		dataMap.put("gridSizeNX", Integer.toString(this.gridSize.getNX()));
@@ -60,11 +73,8 @@ public class Grid
 		dataMap.put("MAX_ABSOLUTE", Integer.toString(this.MAX_ABSOLUTE));
 		return dataMap;
 	}
-	Session getSession()
-	{
-		return this.session;
-	}
-	void setData(HashMap<String, String> dataMap)
+	@Override
+	public void setData(LinkedHashMap<String, String> dataMap)
 	{
 		SizeInfo size = new SizeInfo(new Integer(dataMap.get("gridSizeX")), new Integer(dataMap.get("gridSizeY"))
 		, new Integer(dataMap.get("gridSizeNX")), new Integer(dataMap.get("gridSizeNY")));
@@ -213,7 +223,7 @@ public class Grid
 				}
 				if(!this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX())))
 				{
-					this.logicMembers.put(new Integer(logicMember.getBlockLocationX()), new HashMap<Integer, LogicBlock>());
+					this.logicMembers.put(new Integer(logicMember.getBlockLocationX()), new LinkedHashMap<Integer, LogicBlock>());
 				}
 				this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).put(new Integer(logicMember.getBlockLocationY()), logicMember);
 				this.session.getCore().getTaskOperator().checkAroundAndReserveTask(logicMember);
@@ -258,10 +268,10 @@ public class Grid
 		}
 		
 	}
-	/*void recover(HashMap<HashMap<String, String>, Boolean> dataMap, SizeInfo sizeInfo, boolean back)
+	/*void recover(LinkedHashMap<LinkedHashMap<String, String>, Boolean> dataMap, SizeInfo sizeInfo, boolean back)
 	{
 		this.gridResize(sizeInfo);
-		for(HashMap<String, String> data : dataMap.keySet())
+		for(LinkedHashMap<String, String> data : dataMap.keySet())
 		{
 			boolean placeStatus = dataMap.get(data);
 			
@@ -276,7 +286,7 @@ public class Grid
 			}
 		}
 	}*/
-	HashMap<UUID, GridMember> getMembers()
+	LinkedHashMap<UUID, GridMember> getMembers()
 	{
 		return this.members;
 	}
