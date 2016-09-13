@@ -1,0 +1,47 @@
+name=noname
+GridData={
+	id=83856e6b-a3db-4f08-bc41-1c7a2c67a874
+	gridSizeX=30
+	gridSizeY=30
+	gridSizeNX=15
+	gridSizeNY=15
+	MAX_SIZE=100
+	MAX_ABSOLUTE=150
+	Members={
+	}
+}
+TaskManager={
+	focus = 0
+	snapShots_0={
+		stateLabel = 초기
+		timeLabel = 17:56:36
+		beforeSnapShot={
+			createSnapMembers={
+			}
+			editSnapMembers={
+			}
+			removeSnapMembers={
+			}
+			createSnapGrids={
+			}
+			editSnapGrids={
+			}
+			removeSnapGrids={
+			}
+		}
+		afterSnapShot={
+			createSnapMembers={
+			}
+			editSnapMembers={
+			}
+			removeSnapMembers={
+			}
+			createSnapGrids={
+			}
+			editSnapGrids={
+			}
+			removeSnapGrids={
+			}
+		}
+	}
+}

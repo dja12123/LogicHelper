@@ -1,0 +1,190 @@
+name=noname
+GridData = {
+	id=7a964d76-8298-42bf-bf5e-99af039a0c96
+	gridSizeX=30
+	gridSizeY=30
+	gridSizeNX=15
+	gridSizeNY=15
+	MAX_SIZE=100
+	MAX_ABSOLUTE=150
+	Members = {
+		GridMember = {
+			ClassPath=kr.dja.AND
+			id=bf6f59f5-6cba-4b16-8e46-1eff4f9c7d05
+			name=AND
+			UIabslocationX=-32
+			UIabslocationY=-384
+			UIabsSizeX=32
+			UIabsSizeY=32
+			placement=true
+			grid=7a964d76-8298-42bf-bf5e-99af039a0c96
+			blocklocationX=-1
+			blocklocationY=-12
+			power=OFF
+			io_EAST=NONE_OFF
+			io_WEST=NONE_OFF
+			io_SOUTH=NONE_OFF
+			io_NORTH=NONE_OFF
+		}
+		GridMember = {
+			ClassPath=kr.dja.AND
+			id=f33a99a2-4c05-42b1-8b2f-99a302469337
+			name=AND
+			UIabslocationX=-32
+			UIabslocationY=-320
+			UIabsSizeX=32
+			UIabsSizeY=32
+			placement=true
+			grid=7a964d76-8298-42bf-bf5e-99af039a0c96
+			blocklocationX=-1
+			blocklocationY=-10
+			power=OFF
+			io_EAST=NONE_OFF
+			io_WEST=NONE_OFF
+			io_SOUTH=NONE_OFF
+			io_NORTH=NONE_OFF
+		}
+		GridMember = {
+			ClassPath=kr.dja.AND
+			id=dea1719f-3ffe-4787-8c29-a95fe955f7ba
+			name=AND
+			UIabslocationX=-160
+			UIabslocationY=-352
+			UIabsSizeX=32
+			UIabsSizeY=32
+			placement=true
+			grid=7a964d76-8298-42bf-bf5e-99af039a0c96
+			blocklocationX=-5
+			blocklocationY=-11
+			power=OFF
+			io_EAST=NONE_OFF
+			io_WEST=NONE_OFF
+			io_SOUTH=NONE_OFF
+			io_NORTH=NONE_OFF
+		}
+	}
+}
+TaskManager = {
+	focus = 1
+	snapShots_0 = {
+		stateLabel = 초기
+		timeLabel = 11:36:16
+		beforeSnapShot = {
+			createSnapMembers = {
+			}
+			editSnapMembers = {
+			}
+			removeSnapMembers = {
+			}
+			createSnapGrids = {
+			}
+			editSnapGrids = {
+			}
+			removeSnapGrids = {
+			}
+		}
+		afterSnapShot = {
+			createSnapMembers = {
+			}
+			editSnapMembers = {
+			}
+			removeSnapMembers = {
+			}
+			createSnapGrids = {
+			}
+			editSnapGrids = {
+			}
+			removeSnapGrids = {
+			}
+		}
+	}
+	snapShots_1 = {
+		stateLabel = (-160, -352) 생성(3)
+		timeLabel = 11:36:19
+		beforeSnapShot = {
+			createSnapMembers = {
+			}
+			editSnapMembers = {
+			}
+			removeSnapMembers = {
+				bf6f59f5-6cba-4b16-8e46-1eff4f9c7d05
+				f33a99a2-4c05-42b1-8b2f-99a302469337
+				dea1719f-3ffe-4787-8c29-a95fe955f7ba
+			}
+			createSnapGrids = {
+			}
+			editSnapGrids = {
+			}
+			removeSnapGrids = {
+			}
+		}
+		afterSnapShot = {
+			createSnapMembers = {
+				Data = {
+					ClassPath=kr.dja.AND
+					id=bf6f59f5-6cba-4b16-8e46-1eff4f9c7d05
+					name=AND
+					UIabslocationX=-32
+					UIabslocationY=-384
+					UIabsSizeX=32
+					UIabsSizeY=32
+					placement=true
+					grid=7a964d76-8298-42bf-bf5e-99af039a0c96
+					blocklocationX=-1
+					blocklocationY=-12
+					power=OFF
+					io_EAST=NONE_OFF
+					io_WEST=NONE_OFF
+					io_SOUTH=NONE_OFF
+					io_NORTH=NONE_OFF
+				}
+				Data = {
+					ClassPath=kr.dja.AND
+					id=f33a99a2-4c05-42b1-8b2f-99a302469337
+					name=AND
+					UIabslocationX=-32
+					UIabslocationY=-320
+					UIabsSizeX=32
+					UIabsSizeY=32
+					placement=true
+					grid=7a964d76-8298-42bf-bf5e-99af039a0c96
+					blocklocationX=-1
+					blocklocationY=-10
+					power=OFF
+					io_EAST=NONE_OFF
+					io_WEST=NONE_OFF
+					io_SOUTH=NONE_OFF
+					io_NORTH=NONE_OFF
+				}
+				Data = {
+					ClassPath=kr.dja.AND
+					id=dea1719f-3ffe-4787-8c29-a95fe955f7ba
+					name=AND
+					UIabslocationX=-160
+					UIabslocationY=-352
+					UIabsSizeX=32
+					UIabsSizeY=32
+					placement=true
+					grid=7a964d76-8298-42bf-bf5e-99af039a0c96
+					blocklocationX=-5
+					blocklocationY=-11
+					power=OFF
+					io_EAST=NONE_OFF
+					io_WEST=NONE_OFF
+					io_SOUTH=NONE_OFF
+					io_NORTH=NONE_OFF
+				}
+			}
+			editSnapMembers = {
+			}
+			removeSnapMembers = {
+			}
+			createSnapGrids = {
+			}
+			editSnapGrids = {
+			}
+			removeSnapGrids = {
+			}
+		}
+	}
+}

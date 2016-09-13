@@ -2,6 +2,7 @@ package kr.dja;
 
 import java.awt.Color;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -30,6 +31,10 @@ public class SessionManager
 	Session getFocusSession()
 	{
 		return this.focusSession;
+	}
+	void LoadFile(File file)
+	{
+		
 	}
 }
 class Session implements DataIO

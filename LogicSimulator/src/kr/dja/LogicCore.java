@@ -175,11 +175,6 @@ class Resource
 				reader.close();
 			}
 			this.config.load(new BufferedReader(new FileReader(configDIR)));
-			//config.store(new FileOutputStream(configDIR, false), "LogicSimulator Config");
-			if(this.config.getProperty("asd") != null)
-			{
-				LogicCore.putConsole(config.getProperty("asd"));
-			}
 			for(String imgFile : this.getFileList(IMG_DIR_NAME))
 			{
 				BufferedImage img = ImageIO.read(this.getFile("/" + IMG_DIR_NAME + "/" + imgFile));
@@ -265,40 +260,49 @@ class Resource
 	{
 		return this.images.get(tag);
 	}
-	ArrayList<String> getFileList(String dir) throws IOException
+	ArrayList<String> getFileList(String dir)
 	{
 		ArrayList<String> fileList = new ArrayList<String>();
-		boolean isZipRead = false;
-		CodeSource src = Resource.class.getProtectionDomain().getCodeSource();
-		if(src != null)
+		try
 		{
-			LogicCore.putConsole("JAR MODE");
-			URL jar = src.getLocation();
-			ZipInputStream zip = new ZipInputStream(jar.openStream());
-			ZipEntry ze = null;
-			while((ze = zip.getNextEntry()) != null)
+			boolean isZipRead = false;
+			CodeSource src = Resource.class.getProtectionDomain().getCodeSource();
+			if(src != null)
 			{
-				isZipRead = true;
-				String entryName = ze.getName();
-				if(entryName.startsWith(dir))
+				LogicCore.putConsole("JAR MODE");
+				URL jar = src.getLocation();
+				ZipInputStream zip = new ZipInputStream(jar.openStream());
+				ZipEntry ze = null;
+				while((ze = zip.getNextEntry()) != null)
 				{
-					String fileName = entryName.replace(dir + "/", "");
-					if(fileName.length() > 0)
+					isZipRead = true;
+					String entryName = ze.getName();
+					if(entryName.startsWith(dir))
 					{
-						fileList.add(fileName);
-					} 
+						String fileName = entryName.replace(dir + "/", "");
+						if(fileName.length() > 0)
+						{
+							fileList.add(fileName);
+						} 
+					}
+				}
+			}
+			if(!isZipRead)
+			{//이클립스에서만
+				LogicCore.putConsole("IDE MODE");
+				String dirName = new File(getClass().getResource("../../" + dir).getFile()).toString();
+				for(File file : new File(dirName).listFiles())
+				{
+					fileList.add(file.toString().replace(dirName + "\\", ""));
 				}
 			}
 		}
-		if(!isZipRead)
-		{//이클립스에서만
-			LogicCore.putConsole("IDE MODE");
-			String dirName = new File(getClass().getResource("../../" + dir).getFile()).toString();
-			for(File file : new File(dirName).listFiles())
-			{
-				fileList.add(file.toString().replace(dirName + "\\", ""));
-			}
+		catch(Exception e)
+		{
+			
 		}
+		
+		
 		return fileList;
 	}
 	File getFile(String tag)
