@@ -11,7 +11,7 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 
-public class Grid implements DataIO
+public class Grid
 {
 	static int count = 0;
 	
@@ -50,19 +50,60 @@ public class Grid implements DataIO
 		label.setBounds(0, 0, 200, 30);
 		this.gridPanel.add(label);
 	}
-	Grid(LinkedHashMap<String, String> dataMap, Session session)
+	Grid(Iterator<String> itr, Session session)
 	{
-		this(session, new SizeInfo(new Integer(dataMap.get("gridSizeX")), new Integer(dataMap.get("gridSizeY"))
-		, new Integer(dataMap.get("gridSizeNX")), new Integer(dataMap.get("gridSizeNY"))), UUID.fromString(dataMap.get("id")));
-		this.MAX_SIZE = new Integer(dataMap.get("MAX_SIZE"));
-		this.MAX_ABSOLUTE = new Integer(dataMap.get("MAX_ABSOLUTE"));
+		this.session = session;
+		this.gridPanel = new GridPanel();
+		Integer[] gridSize = new Integer[4];
+		while(itr.hasNext())
+		{
+			String[] KV = itr.next().replace("\t", "").split("=");
+			String key = KV[0];
+			String velue = KV.length > 0 ? KV[1] : null;
+			switch(key)
+			{
+			case "id":
+				this.id = UUID.fromString(velue);
+				break;
+			case "gridSizeX":
+				gridSize[0] = new Integer(velue);
+				break;
+			case "gridSizeY":
+				gridSize[1] = new Integer(velue);
+				break;
+			case "gridSizeNX":
+				gridSize[2] = new Integer(velue);
+				break;
+			case "gridSizeNY":
+				gridSize[3] = new Integer(velue);
+				break;
+			case "MAX_SIZE":
+				this.MAX_SIZE = new Integer(velue);
+				break;
+			case "MAX_ABSOLUTE":
+				this.MAX_ABSOLUTE = new Integer(velue);
+				break;
+			case "Members":
+				while(itr.hasNext())
+				{
+					KV = itr.next().replace("\t", "").split("=");
+					key = KV[0];
+					if(key.equals("GridMember"))
+					{
+						GridMember member = GridMember.Factory(this.session.getCore(), itr);
+						this.addMember(member, member.getUIabsLocationX(), member.getUIabsLocationY(), false);
+					}
+				}
+				break;
+			}
+		}
+		this.gridSize = new SizeInfo(gridSize[0], gridSize[1], gridSize[2], gridSize[3]);
 	}
 	Session getSession()
 	{
 		return this.session;
 	}
-	@Override
-	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
 	{
 		dataMap.put("id", this.id.toString());
 		dataMap.put("gridSizeX", Integer.toString(this.gridSize.getX()));
@@ -73,8 +114,25 @@ public class Grid implements DataIO
 		dataMap.put("MAX_ABSOLUTE", Integer.toString(this.MAX_ABSOLUTE));
 		return dataMap;
 	}
-	@Override
-	public void setData(LinkedHashMap<String, String> dataMap)
+	ArrayList<String> getMemberData(ArrayList<String> dataList)
+	{
+		LinkedHashMap<String, String> dataTemp = null;
+		dataList.add("Members={\n");
+		for(GridMember member : this.members.values())
+		{
+			dataTemp = new LinkedHashMap<String, String>();
+			member.getData(dataTemp);
+			dataList.add("\tGridMember={\n");
+			for(String dataKey : dataTemp.keySet())
+			{
+				dataList.add("\t\t" + dataKey + "=" + dataTemp.get(dataKey) + "\n");
+			}
+			dataList.add("\t}\n");
+		}
+		dataList.add("}\n");
+		return dataList;
+	}
+	void setData(LinkedHashMap<String, String> dataMap)
 	{
 		SizeInfo size = new SizeInfo(new Integer(dataMap.get("gridSizeX")), new Integer(dataMap.get("gridSizeY"))
 		, new Integer(dataMap.get("gridSizeNX")), new Integer(dataMap.get("gridSizeNY")));

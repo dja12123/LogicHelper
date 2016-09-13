@@ -301,41 +301,48 @@ class Resource
 		}
 		return fileList;
 	}
-	File getFile(String tag) throws IOException
+	File getFile(String tag)
 	{//"http://stackoverflow.com/questions/941754/how-to-get-a-path-to-a-resource-in-a-java-jar-file#comment750014_941754"
 		File file = null;
+		try
+		{
 		String resource = tag;
 		URL res = getClass().getResource(resource);
-		if(res.toString().startsWith("jar:"))
-		{
-			LogicCore.putConsole("JAR MODE ");
-			InputStream input = getClass().getResourceAsStream(resource);
-			file = File.createTempFile("tempfile", ".tmp");
-			OutputStream out = new FileOutputStream(file);
-			int read;
-			byte[] bytes = new byte[1024];
-			while((read = input.read(bytes)) != -1)
+			if(res.toString().startsWith("jar:"))
 			{
-				out.write(bytes, 0, read);
+				LogicCore.putConsole("JAR MODE ");
+				InputStream input = getClass().getResourceAsStream(resource);
+				file = File.createTempFile("tempfile", ".tmp");
+				OutputStream out = new FileOutputStream(file);
+				int read;
+				byte[] bytes = new byte[1024];
+				while((read = input.read(bytes)) != -1)
+				{
+					out.write(bytes, 0, read);
+				}
+				out.close();
+				input.close();
+				file.deleteOnExit();
 			}
-			out.close();
-			input.close();
-			file.deleteOnExit();
+			else
+			{//this will probably work in your IDE, but not from a JAR
+				LogicCore.putConsole("IDE MODE ");
+				file = new File(res.getFile());
+			}
+			if(file != null && !file.exists())
+			{
+				throw new RuntimeException("Error: File " + file + " not found!");
+			}
+			else
+			{
+				LogicCore.putConsole("LOAD: " + file.toString());
+			}
+			
 		}
-		else
-		{//this will probably work in your IDE, but not from a JAR
-			LogicCore.putConsole("IDE MODE ");
-			file = new File(res.getFile());
-		}
-		if(file != null && !file.exists())
+		catch(Exception e)
 		{
-			throw new RuntimeException("Error: File " + file + " not found!");
+			
 		}
-		else
-		{
-			LogicCore.putConsole("LOAD: " + file.toString());
-		}
-		
 		return file;
 	}
 }

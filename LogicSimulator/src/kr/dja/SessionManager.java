@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
@@ -62,28 +63,32 @@ class Session implements DataIO
 		try
 		{
 			BufferedWriter out = new BufferedWriter(new FileWriter(LogicCore.JARLOC + "/" + this.name + ".LogicSave", false));
-			LinkedHashMap<String, String> sessionDataMap = this.getData(new LinkedHashMap<String, String>());
-			for(String sessionKey : sessionDataMap.keySet())
+			LinkedHashMap<String, String> dataTemp = this.getData(new LinkedHashMap<String, String>());
+			for(String sessionKey : dataTemp.keySet())
 			{
-				out.write(sessionKey + "=" + sessionDataMap.get(sessionKey) + "\n");
+				out.write(sessionKey + "=" + dataTemp.get(sessionKey) + "\n");
 			}
-			
 				LinkedHashMap<String, String> gridDataMap = this.grid.getData(new LinkedHashMap<String, String>());
-				out.write("\nGridData:\n");
+				out.write("GridData={\n");
 				for(String sessionKey : gridDataMap.keySet())
 				{
 					out.write("\t" + sessionKey + "=" + gridDataMap.get(sessionKey) + "\n");
 				}
-				for(GridMember member : this.grid.getMembers().values())
+				ArrayList<String> memberDataList = new ArrayList<String>();
+				this.grid.getMemberData(memberDataList);
+				for(String memberData : memberDataList)
 				{
-					LinkedHashMap<String, String> memberDataMap = new LinkedHashMap<String, String>();
-					member.getData(memberDataMap);
-					out.write("\n\tGridMemberData:\n");
-					for(String memberKey : memberDataMap.keySet())
-					{
-						out.write("\t\t" + memberKey + "=" + memberDataMap.get(memberKey) + "\n");
-					}
+					out.write("\t" + memberData);
 				}
+				out.write("}\n");
+			ArrayList<String> arrDataTemp = new ArrayList<String>();
+			this.getTaskManager().getData(arrDataTemp);
+			out.write("TaskManager={\n");
+			for(String data : arrDataTemp)
+			{
+				out.write("\t" + data);
+			}
+			out.write("}\n");
 			out.close();
 		}
 		catch (IOException e)
@@ -93,6 +98,7 @@ class Session implements DataIO
 	}
 	void Session(String fileLocation)
 	{
+		LogicCore.getResource().getFile(fileLocation);
 
 	}
 	void close()

@@ -4,6 +4,7 @@ import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -27,6 +28,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,11 +40,15 @@ import java.util.UUID;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -52,6 +60,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import kr.dja.Grid.GridPanel;
 
@@ -61,6 +70,7 @@ public class UI
 	
 	private Size UI_Size;
 	
+	private FileLoadPanel fileLoadPanel;
 	private GridArea gridArea;
 	private ToolBar toolBar;
 	private UnderBar underBar;
@@ -88,6 +98,8 @@ public class UI
 		this.core = core;
 		
 		this.UI_Size = Size.MIDDLE;
+		
+		this.fileLoadPanel = new FileLoadPanel(this.core);
 		this.toolBar = new ToolBar(this.core);
 		this.underBar = new UnderBar();
 		
@@ -106,7 +118,6 @@ public class UI
 				LogicCore.removeInstance(core);
 			}
 		});
-
 		this.gridArea = new GridArea(this);
 		this.taskOperatorPanel = new TaskOperatorPanel();
 		this.palettePanel = new PalettePanel(this);
@@ -177,6 +188,14 @@ public class UI
 		this.mainFrame.add(this.controlView, BorderLayout.EAST);
 
 		this.mainFrame.setVisible(true);
+	}
+	JFrame getFrame()
+	{
+		return this.mainFrame;
+	}
+	FileLoadPanel getFileLoader()
+	{
+		return this.fileLoadPanel;
 	}
 	GridArea getGridArea()
 	{
@@ -717,7 +736,7 @@ class ToolBar implements LogicUIComponent
 	private JLabel titleLabel;
 	private ButtonPanel saveButton;
 	private UIButton optionSaveButton;
-	private UIButton loadButton;
+	private ButtonPanel loadButton;
 	private UIButton createNewfileButton;
 	private UIButton sizeUpButton;
 	private UIButton sizeDownButton;
@@ -764,7 +783,16 @@ class ToolBar implements LogicUIComponent
 			}
 		};
 		this.optionSaveButton = new UIButton(20, 20, null, null);
-		this.loadButton = new UIButton(20, 20, null, null);
+		this.loadButton = new ButtonPanel(20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+			
+			@Override
+			void pressed(int button)
+			{
+				core.getUI().getFileLoader().active();
+			}
+		};
 		this.createNewfileButton = new UIButton(20, 20, null, null);
 		this.sizeUpButton = new UIButton(20, 20, null, null);
 		this.sizeDownButton = new UIButton(20, 20, null, null);
@@ -1700,7 +1728,112 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	{
 		NONE, PRESS, ONMOUSE;
 	}
-
+}
+class FileLoadPanel
+{
+	private JDialog diaLog;
+	private LogicCore core;
+	private JFileChooser fileChooser;
+	
+	private JPanel buttonPanel;
+	private ButtonGroup grp;
+	private JRadioButton dftLoad;
+	private JRadioButton tempLoad;
+	private JRadioButton studyLoad;
+	private JButton selectButton;
+	
+	FileLoadPanel(LogicCore core)
+	{
+		this.core = core;
+		this.diaLog = new JDialog();
+		this.diaLog.setTitle("불러오기");
+		this.diaLog.setLayout(null);
+		
+		this.buttonPanel = new JPanel();
+		this.buttonPanel.setLayout(null);
+		this.buttonPanel.setBounds(0, 230, 500, 70);
+		this.grp = new ButtonGroup();
+		this.dftLoad = new JRadioButton("기본");
+		this.dftLoad.setBounds(20, 10, 80, 20);
+		this.tempLoad = new JRadioButton("템플릿");
+		this.tempLoad.setBounds(100, 10, 80, 20);
+		this.studyLoad = new JRadioButton("내부파일");
+		this.studyLoad.setBounds(180, 10, 80, 20);
+		this.grp.add(this.dftLoad);
+		this.grp.add(this.tempLoad);
+		this.grp.add(this.studyLoad);
+		this.dftLoad.setSelected(true);
+		this.selectButton = new JButton("선택");
+		this.selectButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				System.out.println(fileChooser.getSelectedFile());
+			}
+		});
+		this.selectButton.setBounds(380, 0, 100, 30);
+		this.buttonPanel.add(this.dftLoad);
+		this.buttonPanel.add(this.tempLoad);
+		this.buttonPanel.add(this.studyLoad);
+		this.buttonPanel.add(this.selectButton);
+		
+		this.fileChooser = new JFileChooser();
+		this.fileChooser.addPropertyChangeListener(new PropertyChangeListener()
+		{
+			@Override
+			public void propertyChange(PropertyChangeEvent arg0)
+			{
+				if(fileChooser.getSelectedFile() != null)
+				{
+					selectButton.setEnabled(true);
+				}
+				else
+				{
+					selectButton.setEnabled(false);
+				}
+			}
+		});
+		this.fileChooser.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14F));
+		this.fileChooser.setBounds(0, 0, 500, 230);
+		this.fileChooser.setCurrentDirectory(new File(LogicCore.JARLOC));
+		this.fileChooser.setFileFilter(new FileNameExtensionFilter("LogicSave", "LogicSave"));
+		this.fileChooser.setControlButtonsAreShown(false);
+		this.fileChooser.setAcceptAllFileFilterUsed(false);
+		
+		this.diaLog.setResizable(false);
+		this.diaLog.setAlwaysOnTop(true);
+		this.diaLog.setSize(500, 300);
+		this.diaLog.add(this.fileChooser);
+		this.diaLog.add(this.buttonPanel);
+		this.setFont(this.diaLog.getComponents());
+	}
+	void active()
+	{
+		JFrame mainFrame = this.core.getUI().getFrame();
+		this.diaLog.setLocation(mainFrame.getX() + (mainFrame.getWidth() / 2) - (this.diaLog.getWidth() / 2)
+				, mainFrame.getY() + (mainFrame.getHeight() / 2) - (this.diaLog.getHeight() / 2));
+		this.diaLog.setVisible(true);
+	}
+	void disActive()
+	{
+		this.diaLog.setVisible(false);
+	}
+	private void setFont(Component[] comp)
+	{
+		for(Component c : comp)
+		{
+			if(c instanceof Container)
+			{
+				this.setFont(((Container) c).getComponents());
+				try
+				{
+					c.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14F));
+				}
+				catch(Exception e){}
+			}
+		}
+	}
 }
 enum Size
 {

@@ -7,6 +7,7 @@ import java.awt.Point;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
@@ -44,10 +45,27 @@ public class TaskManager
 	{
 		this(session);
 	}
-	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	ArrayList<String> getData(ArrayList<String> dataList)
 	{
-		
-		return dataMap;
+		if(this.focusUnit != null)
+		{
+			dataList.add("focus = " + this.snapShots.indexOf(this.focusUnit) + "\n");
+		}
+		else
+		{
+			dataList.add("focus = 0\n");
+		}
+		for(TaskUnit unit : this.snapShots)
+		{
+			dataList.add("snapShots_" + this.snapShots.indexOf(unit) + "={\n");
+			ArrayList<String> dataTemp = new ArrayList<String>();
+			for(String key : unit.getData(dataTemp))
+			{
+				dataList.add("\t" + key);
+			}
+			dataList.add("}\n");
+		}
+		return dataList;
 	}
 	private TaskUnit getLastSnapShot()
 	{
@@ -287,9 +305,25 @@ class TaskUnit
 	{
 		this(manager);
 	}
-	LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	ArrayList<String> getData(ArrayList<String> dataList)
 	{
-		return dataMap;
+		dataList.add("stateLabel = " + this.stateLabel.getText() + "\n");//다국어 지원 모드로 수정 필요
+		dataList.add("timeLabel = " + this.timeLabel.getText() + "\n");
+		dataList.add("beforeSnapShot={\n");
+		ArrayList<String> dataTemp = new ArrayList<String>();
+		for(String data : this.beforeSnapShot.getData(dataTemp))
+		{
+			dataList.add("\t" + data);
+		}
+		dataList.add("}\n");
+		dataList.add("afterSnapShot={\n");
+		dataTemp = new ArrayList<String>();
+		for(String data : this.afterSnapShot.getData(dataTemp))
+		{
+			dataList.add("\t" + data);
+		}
+		dataList.add("}\n");
+		return dataList;
 	}
 	boolean isEdit()
 	{
@@ -313,7 +347,7 @@ class TaskUnit
 	}
 	void addCreate(GridMember member)
 	{
-		if(!this.beforeSnapShot.removeSnapMembers.contains(member.getUUID()))
+		if(!this.beforeSnapShot.removeSnapMembers.equals(member.getUUID()))
 		{
 			this.beforeSnapShot.removeSnapMembers.add(member.getUUID());
 		}
@@ -325,7 +359,7 @@ class TaskUnit
 		if(!this.afterSnapShot.createSnapMembers.containsKey(member.getUUID()))
 		{
 			this.beforeSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new LinkedHashMap<String, String>()));
-			if(!this.afterSnapShot.removeSnapMembers.contains(member.getUUID()))
+			if(!this.afterSnapShot.removeSnapMembers.equals(member.getUUID()))
 			{
 				this.afterSnapShot.removeSnapMembers.add(member.getUUID());
 			}
@@ -351,7 +385,7 @@ class TaskUnit
 	}
 	void addCreate(Grid grid)
 	{
-		if(!this.beforeSnapShot.removeSnapGrids.contains(grid.getUUID()))
+		if(!this.beforeSnapShot.removeSnapGrids.equals(grid.getUUID()))
 		{
 			this.beforeSnapShot.removeSnapGrids.add(grid.getUUID());
 		}
@@ -363,7 +397,7 @@ class TaskUnit
 		if(!this.afterSnapShot.createSnapGrids.containsKey(grid.getUUID()))
 		{
 			this.beforeSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new LinkedHashMap<String, String>()));
-			if(!this.afterSnapShot.removeSnapGrids.contains(grid.getUUID()))
+			if(!this.afterSnapShot.removeSnapGrids.equals(grid.getUUID()))
 			{
 				this.afterSnapShot.removeSnapGrids.add(grid.getUUID());
 			}
@@ -453,12 +487,102 @@ class TaskSnapShot
 	LinkedHashMap<UUID, LinkedHashMap<String, String>> createSnapGrids = new LinkedHashMap<UUID, LinkedHashMap<String, String>>();
 	ArrayList<UUID> removeSnapGrids = new ArrayList<UUID>();
 	TaskSnapShot(){};
+	
+	/*@SuppressWarnings("unchecked")
 	TaskSnapShot(LinkedHashMap<String, String> dataMap)
 	{
-		
-	}
-	LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+		Object pushData = null;
+		LinkedHashMap<String, String> dataTemp = new LinkedHashMap<String, String>();
+		for(String dataKey : dataMap.keySet())
+		{
+			switch(dataKey)
+			{
+			case "editSnapMembers = {":
+				pushData = this.editSnapMembers;
+				break;
+			case "createSnapMembers = {":
+				pushData = this.createSnapMembers;
+				break;
+			case "removeSnapMembers = {":
+				pushData = this.removeSnapMembers;
+				break;
+			case "editSnapGrids = {":
+				pushData = this.editSnapGrids;
+				break;
+			case "createSnapGrids = {":
+				pushData = this.createSnapGrids;
+				break;
+			case "removeSnapGrids = {":
+				pushData = this.removeSnapGrids;
+				break;
+			default:
+				if(pushData instanceof LinkedHashMap)
+				{
+					if(dataKey.contains("Data = {"))
+					{
+						dataTemp = new LinkedHashMap<String, String>();
+					}
+					else if(dataKey.contains("}"))
+					{
+						((LinkedHashMap<UUID, LinkedHashMap<String, String>>) pushData).put(UUID.fromString(dataKey), dataTemp);
+					}
+					else
+					{
+						dataTemp.put(dataKey, dataMap.get(dataKey));
+					}
+				}
+				else if(pushData instanceof ArrayList)
+				{
+					((ArrayList<UUID>) pushData).add(UUID.fromString(dataKey));
+				}
+			}
+		}
+	}*/
+	ArrayList<String> getData(ArrayList<String> dataList)
 	{
-		return dataMap;
+		dataList.add("createSnapMembers={\n");
+		this.inputData(this.createSnapMembers, dataList);
+		dataList.add("}\n");
+		
+		dataList.add("editSnapMembers={\n");
+		this.inputData(this.editSnapMembers, dataList);
+		dataList.add("}\n");
+
+		dataList.add("removeSnapMembers={\n");
+		this.inputData(this.removeSnapMembers, dataList);
+		dataList.add("}\n");
+		
+		dataList.add("createSnapGrids={\n");
+		this.inputData(this.createSnapGrids, dataList);
+		dataList.add("}\n");
+		
+		dataList.add("editSnapGrids={\n");
+		this.inputData(this.editSnapGrids, dataList);
+		dataList.add("}\n");
+
+		dataList.add("removeSnapGrids={\n");
+		this.inputData(this.removeSnapGrids, dataList);
+		dataList.add("}\n");
+		
+		return dataList;
+	}
+	private void inputData(LinkedHashMap<UUID, LinkedHashMap<String, String>> collection, ArrayList<String> dataList)
+	{
+		for(UUID dataKey : collection.keySet())
+		{
+			dataList.add("\tData={\n");
+			for(String strKey : collection.get(dataKey).keySet())
+			{
+				dataList.add("\t\t" + strKey + "=" + collection.get(dataKey).get(strKey) + "\n");
+			}
+			dataList.add("\t}\n");
+		}
+	}
+	private void inputData(ArrayList<UUID> collection, ArrayList<String> dataList)
+	{
+		for(UUID id : collection)
+		{
+			dataList.add("\t" + id.toString() + "\n");
+		}
 	}
 }

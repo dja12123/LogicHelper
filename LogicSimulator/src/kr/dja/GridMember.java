@@ -6,6 +6,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
@@ -13,7 +14,6 @@ import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-
 
 public abstract class GridMember implements DataIO, SizeUpdate
 {
@@ -48,11 +48,12 @@ public abstract class GridMember implements DataIO, SizeUpdate
 		this.UIabslocationY = new Integer(dataMap.get("UIabslocationY"));
 		this.UIabsSizeX = new Integer(dataMap.get("UIabsSizeX"));
 		this.UIabsSizeY = new Integer(dataMap.get("UIabsSizeY"));
+		this.gridViewPane.repaint();
 	}
 	@Override
 	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
 	{
-		dataMap.put("ClassName", this.getClass().getName());
+		dataMap.put("ClassPath", this.getClass().getName());
 		dataMap.put("id", this.id.toString());
 		dataMap.put("name", this.name);
 		dataMap.put("UIabslocationX", Integer.toString(this.UIabslocationX));
@@ -232,12 +233,24 @@ public abstract class GridMember implements DataIO, SizeUpdate
 			}
 		}
 	}
+	static GridMember Factory(LogicCore core, Iterator<String> itr)
+	{
+		String str;
+		String[] KV;
+		LinkedHashMap<String, String> dataMap = new LinkedHashMap<String, String>();
+		while(!(str = itr.next().replace("\n", "")).equals("}"))
+		{
+			KV = str.split("=");
+			dataMap.put(KV[0], KV[1]);
+		}
+		return Factory(core, dataMap);
+	}
 	static GridMember Factory(LogicCore core, LinkedHashMap<String, String> info)
 	{
 		GridMember member = null;
 		try
 		{//리플렉션
-			member = (GridMember)Class.forName(info.get("ClassName")).getDeclaredConstructor(new Class[]{LogicCore.class}).newInstance(core);
+			member = (GridMember)Class.forName(info.get("ClassPath")).getDeclaredConstructor(new Class[]{LogicCore.class}).newInstance(core);
 			member.setData(info);
 		}
 		catch(Exception e)
@@ -285,23 +298,24 @@ abstract class LogicBlock extends GridMember
 	@Override
 	public void setData(LinkedHashMap<String, String> dataMap)
 	{
-		super.setData(dataMap);
 		this.blocklocationX = new Integer(dataMap.get("blocklocationX"));
 		this.blocklocationY = new Integer(dataMap.get("blocklocationY"));
 		this.power = Power.valueOf(Power.OFF.toString());
 		for(Direction ext : Direction.values())
 		{
+			this.setTimer(0);
 			String data = dataMap.get("io_" + ext);
 			IOPanel ioPanel = new IOPanel(this, ext);
 			this.io.put(ext, ioPanel);
 			ioPanel.setStatus(IOStatus.valueOf(data.split("_")[0]));
 			ioPanel.setOnOffStatus(Power.valueOf(data.split("_")[1]));
-			
+			this.calculate();
 		}
 		if(super.isPlacement())
 		{
 			super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		}
+		super.setData(dataMap);
 	}
 	@Override
 	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
@@ -377,7 +391,6 @@ abstract class LogicBlock extends GridMember
 		}
 		super.layeredPane.repaint();
 	}
-
 	final void toggleIO(Direction ext)
 	{
 		super.setChangeStateBefore();
