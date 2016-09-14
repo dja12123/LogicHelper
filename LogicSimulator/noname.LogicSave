@@ -1,6 +1,6 @@
 name=noname
 GridData={
-	id=83856e6b-a3db-4f08-bc41-1c7a2c67a874
+	id=de0381ba-4be1-4604-89f9-538be2ef1e6e
 	gridSizeX=30
 	gridSizeY=30
 	gridSizeNX=15
@@ -14,7 +14,7 @@ TaskManager={
 	focus = 0
 	snapShots_0={
 		stateLabel = 초기
-		timeLabel = 17:56:36
+		timeLabel = 15:45:04
 		beforeSnapShot={
 			createSnapMembers={
 			}

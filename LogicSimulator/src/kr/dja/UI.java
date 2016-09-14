@@ -42,6 +42,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -52,6 +53,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.JViewport;
 import javax.swing.SwingConstants;
@@ -70,6 +72,7 @@ public class UI
 	
 	private Size UI_Size;
 	
+	private FileSavePanel fileSavePanel;
 	private FileLoadPanel fileLoadPanel;
 	private GridArea gridArea;
 	private ToolBar toolBar;
@@ -99,6 +102,7 @@ public class UI
 		
 		this.UI_Size = Size.MIDDLE;
 		
+		this.fileSavePanel = new FileSavePanel(this.core);
 		this.fileLoadPanel = new FileLoadPanel(this.core);
 		this.toolBar = new ToolBar(this.core);
 		this.underBar = new UnderBar();
@@ -192,6 +196,10 @@ public class UI
 	JFrame getFrame()
 	{
 		return this.mainFrame;
+	}
+	FileSavePanel getFileSaver()
+	{
+		return this.fileSavePanel;
 	}
 	FileLoadPanel getFileLoader()
 	{
@@ -735,7 +743,7 @@ class ToolBar implements LogicUIComponent
 	private JPanel rightSidePanel;
 	private JLabel titleLabel;
 	private ButtonPanel saveButton;
-	private UIButton optionSaveButton;
+	private ButtonPanel optionSaveButton;
 	private ButtonPanel loadButton;
 	private UIButton createNewfileButton;
 	private UIButton sizeUpButton;
@@ -782,7 +790,16 @@ class ToolBar implements LogicUIComponent
 				core.getSession().getFocusSession().saveData();
 			}
 		};
-		this.optionSaveButton = new UIButton(20, 20, null, null);
+		this.optionSaveButton = new ButtonPanel(20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+			
+			@Override
+			void pressed(int button)
+			{
+				core.getUI().getFileSaver().active();
+			}
+		};
 		this.loadButton = new ButtonPanel(20, 20)
 		{
 			private static final long serialVersionUID = 1L;
@@ -1729,106 +1746,257 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		NONE, PRESS, ONMOUSE;
 	}
 }
-class FileLoadPanel
+class FileSavePanel extends fileManagerWindow
 {
-	private JDialog diaLog;
-	private LogicCore core;
-	private JFileChooser fileChooser;
+	private ButtonGroup grp;
+	private JRadioButton dftSave;
+	private JRadioButton cloudSave;
+	private JCheckBox readOnly;
+	private JButton saveButton;
 	
+	private JTextField titleField;
+	private JTextArea descriptionArea;
+	
+	private File saveDir;
+	
+	FileSavePanel(LogicCore core)
+	{
+		super(core);
+		
+		super.diaLog.setSize(720, 300);
+		super.diaLog.setTitle("저장");
+		
+		this.grp = new ButtonGroup();
+		this.dftSave = new JRadioButton("로컬");
+		this.dftSave.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				setDFTFileView();
+			}
+		});
+		this.dftSave.setBounds(5, 225, 100, 20);
+		this.cloudSave = new JRadioButton("클라우드");
+		this.cloudSave.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				setCloudFileView();
+			}
+		});
+		this.cloudSave.setBounds(5, 245, 100, 20);
+		this.grp.add(this.dftSave);
+		this.grp.add(this.cloudSave);
+		this.readOnly = new JCheckBox("읽기 전용");
+		this.readOnly.setBounds(240, 225, 100, 20);
+		this.dftSave.setSelected(true);
+		
+		this.saveButton = new JButton("저장");
+		this.saveButton.setBounds(380, 230, 100, 30);
+		
+		this.titleField = new JTextField();
+		this.titleField.setBounds(500, 0, 210, 300);
+		this.descriptionArea = new JTextArea();
+		this.descriptionArea.setBounds(5, 30, 205, 235);
+		this.descriptionArea.setBorder(new EtchedBorder(EtchedBorder.RAISED));
+		
+		super.fileChooser.setBounds(0, 0, 500, 255);
+		super.fileChooser.addPropertyChangeListener(new PropertyChangeListener()
+		{
+			@Override
+			public void propertyChange(PropertyChangeEvent arg0)
+			{ 
+				if(fileChooser.getSelectedFile() != null)
+				{
+					saveButton.setEnabled(true);
+					saveDir = fileChooser.getSelectedFile();
+				}
+				else
+				{
+					saveButton.setEnabled(false);
+				}
+			}
+		});
+		super.diaLog.add(this.dftSave);
+		super.diaLog.add(this.cloudSave);
+		super.diaLog.add(this.readOnly);
+		super.diaLog.add(this.saveButton);
+		
+		super.setFont(super.diaLog.getComponents());
+	}
+}
+class FileLoadPanel extends fileManagerWindow
+{
 	private JPanel buttonPanel;
 	private ButtonGroup grp;
 	private JRadioButton dftLoad;
-	private JRadioButton tempLoad;
 	private JRadioButton innerLoad;
-	private JRadioButton innerTempLoad;
+	private JRadioButton cloudLoad;
+	private JCheckBox TempLoad;
+	private JCheckBox newSessionOpen;
 	private JButton selectButton;
 	
-	private JScrollPane innerSelectScroll;
-	private JPanel innerSelectPanel;
-	
-	private ArrayList<InnerSelectMember> innerSelects = new ArrayList<InnerSelectMember>();
-	private InnerSelectMember focusMember;
+	private JPanel descriptionPane;
+	private JLabel descriptionTitle;
+	private JTextArea descriptionText;
 	
 	FileLoadPanel(LogicCore core)
 	{
-		this.core = core;
-		this.diaLog = new JDialog();
-		this.diaLog.setTitle("불러오기");
-		this.diaLog.setLayout(null);
+		super(core);
 		
-		this.buttonPanel = new JPanel();
-		this.buttonPanel.setLayout(null);
-		this.buttonPanel.setBounds(0, 220, 500, 80);
-		this.grp = new ButtonGroup();
-		this.dftLoad = new JRadioButton("기본");
-		this.dftLoad.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				setDFTLoad();
-			}
-		});
-		this.dftLoad.setBounds(10, 5, 100, 20);
-		this.tempLoad = new JRadioButton("템플릿");
-		this.tempLoad.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				setDFTTempleatLoad();
-			}
-		});
-		this.tempLoad.setBounds(10, 25, 100, 20);
-		this.innerLoad = new JRadioButton("내부 파일");
-		this.innerLoad.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				setInnerDFTLoad();
-			}
-		});
-		this.innerLoad.setBounds(150, 5, 100, 20);
-		this.innerTempLoad = new JRadioButton("내부 템플릿");
-		this.innerTempLoad.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				setInnerTempleatLoad();
-			}
-		});
-		this.innerTempLoad.setBounds(150, 25, 100, 20);
-		this.grp.add(this.dftLoad);
-		this.grp.add(this.tempLoad);
-		this.grp.add(this.innerLoad);
-		this.grp.add(this.innerTempLoad);
-		this.dftLoad.setSelected(true);
-		this.selectButton = new JButton("선택");
-		this.selectButton.setBounds(380, 10, 100, 30);
-		this.buttonPanel.add(this.dftLoad);
-		this.buttonPanel.add(this.tempLoad);
-		this.buttonPanel.add(this.innerLoad);
-		this.buttonPanel.add(this.innerTempLoad);
-		this.buttonPanel.add(this.selectButton);
+		super.diaLog.setTitle("불러오기");
 		
-		this.fileChooser = new JFileChooser();
-		this.fileChooser.addPropertyChangeListener(new PropertyChangeListener()
+		super.fileChooser.addPropertyChangeListener(new PropertyChangeListener()
 		{
 			@Override
 			public void propertyChange(PropertyChangeEvent arg0)
 			{
 				if(fileChooser.getSelectedFile() != null)
-				{//TODO
+				{
 					selectButton.setEnabled(true);
+					selectFile = fileChooser.getSelectedFile();
+					showFileDescription();
 				}
 				else
 				{
 					selectButton.setEnabled(false);
+					deShowFileDescription();
 				}
 			}
 		});
+		
+		this.descriptionPane = new JPanel();
+		this.descriptionPane.setLayout(null);
+		this.descriptionPane.setBounds(500, 0, 210, 300);
+		this.descriptionTitle = new JLabel("제목테스트");
+		this.descriptionTitle.setBounds(0, 5, 220, 20);
+		this.descriptionTitle.setHorizontalAlignment(SwingConstants.CENTER);
+		this.descriptionText = new JTextArea();
+		this.descriptionText.setBounds(5, 30, 205, 235);
+		this.descriptionText.setBorder(new EtchedBorder(EtchedBorder.RAISED));
+		this.descriptionText.setEditable(false);
+		this.descriptionPane.add(this.descriptionTitle);
+		this.descriptionPane.add(this.descriptionText);
+		
+		this.buttonPanel = new JPanel();
+		this.buttonPanel.setLayout(null);
+		this.buttonPanel.setBounds(0, 220, 500, 80);
+		
+		this.grp = new ButtonGroup();
+		this.dftLoad = new JRadioButton("로컬");
+		this.dftLoad.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				setDFTFileView();
+			}
+		});
+		this.dftLoad.setBounds(10, 5, 100, 20);
+		this.innerLoad = new JRadioButton("기본 제공");
+		this.innerLoad.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				setInnerFileView();
+			}
+		});
+		this.innerLoad.setBounds(10, 25, 100, 20);
+		this.cloudLoad = new JRadioButton("클라우드");
+		this.cloudLoad.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				setCloudFileView();
+			}
+		});
+		this.cloudLoad.setBounds(110, 5, 100, 20);
+		this.grp.add(this.dftLoad);
+		this.grp.add(this.innerLoad);
+		this.grp.add(this.cloudLoad);
+		this.dftLoad.setSelected(true);
+		this.TempLoad = new JCheckBox("템플릿만 로드");
+		this.TempLoad.setBounds(240, 5, 120, 20);
+		this.newSessionOpen = new JCheckBox("새 세션 생성");
+		this.newSessionOpen.setSelected(true);
+		this.newSessionOpen.setBounds(240, 25, 120, 20);
+		this.selectButton = new JButton("선택");
+		this.selectButton.setBounds(380, 10, 100, 30);
+		this.selectButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				if(selectFile != null)
+				{
+					core.getSession().LoadFile(selectFile);
+					System.out.println(selectFile);
+				}
+			}
+		});
+		this.buttonPanel.add(this.dftLoad);
+		this.buttonPanel.add(this.innerLoad);
+		this.buttonPanel.add(this.cloudLoad);
+		this.buttonPanel.add(this.TempLoad);
+		this.buttonPanel.add(this.newSessionOpen);
+		this.buttonPanel.add(this.selectButton);
+		
+		super.diaLog.add(this.buttonPanel);
+		super.diaLog.add(this.descriptionPane);
+		super.setDFTFileView();
+		super.setFont(super.diaLog.getComponents());
+	}
+	private void showFileDescription()
+	{
+		this.diaLog.setSize(720, 300);
+	}
+	private void deShowFileDescription()
+	{
+		this.diaLog.setSize(500, 300);
+	}
+	@Override
+	protected void selectFile()
+	{
+		this.selectButton.setEnabled(true);
+	}
+}
+class fileManagerWindow
+{
+	protected JDialog diaLog;
+	protected LogicCore core;
+	
+	protected File selectFile;
+	
+	protected JFileChooser fileChooser;
+	
+	private JScrollPane innerSelectScroll;
+	private JPanel innerSelectPanel;
+	private ArrayList<InnerSelectMember> innerSelects = new ArrayList<InnerSelectMember>();
+	private InnerSelectMember focusMember;
+	
+	private JPanel cloudLoaderPanel;
+	
+	private JPanel fileSelecterPanel;
+	
+	fileManagerWindow(LogicCore core)
+	{
+		this.core = core;
+		
+		this.diaLog = new JDialog();
+		this.diaLog.setLayout(null);
+		this.diaLog.setResizable(false);
+		this.diaLog.setAlwaysOnTop(true);
+		this.diaLog.setSize(500, 300);
+		
+		this.fileSelecterPanel = new JPanel();
+		this.fileSelecterPanel.setLayout(null);
+		this.fileSelecterPanel.setBounds(0, 0, 500, 220);
+		
+		this.fileChooser = new JFileChooser();
 		this.fileChooser.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14F));
 		this.fileChooser.setBounds(0, 0, 500, 220);
 		this.fileChooser.setCurrentDirectory(new File(LogicCore.JARLOC));
@@ -1844,12 +2012,12 @@ class FileLoadPanel
 		this.innerSelectScroll.setBounds(0, 0, 495, 220);
 		this.innerSelectScroll.getVerticalScrollBar().setUnitIncrement(10);
 		
-		this.diaLog.setResizable(false);
-		this.diaLog.setAlwaysOnTop(true);
-		this.diaLog.setSize(500, 300);
-		this.diaLog.add(this.buttonPanel);
-		this.setFont(this.diaLog.getComponents());
-		this.setDFTLoad();
+		this.cloudLoaderPanel = new JPanel();
+		this.cloudLoaderPanel.setBounds(0, 0, 500, 220);
+		this.cloudLoaderPanel.setBackground(Color.green);
+		
+		this.diaLog.add(this.fileSelecterPanel);
+		this.setDFTFileView();
 	}
 	void active()
 	{
@@ -1862,62 +2030,40 @@ class FileLoadPanel
 	{
 		this.diaLog.setVisible(false);
 	}
-	private void setDFTLoad()
+	protected void setDFTFileView()
 	{
-		this.setDFTFileLoadView();
-		this.selectButton.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent arg0)
-			{
-				File file;
-				if((file = fileChooser.getSelectedFile()) != null)
-				{
-					core.getSession().LoadFile(file);
-				}
-			}
-		});
+		this.resetFileSelector();
+		this.fileSelecterPanel.add(this.fileChooser);
 	}
-	private void setDFTTempleatLoad()
+	protected void setInnerFileView()
 	{
-		this.setDFTFileLoadView();
-	}
-	private void setInnerDFTLoad()
-	{
-		this.setInnerFileView();
-	}
-	private void setInnerTempleatLoad()
-	{
-		this.setInnerFileView();
-	}
-	
-	private void setInnerFileView()
-	{
-		this.selectButton.setEnabled(false);
-		this.diaLog.remove(this.fileChooser);
-		this.diaLog.add(this.innerSelectScroll);
-		this.focusMember = null;
+		this.resetFileSelector();
+		this.fileSelecterPanel.add(this.innerSelectScroll);
 		this.innerSelects = new ArrayList<InnerSelectMember>();
 		this.innerSelectPanel.removeAll();
 		
 		ArrayList<String> innerDirList = LogicCore.getResource().getFileList("template");
 		for(String dir : innerDirList)
 		{
-			InnerSelectMember member = new InnerSelectMember(LogicCore.getResource().getFile(dir));
+			InnerSelectMember member = new InnerSelectMember(LogicCore.getResource().getFile("/template/" + dir));
 			member.setLocation(2, (this.innerSelects.size() - 1) * 53 + 2);
 			this.innerSelectPanel.add(member);
 		}
 		this.innerSelectPanel.setPreferredSize(new Dimension(500, this.innerSelects.size() * 53 + 2));
 		this.innerSelectScroll.getViewport().setView(this.innerSelectPanel);
-		this.diaLog.repaint();
 	}
-	private void setDFTFileLoadView()
+	protected void setCloudFileView()
 	{
-		this.diaLog.remove(this.innerSelectScroll);
-		this.diaLog.add(this.fileChooser);
-		this.diaLog.repaint();
+		this.resetFileSelector();
+		this.fileSelecterPanel.add(this.cloudLoaderPanel);
 	}
-	private void setFont(Component[] comp)
+	protected void resetFileSelector()
+	{
+		this.fileChooser.setSelectedFile(null);
+		this.fileSelecterPanel.removeAll();
+		this.fileSelecterPanel.repaint();
+	}
+	protected void setFont(Component[] comp)
 	{
 		for(Component c : comp)
 		{
@@ -1932,7 +2078,11 @@ class FileLoadPanel
 			}
 		}
 	}
-	class InnerSelectMember extends ButtonPanel
+	protected void selectFile()
+	{
+		
+	}
+	private class InnerSelectMember extends ButtonPanel
 	{
 		private static final long serialVersionUID = 1L;
 		private File LoadFile;
@@ -1961,17 +2111,17 @@ class FileLoadPanel
 		@Override
 		void pressed(int button)
 		{
-			for(InnerSelectMember member : innerSelects)
+			if(focusMember != null)
 			{
-				member.deSelectFocus();
+				focusMember.deSelectFocus();
 			}
-			selectButton.setEnabled(true);
+			selectFile();
 			focusMember = this;
+			selectFile = this.LoadFile;
 			this.selectFocus();
 		}
 	}
 }
-
 enum Size
 {
 	SMALL(1, "SMALL"), MIDDLE(2, "MIDDLE"), BIG(4, "BIG");
