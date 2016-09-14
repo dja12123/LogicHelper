@@ -37,12 +37,14 @@ public class SessionManager
 		
 	}
 }
-class Session implements DataIO
+class Session
 {
 	private LogicCore core;
+	private File fileLocation = null;
 	private Grid grid;
 	private TaskManager manager;
 	private String name = "noname";
+	private String description = "";
 	Session(LogicCore core)
 	{
 		this.core = core;
@@ -51,28 +53,25 @@ class Session implements DataIO
 		this.core.getUI().getGridArea().setGrid(this.grid);
 		this.core.getUI().getTaskManagerPanel().setManager(this.manager);
 	}
-	@Override
-	public void setData(LinkedHashMap<String, String> dataMap)
+	void setData(LinkedHashMap<String, String> dataMap)
 	{
-		this.name = dataMap.get("name");
+		//this.name = dataMap.get("name");
+		//this.description = dataMap.get("description");
 	}
-	@Override
-	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	void saveData(File file)
 	{
-		dataMap.put("name", this.name);
-		return dataMap;
-	}
-	void saveData()
-	{
-		System.out.println(LogicCore.JARLOC + "/" + this.name + ".LogicSave");
+		System.out.println(file);
+		this.fileLocation = file;
 		try
 		{
-			BufferedWriter out = new BufferedWriter(new FileWriter(LogicCore.JARLOC + "/" + this.name + ".LogicSave", false));
-			LinkedHashMap<String, String> dataTemp = this.getData(new LinkedHashMap<String, String>());
-			for(String sessionKey : dataTemp.keySet())
+			BufferedWriter out = new BufferedWriter(new FileWriter(file, false));
+			out.write("name=" + this.name + "\n");
+			out.write("description={\n");
+			for(String str : this.description.split("\\r?\\n"))
 			{
-				out.write(sessionKey + "=" + dataTemp.get(sessionKey) + "\n");
+				out.write("\t" + str + "\n");
 			}
+			out.write("}\n");
 				LinkedHashMap<String, String> gridDataMap = this.grid.getData(new LinkedHashMap<String, String>());
 				out.write("GridData={\n");
 				for(String sessionKey : gridDataMap.keySet())
@@ -121,6 +120,26 @@ class Session implements DataIO
 	Grid getGrid()
 	{
 		return this.grid;
+	}
+	String getName()
+	{
+		return this.name;
+	}
+	void setName(String name)
+	{
+		this.name = name;
+	}
+	String getDescription()
+	{
+		return this.description;
+	}
+	void setDescription(String str)
+	{
+		this.description = str;
+	}
+	File getFileLocation()
+	{
+		return this.fileLocation;
 	}
 }
 interface DataIO
