@@ -15,7 +15,7 @@ import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-public abstract class GridMember implements DataIO, SizeUpdate
+public abstract class GridMember implements SizeUpdate
 {
 	protected int UIabslocationX = 0;
 	protected int UIabslocationY = 0;
@@ -39,51 +39,31 @@ public abstract class GridMember implements DataIO, SizeUpdate
 		this.gridViewPane = new GridViewPane(this);
 		this.layeredPane.add(this.gridViewPane, new Integer(1));
 	}
-	@Override
-	public void setData(LinkedHashMap<String, String> dataMap)
+	public void setData(DataBranch branch)
 	{
-		this.id = UUID.fromString(dataMap.get("id"));
-		this.name = dataMap.get("name");
-		this.UIabslocationX = new Integer(dataMap.get("UIabslocationX"));
-		this.UIabslocationY = new Integer(dataMap.get("UIabslocationY"));
-		this.UIabsSizeX = new Integer(dataMap.get("UIabsSizeX"));
-		this.UIabsSizeY = new Integer(dataMap.get("UIabsSizeY"));
+		this.id = UUID.fromString(branch.getData("id"));
+		this.name = branch.getData("name");
+		this.UIabslocationX = new Integer(branch.getData("UIabslocationX"));
+		this.UIabslocationY = new Integer(branch.getData("UIabslocationY"));
+		this.UIabsSizeX = new Integer(branch.getData("UIabsSizeX"));
+		this.UIabsSizeY = new Integer(branch.getData("UIabsSizeY"));
 		this.gridViewPane.repaint();
 	}
-	@Override
-	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	public DataBranch getData(DataBranch branch)
 	{
-		dataMap.put("ClassPath", this.getClass().getName());
-		dataMap.put("id", this.id.toString());
-		dataMap.put("name", this.name);
-		dataMap.put("UIabslocationX", Integer.toString(this.UIabslocationX));
-		dataMap.put("UIabslocationY", Integer.toString(this.UIabslocationY));
-		dataMap.put("UIabsSizeX", Integer.toString(this.UIabsSizeX));
-		dataMap.put("UIabsSizeY", Integer.toString(this.UIabsSizeY));
-		dataMap.put("placement", Boolean.toString(this.placement));
-		System.out.println(this.placement);
+		branch.setData("ClassPath", this.getClass().getName());
+		branch.setData("id", this.id.toString());
+		branch.setData("name", this.name);
+		branch.setData("UIabslocationX", Integer.toString(this.UIabslocationX));
+		branch.setData("UIabslocationY", Integer.toString(this.UIabslocationY));
+		branch.setData("UIabsSizeX", Integer.toString(this.UIabsSizeX));
+		branch.setData("UIabsSizeY", Integer.toString(this.UIabsSizeY));
+		branch.setData("placement", Boolean.toString(this.placement));
 		if(this.grid != null)
 		{
-			dataMap.put("grid", this.grid.getUUID().toString());
+			branch.setData("grid", this.grid.getUUID().toString());
 		}
-		return dataMap;
-	}
-	protected void setChangeStateBefore()
-	{
-		if(this.placement)
-		{
-			this.taskUnit = this.grid.getSession().getTaskManager().setTask();
-			this.taskUnit.addEditBefore(this);
-		}
-	}
-	protected void setChangeStateAfter()
-	{
-		if(this.placement)
-		{
-			this.taskUnit.setFirstLabel("(" + this.UIabslocationX + ", " + this.UIabslocationY + ")");
-			this.taskUnit.addEditAfter(this);
-			this.taskUnit = null;
-		}
+		return branch;
 	}
 	LogicCore getCore()
 	{
@@ -233,24 +213,12 @@ public abstract class GridMember implements DataIO, SizeUpdate
 			}
 		}
 	}
-	static GridMember Factory(LogicCore core, Iterator<String> itr)
-	{
-		String str;
-		String[] KV;
-		LinkedHashMap<String, String> dataMap = new LinkedHashMap<String, String>();
-		while(!(str = itr.next().replace("\n", "")).equals("}"))
-		{
-			KV = str.split("=");
-			dataMap.put(KV[0], KV[1]);
-		}
-		return Factory(core, dataMap);
-	}
-	static GridMember Factory(LogicCore core, LinkedHashMap<String, String> info)
+	static GridMember Factory(LogicCore core, DataBranch info)
 	{
 		GridMember member = null;
 		try
 		{//리플렉션
-			member = (GridMember)Class.forName(info.get("ClassPath")).getDeclaredConstructor(new Class[]{LogicCore.class}).newInstance(core);
+			member = (GridMember)Class.forName(info.getData("ClassPath")).getDeclaredConstructor(new Class[]{LogicCore.class}).newInstance(core);
 			member.setData(info);
 		}
 		catch(Exception e)
@@ -296,15 +264,15 @@ abstract class LogicBlock extends GridMember
 		this.io.put(Direction.NORTH, new IOPanel(this, Direction.NORTH));
 	}
 	@Override
-	public void setData(LinkedHashMap<String, String> dataMap)
+	public void setData(DataBranch branch)
 	{
-		this.blocklocationX = new Integer(dataMap.get("blocklocationX"));
-		this.blocklocationY = new Integer(dataMap.get("blocklocationY"));
+		this.blocklocationX = new Integer(branch.getData("blocklocationX"));
+		this.blocklocationY = new Integer(branch.getData("blocklocationY"));
 		this.power = Power.valueOf(Power.OFF.toString());
 		for(Direction ext : Direction.values())
 		{
 			this.setTimer(0);
-			String data = dataMap.get("io_" + ext);
+			String data = branch.getData("io_" + ext);
 			IOPanel ioPanel = new IOPanel(this, ext);
 			this.io.put(ext, ioPanel);
 			ioPanel.setStatus(IOStatus.valueOf(data.split("_")[0]));
@@ -315,20 +283,20 @@ abstract class LogicBlock extends GridMember
 		{
 			super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		}
-		super.setData(dataMap);
+		super.setData(branch);
 	}
 	@Override
-	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	public DataBranch getData(DataBranch branch)
 	{
-		super.getData(dataMap);
-		dataMap.put("blocklocationX", Integer.toString(this.blocklocationX));
-		dataMap.put("blocklocationY", Integer.toString(this.blocklocationY));
-		dataMap.put("power", power.toString());
+		super.getData(branch);
+		branch.setData("blocklocationX", Integer.toString(this.blocklocationX));
+		branch.setData("blocklocationY", Integer.toString(this.blocklocationY));
+		branch.setData("power", power.toString());
 		for(Direction ext : Direction.values())
 		{
-			dataMap.put("io_" + ext, this.io.get(ext).getStatus().toString() + "_" + this.io.get(ext).getOnOffStatus().toString());
+			branch.setData("io_" + ext, this.io.get(ext).getStatus().toString() + "_" + this.io.get(ext).getOnOffStatus().toString());
 		}
-		return dataMap;
+		return branch;
 	}
 	@Override
 	void put(int absX, int absY, Grid grid)
@@ -393,14 +361,17 @@ abstract class LogicBlock extends GridMember
 	}
 	final void toggleIO(Direction ext)
 	{
-		super.setChangeStateBefore();
 		this.doToggleIO(ext);
 		super.layeredPane.repaint();
 		if(super.isPlacement())
 		{
 			super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		}
-		super.setChangeStateAfter();
+	}
+	void setIO(Direction ext, IOStatus io)
+	{
+		this.io.get(ext).setStatus(io);
+		super.layeredPane.repaint();
 	}
 	protected void doToggleIO(Direction ext)
 	{
@@ -628,20 +599,19 @@ class Button extends LogicBlock
 		this.timeLabel.setHorizontalAlignment(JTextField.CENTER);
 		super.layeredPane.add(this.timeLabel, new Integer(20));
 		super.gridViewPane.add(this.btn);
-		
 	}
 	@Override
-	public void setData(LinkedHashMap<String, String> dataMap)
+	public void setData(DataBranch branch)
 	{
-		super.setData(dataMap);
-		this.basicTime = new Integer(dataMap.get("basicTime"));
+		super.setData(branch);
+		this.basicTime = new Integer(branch.getData("basicTime"));
 	}
 	@Override
-	public LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	public DataBranch getData(DataBranch branch)
 	{
-		super.getData(dataMap);
-		dataMap.put("basicTime", Integer.toString(this.basicTime));
-		return dataMap;
+		super.getData(branch);
+		branch.setData("basicTime", Integer.toString(this.basicTime));
+		return branch;
 	}
 	@Override
 	protected void doToggleIO(Direction ext)

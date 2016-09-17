@@ -8,7 +8,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.UUID;
 
 import javax.swing.BoxLayout;
@@ -41,31 +43,47 @@ public class TaskManager
 		this.createNoneUint();
 		this.lastCheckTime = 0;
 	}
-	TaskManager(Session session, LinkedHashMap<String, String> data)
+	TaskManager(Session session, DataBranch data)
 	{
-		this(session);
+		this.session = session;
+		this.taskPanel = new JPanel();
+		this.taskPanel.setLayout(null);
+		this.lastCheckTime = 0;
+		Iterator<DataBranch> branchItr = data.getLowerBranchIterator();
+		while(branchItr.hasNext())
+		{
+			
+			DataBranch branch = branchItr.next();
+			
+			switch(branch.getName())
+			{
+			case "TaskUnit":
+				TaskUnit createTask = new TaskUnit(this, session, branch);
+				createTask.getView().setLocation(WGAP, this.snapShots.size() * (createTask.getView().getHeight() + HGAP));
+				this.taskPanel.add(createTask.getView());
+				this.snapShots.add(createTask);
+				break;
+			}
+		}
+		this.setFocus(this.snapShots.get(new Integer(data.getData("focus"))));
+		this.reSizeTaskPanel();
 	}
-	ArrayList<String> getData(ArrayList<String> dataList)
+	DataBranch getData()
 	{
+		DataBranch data = new DataBranch("TaskManager");
 		if(this.focusUnit != null)
 		{
-			dataList.add("focus = " + this.snapShots.indexOf(this.focusUnit) + "\n");
+			data.setData("focus", Integer.toString(this.snapShots.indexOf(this.focusUnit)));
 		}
 		else
 		{
-			dataList.add("focus = 0\n");
+			data.setData("focus", Integer.toString(0));
 		}
 		for(TaskUnit unit : this.snapShots)
 		{
-			dataList.add("snapShots_" + this.snapShots.indexOf(unit) + "={\n");
-			ArrayList<String> dataTemp = new ArrayList<String>();
-			for(String key : unit.getData(dataTemp))
-			{
-				dataList.add("\t" + key);
-			}
-			dataList.add("}\n");
+			data.addLowerBranch(unit.getData());
 		}
-		return dataList;
+		return data;
 	}
 	private TaskUnit getLastSnapShot()
 	{
@@ -90,7 +108,7 @@ public class TaskManager
 	{
 		this.createSnapShot();
 		TaskUnit task = this.getLastSnapShot();
-		task.setFirstLabel("초기");
+		//task.setFirstLabel("초기");
 		task.setEdit();
 	}
 	private void reSizeTaskPanel()
@@ -119,7 +137,7 @@ public class TaskManager
 			this.focusUnit = null;
 			this.createSnapShot();
 		}
-		if(this.lastCheckTime + checkTime < System.currentTimeMillis() / 1000 && this.getLastSnapShot().isEdit())
+		if(this.getLastSnapShot() == null || (this.lastCheckTime + checkTime < System.currentTimeMillis() / 1000 && this.getLastSnapShot().isEdit()))
 		{
 			this.createSnapShot();
 		}
@@ -155,76 +173,13 @@ public class TaskManager
 		{
 			TaskUnit task = this.snapShots.get(i);
 			System.out.println("REDO " + i);
-			for(UUID gridID : task.afterSnapShot.removeSnapGrids)
-			{//다중 레이어일시 구현하시오
-				
-			}
-			for(UUID gridID : task.afterSnapShot.createSnapGrids.keySet())
-			{//다중 레이어일시 구현하시오
-				
-			}
-			for(UUID gridID : task.afterSnapShot.editSnapGrids.keySet())
-			{//다중 레이어일시 수정 필요
-				Grid grid = this.session.getGrid();
-				grid.setData(task.afterSnapShot.editSnapGrids.get(gridID));
-			}
-			for(UUID memberID : task.afterSnapShot.removeSnapMembers)
-			{
-				this.session.getGrid().removeMember(memberID, false);
-			}
-			for(UUID memberID : task.afterSnapShot.createSnapMembers.keySet())
-			{
-				LinkedHashMap<String, String> memberData = task.afterSnapShot.createSnapMembers.get(memberID);
-				GridMember member = GridMember.Factory(session.getCore(), memberData);
-				this.session.getGrid().addMember(member, member.getUIabsLocationX(), member.getUIabsLocationY(), false);
-			}
-			for(UUID memberID : task.afterSnapShot.editSnapMembers.keySet())
-			{
-				if(this.session.getGrid().getMembers().containsKey(memberID))
-				{
-					LinkedHashMap<String, String> memberData = task.afterSnapShot.editSnapMembers.get(memberID);
-					this.session.getGrid().getMembers().get(memberID).setData(memberData);
-				}
-			}
+			task.redo();
 		}
 		for(int i = oldFocusIndex; i > nowFocusIndex; i--)
 		{
 			TaskUnit task = this.snapShots.get(i);
 			System.out.println("UNDO " + this.snapShots.indexOf(task));
-			for(UUID gridID : task.beforeSnapShot.removeSnapGrids)
-			{//다중 레이어일시 구현하시오
-				
-			}
-			for(UUID gridID : task.beforeSnapShot.createSnapGrids.keySet())
-			{//다중 레이어일시 구현하시오
-				
-			}
-			for(UUID gridID : task.beforeSnapShot.editSnapGrids.keySet())
-			{//다중 레이어일시 수정 필요
-				Grid grid = this.session.getGrid();
-				grid.setData(task.beforeSnapShot.editSnapGrids.get(gridID));
-			}
-			for(UUID memberID : task.beforeSnapShot.removeSnapMembers)
-			{
-				if(this.session.getGrid().getMembers().containsKey(memberID))
-				{
-					this.session.getGrid().removeMember(memberID, false);
-				}
-			}
-			for(UUID memberID : task.beforeSnapShot.createSnapMembers.keySet())
-			{
-				LinkedHashMap<String, String> memberData = task.beforeSnapShot.createSnapMembers.get(memberID);
-				this.session.getGrid().addMember(GridMember.Factory(session.getCore(), memberData)
-						, new Integer(memberData.get("UIabslocationX")), new Integer(memberData.get("UIabslocationY")), false);
-			}
-			for(UUID memberID : task.beforeSnapShot.editSnapMembers.keySet())
-			{
-				if(this.session.getGrid().getMembers().containsKey(memberID))
-				{
-					LinkedHashMap<String, String> memberData = task.beforeSnapShot.editSnapMembers.get(memberID);
-					this.session.getGrid().getMembers().get(memberID).setData(memberData);
-				}
-			}
+			task.undo();
 		}
 	}
 	private void checkSnapShotCount()
@@ -273,23 +228,16 @@ public class TaskManager
 class TaskUnit
 {
 	private TaskManager manager;
-	
-	TaskSnapShot beforeSnapShot;
-	TaskSnapShot afterSnapShot;
+	private LinkedList<Command> commandList;
+	boolean isEdit = false;
 	
 	private TaskButton snapShotView;
 	private JLabel stateLabel;
-	private JLabel timeLabel;
 	private LinkedHashMap<String, Integer> labels = new LinkedHashMap<String, Integer>();
-	private String firstLabel = new String("");
-	
-	private boolean editFlag = false;
-	
+	private JLabel timeLabel;
 	TaskUnit(TaskManager manager)
 	{
 		this.manager = manager;
-		this.beforeSnapShot = new TaskSnapShot();
-		this.afterSnapShot = new TaskSnapShot();
 		this.snapShotView = new TaskButton();
 		this.stateLabel = new JLabel();
 		this.stateLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(12f));
@@ -300,142 +248,98 @@ class TaskUnit
 		this.timeLabel.setBounds(TaskManager.COMPW - 42, 20, 40, 10);
 		this.snapShotView.add(this.stateLabel);
 		this.snapShotView.add(this.timeLabel);
+		this.commandList = new LinkedList<Command>();
 	}
-	TaskUnit(TaskManager manager, LinkedHashMap<String, String> dataMap)
+	TaskUnit(TaskManager manager, Session session, DataBranch data)
 	{
 		this(manager);
-	}
-	ArrayList<String> getData(ArrayList<String> dataList)
-	{
-		dataList.add("stateLabel = " + this.stateLabel.getText() + "\n");//다국어 지원 모드로 수정 필요
-		dataList.add("timeLabel = " + this.timeLabel.getText() + "\n");
-		dataList.add("beforeSnapShot={\n");
-		ArrayList<String> dataTemp = new ArrayList<String>();
-		for(String data : this.beforeSnapShot.getData(dataTemp))
+		Iterator<DataBranch> itr = data.getLowerBranchIterator();
+		while(itr.hasNext())
 		{
-			dataList.add("\t" + data);
+			DataBranch info = itr.next();
+			System.out.println(info.getName());
+			Command cmd = TaskUnit.Factory(info, session);
+			this.commandList.add(cmd);
+			this.addLabel(cmd);
 		}
-		dataList.add("}\n");
-		dataList.add("afterSnapShot={\n");
-		dataTemp = new ArrayList<String>();
-		for(String data : this.afterSnapShot.getData(dataTemp))
+		this.setLabelText();
+	}
+	DataBranch getData()
+	{
+		DataBranch data = new DataBranch("TaskUnit");
+		for(Command cmd : this.commandList)
 		{
-			dataList.add("\t" + data);
+			data.addLowerBranch(cmd.masterData);
 		}
-		dataList.add("}\n");
-		return dataList;
+		return data;
 	}
-	boolean isEdit()
+	void addCommand(Command cmd)
 	{
-		return this.editFlag;
+		this.commandList.add(cmd);
+		this.addLabel(cmd);
+		this.setLabelText();
 	}
-	void setEdit()
+	private void addLabel(Command cmd)
 	{
-		this.editFlag = true;
-	}
-	void addEditBefore(GridMember member)
-	{
-		if(!this.beforeSnapShot.editSnapMembers.containsKey(member.getUUID()))
+		String name = cmd.masterData.getName();
+		if(this.labels.containsKey(name))
 		{
-			this.beforeSnapShot.editSnapMembers.put(member.getUUID(), member.getData(new LinkedHashMap<String, String>()));
-		}
-	}
-	void addEditAfter(GridMember member)
-	{
-		this.afterSnapShot.editSnapMembers.put(member.getUUID(), member.getData(new LinkedHashMap<String, String>()));
-		this.setLabel("편집", this.afterSnapShot.editSnapMembers.size());
-	}
-	void addCreate(GridMember member)
-	{
-		if(!this.beforeSnapShot.removeSnapMembers.equals(member.getUUID()))
-		{
-			this.beforeSnapShot.removeSnapMembers.add(member.getUUID());
-		}
-		this.afterSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new LinkedHashMap<String, String>()));
-		this.setLabel("생성", this.afterSnapShot.createSnapMembers.size());
-	}
-	void addRemove(GridMember member)
-	{
-		if(!this.afterSnapShot.createSnapMembers.containsKey(member.getUUID()))
-		{
-			this.beforeSnapShot.createSnapMembers.put(member.getUUID(), member.getData(new LinkedHashMap<String, String>()));
-			if(!this.afterSnapShot.removeSnapMembers.equals(member.getUUID()))
-			{
-				this.afterSnapShot.removeSnapMembers.add(member.getUUID());
-			}
-			this.setLabel("삭제", this.afterSnapShot.removeSnapMembers.size());
+			this.labels.put(name, new Integer(this.labels.get(name)) + 1);
 		}
 		else
 		{
-			this.afterSnapShot.createSnapMembers.remove(member.getUUID());
-			this.beforeSnapShot.removeSnapMembers.remove(member.getUUID());
+			this.labels.put(name, new Integer(1));
 		}
 	}
-	void addEditBefore(Grid grid)
+	private void setLabelText()
 	{
-		if(!this.beforeSnapShot.editSnapGrids.containsKey(grid.getUUID()))
+		String labelText = new String();
+		for(String key : this.labels.keySet())
 		{
-			this.beforeSnapShot.editSnapGrids.put(grid.getUUID(), grid.getData(new LinkedHashMap<String, String>()));
+			labelText += key + "(" + this.labels.get(key) + ") ";
 		}
+		this.stateLabel.setText(labelText);
 	}
-	void addEditAfter(Grid grid)
+	void redo()
 	{
-		this.afterSnapShot.editSnapGrids.put(grid.getUUID(), grid.getData(new LinkedHashMap<String, String>()));
-		this.setLabel("그리드 편집", this.afterSnapShot.editSnapGrids.size());
-	}
-	void addCreate(Grid grid)
-	{
-		if(!this.beforeSnapShot.removeSnapGrids.equals(grid.getUUID()))
+		Iterator<Command> itr = commandList.iterator();
+		while(itr.hasNext())
 		{
-			this.beforeSnapShot.removeSnapGrids.add(grid.getUUID());
-		}
-		this.afterSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new LinkedHashMap<String, String>()));
-		this.setLabel("그리드 생성", this.afterSnapShot.createSnapGrids.size());
-	}
-	void addRemove(Grid grid)
-	{
-		if(!this.afterSnapShot.createSnapGrids.containsKey(grid.getUUID()))
-		{
-			this.beforeSnapShot.createSnapGrids.put(grid.getUUID(), grid.getData(new LinkedHashMap<String, String>()));
-			if(!this.afterSnapShot.removeSnapGrids.equals(grid.getUUID()))
-			{
-				this.afterSnapShot.removeSnapGrids.add(grid.getUUID());
-			}
-			this.setLabel("그리드 삭제", this.afterSnapShot.removeSnapGrids.size());
-		}
-		else
-		{
-			this.afterSnapShot.createSnapGrids.remove(grid.getUUID());
-			this.beforeSnapShot.removeSnapGrids.remove(grid.getUUID());
+			itr.next().redo();
 		}
 	}
-	void setLabel(String str)
+	void undo()
 	{
-		this.stateLabel.setText(str);
+		Iterator<Command> itr = commandList.descendingIterator();
+		while(itr.hasNext())
+		{
+			itr.next().undo();
+		}
 	}
 	TaskButton getView()
 	{
 		return this.snapShotView;
 	}
-	private void setLabel(String str, int num)
+	void setEdit()
 	{
-		this.labels.put(str, num);
-		this.setLabelText();
+		this.isEdit = true;
 	}
-	void setFirstLabel(String str)
+	boolean isEdit()
 	{
-		this.firstLabel = str;
-		this.setLabelText();
+		return this.isEdit;
 	}
-	private void setLabelText()
+	static Command Factory(DataBranch info, Session session)
 	{
-		String set = new String(this.firstLabel);
-		for(String arrStr : this.labels.keySet())
-		{
-			set = new String(set + " " + arrStr + "(" + this.labels.get(arrStr) + ")");
+		Command command = null;
+		try
+		{//리플렉션
+			command = (Command)Class.forName(info.getData("CommandPath")).getDeclaredConstructor(new Class[]{DataBranch.class, Session.class}).newInstance(info, session);
 		}
-		this.stateLabel.setText(set);
-		this.timeLabel.setText(new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime()));
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		return command;
 	}
 	class TaskButton extends ButtonPanel
 	{
@@ -478,111 +382,166 @@ class TaskUnit
 		}
 	}
 }
-class TaskSnapShot
+class EditGridSize extends Command
 {
-	LinkedHashMap<UUID, LinkedHashMap<String, String>> editSnapMembers = new LinkedHashMap<UUID, LinkedHashMap<String, String>>();
-	LinkedHashMap<UUID, LinkedHashMap<String, String>> createSnapMembers = new LinkedHashMap<UUID, LinkedHashMap<String, String>>();
-	ArrayList<UUID> removeSnapMembers = new ArrayList<UUID>();
-	LinkedHashMap<UUID, LinkedHashMap<String, String>> editSnapGrids = new LinkedHashMap<UUID, LinkedHashMap<String, String>>();
-	LinkedHashMap<UUID, LinkedHashMap<String, String>> createSnapGrids = new LinkedHashMap<UUID, LinkedHashMap<String, String>>();
-	ArrayList<UUID> removeSnapGrids = new ArrayList<UUID>();
-	TaskSnapShot(){};
-	
-	/*@SuppressWarnings("unchecked")
-	TaskSnapShot(LinkedHashMap<String, String> dataMap)
+	EditGridSize(Grid grid, Direction ext, int size)
 	{
-		Object pushData = null;
-		LinkedHashMap<String, String> dataTemp = new LinkedHashMap<String, String>();
-		for(String dataKey : dataMap.keySet())
+		super("EditGridSize", grid.getSession());
+		super.masterData.setData("Grid", grid.getUUID().toString());
+		this.setSizeData(super.undoData, grid.getGridSize());
+		grid.gridResize(ext, size);
+		this.setSizeData(super.redoData, grid.getGridSize());
+	}
+	EditGridSize(DataBranch branch, Session session)
+	{
+		super(branch, session);
+	}
+	private void setSizeData(DataBranch data, SizeInfo size)
+	{
+		data.setData("sizeX", Integer.toString(size.getX()));
+		data.setData("sizeY", Integer.toString(size.getY()));
+		data.setData("sizeNX", Integer.toString(size.getNX()));
+		data.setData("sizeNY", Integer.toString(size.getNY()));
+	}
+	private SizeInfo getSizeData(DataBranch data)
+	{
+		SizeInfo size = new SizeInfo(new Integer(data.getData("sizeX")), new Integer(data.getData("sizeY"))
+									, new Integer(data.getData("sizeNX")), new Integer(data.getData("sizeNY")));
+		return size;
+	}
+	@Override
+	public void redo()
+	{
+		super.session.getGrid().gridResize(this.getSizeData(super.redoData));
+	}
+	@Override
+	public void undo()
+	{
+		super.session.getGrid().gridResize(this.getSizeData(super.undoData));
+	}
+}
+class PutMemberOnGrid extends Command
+{
+	PutMemberOnGrid(Grid grid, GridMember member, int absX, int absY)
+	{
+		super("PutMemberonGrid", grid.getSession());
+		super.masterData.setData("CommandAbsX", Integer.toString(absX));
+		super.masterData.setData("CommandAbsY", Integer.toString(absY));
+		member.setUUID();
+		member.getData(super.masterData);
+		LogicBlock block = grid.getLogicBlock(absX / Size.REGULAR_SIZE, absY / Size.REGULAR_SIZE);
+		if(block != null)
 		{
-			switch(dataKey)
+			grid.getSession().getTaskManager().setTask().addCommand(new RemoveMemberOnGrid(block));
+		}
+		grid.addMember(member, absX, absY);
+	}
+	PutMemberOnGrid(DataBranch branch, Session session)
+	{
+		super(branch, session);
+	}
+	@Override
+	public void redo()
+	{
+		super.session.getGrid().addMember(GridMember.Factory(session.getCore(), super.masterData)
+				, new Integer(super.masterData.getData("CommandAbsX")), new Integer(super.masterData.getData("CommandAbsY")));
+	}
+	@Override
+	public void undo()
+	{
+		super.session.getGrid().removeMember(UUID.fromString(super.masterData.getData("id")));
+	}
+}
+class RemoveMemberOnGrid extends Command
+{
+	RemoveMemberOnGrid(GridMember member)
+	{
+		super("RemoveMemberOnGrid", member.getGrid().getSession());
+		member.getData(super.masterData);
+		member.getGrid().removeMember(member.getUUID());
+	}
+	RemoveMemberOnGrid(DataBranch branch, Session session)
+	{
+		super(branch, session);
+	}
+	@Override
+	public void redo()
+	{
+		super.session.getGrid().removeMember(UUID.fromString(super.masterData.getData("id")));
+	}
+	@Override
+	public void undo()
+	{
+		System.out.println("UNDOUNDO");
+		super.session.getGrid().addMember(GridMember.Factory(session.getCore(), super.masterData)
+				, new Integer(super.masterData.getData("UIabslocationX")), new Integer(super.masterData.getData("UIabslocationY")));
+	}
+}
+class SetLogicBlockIO extends Command
+{
+	SetLogicBlockIO(LogicBlock block, Direction ext, Session session)
+	{
+		super("SetLogicBlockIO", session);
+		super.masterData.setData("Direction", ext.getTag());
+		super.masterData.setData("LogicBlock", block.getUUID().toString());
+		super.undoData.setData("IOStatus", block.getIOStatus(ext).toString());
+		block.toggleIO(ext);
+		super.redoData.setData("IOStatus", block.getIOStatus(ext).toString());
+	}
+	SetLogicBlockIO(DataBranch branch, Session session)
+	{
+		super(branch, session);
+	}
+	@Override
+	public void redo()
+	{
+		this.getBlock().setIO(Direction.valueOf(super.masterData.getData("Direction")), IOStatus.valueOf(super.redoData.getData("IOStatus")));
+	}
+	@Override
+	public void undo()
+	{
+		this.getBlock().setIO(Direction.valueOf(super.masterData.getData("Direction")), IOStatus.valueOf(super.undoData.getData("IOStatus")));
+	}
+	private LogicBlock getBlock()
+	{
+		return (LogicBlock)super.session.getGrid().getMember(UUID.fromString(super.masterData.getData("LogicBlock")));
+	}
+}
+abstract class Command
+{
+	protected Session session;
+	protected DataBranch masterData;
+	protected DataBranch redoData;
+	protected DataBranch undoData;
+	Command(String name, Session session)
+	{
+		this.masterData = new DataBranch(name);
+		this.masterData.setData("CommandPath", this.getClass().getName());
+		this.session = session;
+		this.redoData = new DataBranch("RedoData");
+		this.undoData = new DataBranch("UndoData");
+		this.masterData.addLowerBranch(this.redoData);
+		this.masterData.addLowerBranch(this.undoData);
+	}
+	Command(DataBranch branch, Session session)
+	{
+		this.masterData = branch;
+		Iterator<DataBranch> dataItr = branch.getLowerBranchIterator();
+		while(dataItr.hasNext())
+		{
+			DataBranch data = dataItr.next();
+			switch(data.getName())
 			{
-			case "editSnapMembers = {":
-				pushData = this.editSnapMembers;
+			case "RedoData":
+				this.redoData = data;
 				break;
-			case "createSnapMembers = {":
-				pushData = this.createSnapMembers;
+			case "UndoData":
+				this.undoData = data;
 				break;
-			case "removeSnapMembers = {":
-				pushData = this.removeSnapMembers;
-				break;
-			case "editSnapGrids = {":
-				pushData = this.editSnapGrids;
-				break;
-			case "createSnapGrids = {":
-				pushData = this.createSnapGrids;
-				break;
-			case "removeSnapGrids = {":
-				pushData = this.removeSnapGrids;
-				break;
-			default:
-				if(pushData instanceof LinkedHashMap)
-				{
-					if(dataKey.contains("Data = {"))
-					{
-						dataTemp = new LinkedHashMap<String, String>();
-					}
-					else if(dataKey.contains("}"))
-					{
-						((LinkedHashMap<UUID, LinkedHashMap<String, String>>) pushData).put(UUID.fromString(dataKey), dataTemp);
-					}
-					else
-					{
-						dataTemp.put(dataKey, dataMap.get(dataKey));
-					}
-				}
-				else if(pushData instanceof ArrayList)
-				{
-					((ArrayList<UUID>) pushData).add(UUID.fromString(dataKey));
-				}
 			}
 		}
-	}*/
-	ArrayList<String> getData(ArrayList<String> dataList)
-	{
-		dataList.add("createSnapMembers={\n");
-		this.inputData(this.createSnapMembers, dataList);
-		dataList.add("}\n");
-		
-		dataList.add("editSnapMembers={\n");
-		this.inputData(this.editSnapMembers, dataList);
-		dataList.add("}\n");
-
-		dataList.add("removeSnapMembers={\n");
-		this.inputData(this.removeSnapMembers, dataList);
-		dataList.add("}\n");
-		
-		dataList.add("createSnapGrids={\n");
-		this.inputData(this.createSnapGrids, dataList);
-		dataList.add("}\n");
-		
-		dataList.add("editSnapGrids={\n");
-		this.inputData(this.editSnapGrids, dataList);
-		dataList.add("}\n");
-
-		dataList.add("removeSnapGrids={\n");
-		this.inputData(this.removeSnapGrids, dataList);
-		dataList.add("}\n");
-		
-		return dataList;
+		this.session = session;
 	}
-	private void inputData(LinkedHashMap<UUID, LinkedHashMap<String, String>> collection, ArrayList<String> dataList)
-	{
-		for(UUID dataKey : collection.keySet())
-		{
-			dataList.add("\tData={\n");
-			for(String strKey : collection.get(dataKey).keySet())
-			{
-				dataList.add("\t\t" + strKey + "=" + collection.get(dataKey).get(strKey) + "\n");
-			}
-			dataList.add("\t}\n");
-		}
-	}
-	private void inputData(ArrayList<UUID> collection, ArrayList<String> dataList)
-	{
-		for(UUID id : collection)
-		{
-			dataList.add("\t" + id.toString() + "\n");
-		}
-	}
+	abstract void redo();
+	abstract void undo();
 }

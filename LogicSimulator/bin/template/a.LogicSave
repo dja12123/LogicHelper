@@ -1,0 +1,52 @@
+Session={
+	name=asdasdasd
+	description={
+		aa
+	}
+}
+GridData={
+	id=c05b92ca-078d-4c7c-b157-ec3140daa26e
+	gridSizeX=30
+	gridSizeY=30
+	gridSizeNX=15
+	gridSizeNY=15
+	MAX_SIZE=100
+	MAX_ABSOLUTE=150
+	Members={
+	}
+}
+TaskManager={
+	focus = 0
+	snapShots_0={
+		stateLabel = 초기
+		timeLabel = 14:23:17
+		beforeSnapShot={
+			createSnapMembers={
+			}
+			editSnapMembers={
+			}
+			removeSnapMembers={
+			}
+			createSnapGrids={
+			}
+			editSnapGrids={
+			}
+			removeSnapGrids={
+			}
+		}
+		afterSnapShot={
+			createSnapMembers={
+			}
+			editSnapMembers={
+			}
+			removeSnapMembers={
+			}
+			createSnapGrids={
+			}
+			editSnapGrids={
+			}
+			removeSnapGrids={
+			}
+		}
+	}
+}

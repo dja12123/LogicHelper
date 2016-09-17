@@ -50,93 +50,63 @@ public class Grid
 		label.setBounds(0, 0, 200, 30);
 		this.gridPanel.add(label);
 	}
-	Grid(Iterator<String> itr, Session session)
+	Grid(Session session, DataBranch data)
 	{
 		this.session = session;
-		this.gridPanel = new GridPanel();
+		this.id = UUID.fromString(data.getData("id"));
 		Integer[] gridSize = new Integer[4];
+		gridSize[0] = new Integer(data.getData("gridSizeX"));
+		gridSize[1] = new Integer(data.getData("gridSizeY"));
+		gridSize[2] = new Integer(data.getData("gridSizeNX"));
+		gridSize[3] = new Integer(data.getData("gridSizeNY"));
+		this.gridSize = new SizeInfo(gridSize[0], gridSize[1], gridSize[2], gridSize[3]);
+		this.MAX_SIZE = new Integer(data.getData("MAX_SIZE"));
+		this.MAX_ABSOLUTE = new Integer(data.getData("MAX_ABSOLUTE"));
+		this.gridPanel = new GridPanel();
+		Iterator<DataBranch> itr = data.getLowerBranchIterator();
 		while(itr.hasNext())
 		{
-			String[] KV = itr.next().replace("\t", "").split("=");
-			String key = KV[0];
-			String velue = KV.length > 0 ? KV[1] : null;
-			switch(key)
+			DataBranch memberData = itr.next();
+			if(memberData.getName().equals("GridMember"))
 			{
-			case "id":
-				this.id = UUID.fromString(velue);
-				break;
-			case "gridSizeX":
-				gridSize[0] = new Integer(velue);
-				break;
-			case "gridSizeY":
-				gridSize[1] = new Integer(velue);
-				break;
-			case "gridSizeNX":
-				gridSize[2] = new Integer(velue);
-				break;
-			case "gridSizeNY":
-				gridSize[3] = new Integer(velue);
-				break;
-			case "MAX_SIZE":
-				this.MAX_SIZE = new Integer(velue);
-				break;
-			case "MAX_ABSOLUTE":
-				this.MAX_ABSOLUTE = new Integer(velue);
-				break;
-			case "Members":
-				while(itr.hasNext())
-				{
-					KV = itr.next().replace("\t", "").split("=");
-					key = KV[0];
-					if(key.equals("GridMember"))
-					{
-						GridMember member = GridMember.Factory(this.session.getCore(), itr);
-						this.addMember(member, member.getUIabsLocationX(), member.getUIabsLocationY(), false);
-					}
-				}
-				break;
+				GridMember member = GridMember.Factory(this.session.getCore(), memberData);
+				this.addMember(member, member.getUIabsLocationX(), member.getUIabsLocationY());
 			}
 		}
-		this.gridSize = new SizeInfo(gridSize[0], gridSize[1], gridSize[2], gridSize[3]);
+		Grid.count++;
+		JLabel label = new JLabel(Integer.toString(Grid.count) + " 번째 생성된 그리드");
+		label.setBounds(0, 0, 200, 30);
+		this.gridPanel.add(label);
 	}
 	Session getSession()
 	{
 		return this.session;
 	}
-	LinkedHashMap<String, String> getData(LinkedHashMap<String, String> dataMap)
+	DataBranch getData()
 	{
-		dataMap.put("id", this.id.toString());
-		dataMap.put("gridSizeX", Integer.toString(this.gridSize.getX()));
-		dataMap.put("gridSizeY", Integer.toString(this.gridSize.getY()));
-		dataMap.put("gridSizeNX", Integer.toString(this.gridSize.getNX()));
-		dataMap.put("gridSizeNY", Integer.toString(this.gridSize.getNY()));
-		dataMap.put("MAX_SIZE", Integer.toString(this.MAX_SIZE));
-		dataMap.put("MAX_ABSOLUTE", Integer.toString(this.MAX_ABSOLUTE));
-		return dataMap;
-	}
-	ArrayList<String> getMemberData(ArrayList<String> dataList)
-	{
-		LinkedHashMap<String, String> dataTemp = null;
-		dataList.add("Members={\n");
+		DataBranch data = new DataBranch("Grid");
+		data.setData("id", this.id.toString());
+		data.setData("gridSizeX", Integer.toString(this.gridSize.getX()));
+		data.setData("gridSizeY", Integer.toString(this.gridSize.getY()));
+		data.setData("gridSizeNX", Integer.toString(this.gridSize.getNX()));
+		data.setData("gridSizeNY", Integer.toString(this.gridSize.getNY()));
+		data.setData("MAX_SIZE", Integer.toString(this.MAX_SIZE));
+		data.setData("MAX_ABSOLUTE", Integer.toString(this.MAX_ABSOLUTE));
 		for(GridMember member : this.members.values())
 		{
-			dataTemp = new LinkedHashMap<String, String>();
-			member.getData(dataTemp);
-			dataList.add("\tGridMember={\n");
-			for(String dataKey : dataTemp.keySet())
-			{
-				dataList.add("\t\t" + dataKey + "=" + dataTemp.get(dataKey) + "\n");
-			}
-			dataList.add("\t}\n");
+			data.addLowerBranch(member.getData(new DataBranch("GridMember")));
 		}
-		dataList.add("}\n");
-		return dataList;
+		return data;
+	}
+	GridMember getMember(UUID id)
+	{
+		return this.members.get(id);
 	}
 	void setData(LinkedHashMap<String, String> dataMap)
 	{
 		SizeInfo size = new SizeInfo(new Integer(dataMap.get("gridSizeX")), new Integer(dataMap.get("gridSizeY"))
 		, new Integer(dataMap.get("gridSizeNX")), new Integer(dataMap.get("gridSizeNY")));
-		this.gridResize(size, false);
+		this.gridResize(size);
 		this.MAX_SIZE = new Integer(dataMap.get("MAX_SIZE"));
 		this.MAX_ABSOLUTE = new Integer(dataMap.get("MAX_ABSOLUTE"));
 	}
@@ -150,8 +120,6 @@ public class Grid
 	}
 	void gridResize(Direction ext, int size)
 	{//�� �ۼ� �ʿ�
-		TaskUnit task = this.session.getTaskManager().setTask();
-		task.addEditBefore(this);
 		if(ext == Direction.EAST)
 		{
 			if(gridSize.getX() + size < 1)
@@ -223,62 +191,45 @@ public class Grid
 		this.deSelectAll();
 		this.session.getCore().getUI().getGridArea().sizeUpdate();
 		List<GridMember> tempMembers = new ArrayList<GridMember>(); //ConcurrentModificationException 방지용
+		this.session.getCore().getUI().getUnderBar().setGridSizeInfo(this.gridSize);
 		for(UUID memberID : getMembers().keySet())
 		{
 			tempMembers.add(getMembers().get(memberID));
 		}
-		for(GridMember member : tempMembers)
+		if(tempMembers.size() > 0)
 		{
-			if((gridPanel.getWidth() - Size.MARGIN < member.getGridViewPane().getX() + member.getGridViewPane().getWidth() || Size.MARGIN > member.getGridViewPane().getX())
-			|| (gridPanel.getHeight() - Size.MARGIN < member.getGridViewPane().getY() + member.getGridViewPane().getHeight() || Size.MARGIN > member.getGridViewPane().getY()))
+			TaskUnit task = this.session.getTaskManager().setTask();
+			for(GridMember member : tempMembers)
 			{
-				removeMember(member.getUUID(), true);
+				if((gridPanel.getWidth() - Size.MARGIN < member.getGridViewPane().getX() + member.getGridViewPane().getWidth() || Size.MARGIN > member.getGridViewPane().getX())
+				|| (gridPanel.getHeight() - Size.MARGIN < member.getGridViewPane().getY() + member.getGridViewPane().getHeight() || Size.MARGIN > member.getGridViewPane().getY()))
+				{
+					task.addCommand(new RemoveMemberOnGrid(member));
+				}
 			}
 		}
-		task.addEditAfter(this);
-		this.session.getCore().getUI().getUnderBar().setGridSizeInfo(this.gridSize);
 	}
-	void gridResize(SizeInfo size, boolean record)
+	void gridResize(SizeInfo size)
 	{
-		TaskUnit task = null;
-		if(record)
-		{
-			task = this.session.getTaskManager().setTask();
-			task.addEditBefore(this);
-		}
 		this.gridSize.setData(size);
 		this.deSelectAll();
 		this.session.getCore().getUI().getUnderBar().setGridSizeInfo(this.gridSize);
 		this.session.getCore().getUI().getGridArea().sizeUpdate();
-		if(record)
-		{
-			task.addEditAfter(this);
-		}
 	}
 	GridPanel getGridPanel()
 	{
 		return this.gridPanel;
 	}
-	void addMember(GridMember member, int absX, int absY, boolean record)
+	void addMember(GridMember member, int absX, int absY)
 	{
-		if(absX < (this.gridSize.getX() - this.gridSize.getNX()) * Size.REGULAR_SIZE && absY < (this.gridSize.getY() - this.gridSize.getNY()) * Size.REGULAR_SIZE
-		&& absX > - (this.gridSize.getNX() + 1) * Size.REGULAR_SIZE && absY > - (this.gridSize.getNY() + 1) * Size.REGULAR_SIZE)
-		{
-			if(record)
-			{
-				member.setUUID();
-			}
-			this.getMembers().put(member.getUUID(), member);
+		//if(absX < (this.gridSize.getX() - this.gridSize.getNX()) * Size.REGULAR_SIZE && absY < (this.gridSize.getY() - this.gridSize.getNY()) * Size.REGULAR_SIZE
+		//&& absX > - (this.gridSize.getNX() + 1) * Size.REGULAR_SIZE && absY > - (this.gridSize.getNY() + 1) * Size.REGULAR_SIZE)
+		//{
+		System.out.println("addMember " + id.toString());
 			member.put(absX, absY, this);
 			if(member instanceof LogicBlock)
 			{
 				LogicBlock logicMember = (LogicBlock)member;
-				if(this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX()))
-						&& this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).containsKey(logicMember.getBlockLocationY()))
-				{
-					System.out.println("삭제콜");
-					this.removeMember(this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).get(logicMember.getBlockLocationY()).getUUID(), record);
-				}
 				if(!this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX())))
 				{
 					this.logicMembers.put(new Integer(logicMember.getBlockLocationX()), new LinkedHashMap<Integer, LogicBlock>());
@@ -286,26 +237,20 @@ public class Grid
 				this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).put(new Integer(logicMember.getBlockLocationY()), logicMember);
 				this.session.getCore().getTaskOperator().checkAroundAndReserveTask(logicMember);
 			}
+			this.members.put(member.getUUID(), member);
 			this.getGridPanel().add(member.getGridViewPane());
 			member.getGridViewPane().repaint();
-			if(record)
-			{
-				this.selectFocus(member);
-				TaskUnit task = this.session.getTaskManager().setTask();
-				task.addCreate(member);
-				task.setFirstLabel("(" + member.getUIabsLocationX() + ", " + member.getUIabsLocationY() + ")");
-			}
-		}
+		//}
 	}
-	void removeMember(UUID id, boolean record)
+	void removeMember(UUID id)
 	{
 		System.out.println("removeMember " + id.toString());
 
 		GridMember removeMember = this.members.get(id);
 		removeMember.remove();
 		this.members.remove(id);
-		this.getGridPanel().remove(removeMember.getGridViewPane());
 		this.deSelect(removeMember);
+		this.getGridPanel().remove(removeMember.getGridViewPane());
 		this.getGridPanel().repaint();
 		if(removeMember instanceof LogicBlock)
 		{
@@ -318,13 +263,6 @@ public class Grid
 			this.session.getCore().getTaskOperator().removeReserveTask(removeBlock);
 			this.session.getCore().getTaskOperator().checkAroundAndReserveTask(removeBlock);
 		}
-		if(record)
-		{
-			TaskUnit task = this.session.getTaskManager().setTask();
-			task.addRemove(removeMember);
-			task.setFirstLabel("(" + removeMember.getUIabsLocationX() + ", " + removeMember.getUIabsLocationY() + ")");
-		}
-		
 	}
 	/*void recover(LinkedHashMap<LinkedHashMap<String, String>, Boolean> dataMap, SizeInfo sizeInfo, boolean back)
 	{

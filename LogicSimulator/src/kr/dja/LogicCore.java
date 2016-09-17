@@ -44,8 +44,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -420,4 +422,48 @@ class LoadingWindow extends JFrame implements Console
 interface Console
 {
 	void put(String str);
+}
+class DataBranch
+{
+	private final String name;
+	private LinkedHashMap<String, String> data;
+	private ArrayList<DataBranch> lowerBranch;
+	DataBranch(String name)
+	{
+		this.name = name;
+		this.data = new LinkedHashMap<String, String>();
+		this.lowerBranch = new ArrayList<DataBranch>();
+	}
+	String getName()
+	{
+		return this.name;
+	}
+	void setData(String key, String value)
+	{
+		this.data.put(key, value);
+	}
+	String getData(String key)
+	{
+		return this.data.get(key);
+	}
+	boolean isData(String key)
+	{
+		if(this.data.containsKey(key))
+		{
+			return true;
+		}
+		return false;
+	}
+	void addLowerBranch(DataBranch executeData)
+	{
+		this.lowerBranch.add(executeData);
+	}
+	Iterator<String> getDataKeySetIterator()
+	{
+		return this.data.keySet().iterator();
+	}
+	Iterator<DataBranch> getLowerBranchIterator()
+	{
+		return this.lowerBranch.iterator();
+	}
 }

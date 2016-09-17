@@ -33,9 +33,15 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
@@ -62,8 +68,11 @@ import javax.swing.JToolBar;
 import javax.swing.JViewport;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
@@ -728,7 +737,7 @@ class GridArea implements LogicUIComponent, SizeUpdate
 				@Override
 				void pressed(int mouse)
 				{
-					grid.gridResize(ext, editSize);
+					grid.getSession().getTaskManager().setTask().addCommand(new EditGridSize(grid, ext, editSize));
 				}
 			}
 		}
@@ -1178,7 +1187,7 @@ class PalettePanel implements LogicUIComponent
 				if(button == 1)
 				{
 					ArrayList<GridMember> list = new ArrayList<GridMember>();
-					list.add(GridMember.Factory(logicUI.getCore(), putMember.getData(new LinkedHashMap<String, String>())));
+					list.add(GridMember.Factory(logicUI.getCore(), putMember.getData(new DataBranch("GridMember"))));
 					logicUI.addTrackedPane(new TrackedPane(list, logicUI));
 				}
 				else if(button == 3)
@@ -1418,7 +1427,8 @@ class EditPane extends JPanel
 		@Override
 		void pressed(int mouse)
 		{
-			member.getGrid().removeMember(member.getUUID(), true);
+			TaskUnit task = member.getGrid().getSession().getTaskManager().setTask();
+			task.addCommand(new RemoveMemberOnGrid(member));
 		}
 	};
 	private ButtonPanel disableButton = new ButtonPanel(325, 100, 20, 20);
@@ -1461,6 +1471,7 @@ class LogicTREditPane extends EditPane
 	
 	LogicTREditPane()
 	{
+		
 		this.IOEditButton.add(new IOControlButton(100, 28, 16, 64, Direction.EAST));
 		this.IOEditButton.add(new IOControlButton(4, 28, 16, 64, Direction.WEST));
 		this.IOEditButton.add(new IOControlButton(28, 100, 64, 16, Direction.SOUTH));
@@ -1522,7 +1533,16 @@ class LogicTREditPane extends EditPane
 		@Override
 		public void pressed(int mouse)
 		{
-			logicMember.toggleIO(this.ext);
+			if(logicMember.getGrid() != null)
+			{
+				TaskUnit task = logicMember.getGrid().getSession().getTaskManager().setTask();
+				task.addCommand(new SetLogicBlockIO(logicMember, ext, logicMember.getGrid().getSession()));
+			}
+			else
+			{
+				logicMember.toggleIO(ext);
+			}
+			
 			this.setImage();
 		}
 		void setImage()
@@ -1572,7 +1592,6 @@ class TrackedPane extends JPanel implements SizeUpdate
 		}
 		this.setSize((this.maxX - this.minX) * logicUI.getUISize().getmultiple(), (this.maxY - this.minY) * logicUI.getUISize().getmultiple());
 		this.repaint();
-
 	}
 	void addMemberOnGrid(int absX, int absY)
 	{
@@ -1584,7 +1603,13 @@ class TrackedPane extends JPanel implements SizeUpdate
 		stdY = (stdY / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
 		for(GridMember member : members)
 		{
-			this.logicUI.getGridArea().getGrid().addMember(member, stdX, stdY, true);
+			Session session = this.logicUI.getCore().getSession().getFocusSession();
+			SizeInfo gridSize = session.getGrid().getGridSize();
+			if(stdX < (gridSize.getX() - gridSize.getNX()) * Size.REGULAR_SIZE && stdY < (gridSize.getY() - gridSize.getNY()) * Size.REGULAR_SIZE
+			&& stdX > - (gridSize.getNX() + 1) * Size.REGULAR_SIZE && stdY > - (gridSize.getNY() + 1) * Size.REGULAR_SIZE)
+			{
+				session.getTaskManager().setTask().addCommand(new PutMemberOnGrid(session.getGrid(), member, stdX, stdY));
+			}
 			//TODO
 		}
 		this.removeAll();
@@ -1762,8 +1787,10 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		NONE, PRESS, ONMOUSE;
 	}
 }
-class FileSavePanel extends fileManagerWindow
+class FileSavePanel extends FileManagerWindow
 {
+	private boolean fileSelectorListenerFlag = true;
+	
 	private ButtonGroup grp;
 	private JRadioButton dftSave;
 	private JRadioButton cloudSave;
@@ -1771,13 +1798,12 @@ class FileSavePanel extends fileManagerWindow
 	private JLabel directoryLabel;
 	private JLabel fileNameLabel;
 	private JTextField fileNameField;
+	private boolean fileNameFiledListenerFlag = true;
 	private JButton removeButton;
 	private JButton saveButton;
 	
 	private JTextField titleField;
 	private JTextArea descriptionArea;
-	
-	private File saveFile;
 	
 	FileSavePanel(LogicCore core)
 	{
@@ -1821,7 +1847,6 @@ class FileSavePanel extends fileManagerWindow
 		this.fileNameLabel.setBounds(10, 200, 50, 20);
 		this.fileNameField = new JTextField();
 		this.fileNameField.setBounds(65, 200, 420, 20);
-		this.fileNameField.setText("이름없음");
 		
 		this.removeButton = new JButton("삭제");
 		this.removeButton.setBounds(310, 230, 80, 30);
@@ -1830,7 +1855,7 @@ class FileSavePanel extends fileManagerWindow
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				saveFile.delete();
+				selectFile.delete();
 				fileChooser.rescanCurrentDirectory();
 				checkFileReadStatus();
 			}
@@ -1845,14 +1870,12 @@ class FileSavePanel extends fileManagerWindow
 			{
 				focusSession.setName(titleField.getText());
 				focusSession.setDescription(descriptionArea.getText());
-				focusSession.saveData(saveFile);
+				focusSession.saveData(selectFile);
 				if(readOnly.isSelected())
 				{
-					System.out.println("readonly");
-					saveFile.setReadOnly();
+					selectFile.setReadOnly();
 				}
 				fileChooser.rescanCurrentDirectory();
-				
 				checkFileReadStatus();
 			}
 		});
@@ -1873,9 +1896,11 @@ class FileSavePanel extends fileManagerWindow
 			@Override
 			public void propertyChange(PropertyChangeEvent arg0)
 			{
-				if(fileChooser.getSelectedFile() != null && !fileChooser.getSelectedFile().isDirectory())
+				if(fileChooser.getSelectedFile() != null && !fileChooser.getSelectedFile().isDirectory() && fileSelectorListenerFlag)
 				{
+					fileNameFiledListenerFlag = false;
 					fileNameField.setText(fileChooser.getSelectedFile().getName().split("[.]LogicSave")[0]);
+					fileNameFiledListenerFlag = true;
 				}
 				checkFileReadStatus();
 			}
@@ -1905,17 +1930,24 @@ class FileSavePanel extends fileManagerWindow
 			@Override
 			public void changedUpdate(DocumentEvent arg0)
 			{
-				checkFileReadStatus();
+				this.check();
 			}
 			@Override
 			public void insertUpdate(DocumentEvent arg0)
 			{
-				checkFileReadStatus();
+				this.check();
 			}
 			@Override
 			public void removeUpdate(DocumentEvent arg0)
 			{
-				checkFileReadStatus();
+				this.check();
+			}
+			private void check()
+			{
+				if(fileNameFiledListenerFlag)
+				{
+					checkFileReadStatus();
+				}
 			}
 		});
 		
@@ -1932,11 +1964,14 @@ class FileSavePanel extends fileManagerWindow
 			this.directoryLabel.setText("경로: " + file.toString());
 			
 		}
-		this.saveFile = new File(focusDir.toString() + "\\" + fileNameField.getText() + ".LogicSave");
+		this.selectFile = new File(focusDir.toString() + "\\" + fileNameField.getText() + ".LogicSave");
 		
-		if(this.saveFile != null && this.saveFile.isFile())
+		if(super.selectFile.isFile())
 		{
 			this.removeButton.setEnabled(true);
+			this.fileSelectorListenerFlag = false;
+			super.fileChooser.setSelectedFile(this.selectFile);
+			this.fileSelectorListenerFlag = true;
 		}
 		else
 		{
@@ -1949,7 +1984,7 @@ class FileSavePanel extends fileManagerWindow
 			this.readOnly.setSelected(false);
 			this.saveButton.setEnabled(false);
 		}
-		else if(this.saveFile.isFile() && !this.saveFile.canWrite())
+		else if(super.selectFile.isFile() && !super.selectFile.canWrite())
 		{
 			this.readOnly.setEnabled(false);
 			this.readOnly.setSelected(true);
@@ -1961,24 +1996,27 @@ class FileSavePanel extends fileManagerWindow
 			this.readOnly.setSelected(false);
 			this.saveButton.setEnabled(true);
 		}
-		
 	}
 	@Override
 	void active(Session session)
 	{
 		super.active(session);
-		this.fileNameField.setText(super.focusSession.getName());
+		if(session.getFileLocation() != null)
+		{
+			this.fileNameField.setText(session.getFileLocation().getName().split("[.]LogicSave")[0]);
+		}
+		this.titleField.setText(super.focusSession.getName());
 		this.descriptionArea.setText(super.focusSession.getDescription());
 	}
 }
-class FileLoadPanel extends fileManagerWindow
+class FileLoadPanel extends FileManagerWindow
 {
 	private JPanel buttonPanel;
 	private ButtonGroup grp;
 	private JRadioButton dftLoad;
 	private JRadioButton innerLoad;
 	private JRadioButton cloudLoad;
-	private JCheckBox TempLoad;
+	private JCheckBox tempLoad;
 	private JCheckBox newSessionOpen;
 	private JButton selectButton;
 	
@@ -1997,7 +2035,7 @@ class FileLoadPanel extends fileManagerWindow
 			@Override
 			public void propertyChange(PropertyChangeEvent arg0)
 			{
-				if(fileChooser.getSelectedFile() != null)
+				if(fileChooser.getSelectedFile() != null && fileChooser.getSelectedFile().isFile())
 				{
 					selectButton.setEnabled(true);
 					selectFile = fileChooser.getSelectedFile();
@@ -2021,6 +2059,7 @@ class FileLoadPanel extends fileManagerWindow
 		this.descriptionText.setBounds(5, 30, 205, 235);
 		this.descriptionText.setBorder(new EtchedBorder(EtchedBorder.RAISED));
 		this.descriptionText.setEditable(false);
+		this.descriptionText.setLineWrap(true);
 		this.descriptionPane.add(this.descriptionTitle);
 		this.descriptionPane.add(this.descriptionText);
 		
@@ -2063,8 +2102,8 @@ class FileLoadPanel extends fileManagerWindow
 		this.grp.add(this.innerLoad);
 		this.grp.add(this.cloudLoad);
 		this.dftLoad.setSelected(true);
-		this.TempLoad = new JCheckBox("템플릿만 로드");
-		this.TempLoad.setBounds(240, 5, 120, 20);
+		this.tempLoad = new JCheckBox("템플릿만 로드");
+		this.tempLoad.setBounds(240, 5, 120, 20);
 		this.newSessionOpen = new JCheckBox("새 세션 생성");
 		this.newSessionOpen.setSelected(true);
 		this.newSessionOpen.setBounds(240, 25, 120, 20);
@@ -2077,15 +2116,26 @@ class FileLoadPanel extends fileManagerWindow
 			{
 				if(selectFile != null)
 				{
-					core.getSession().LoadFile(selectFile);
-					System.out.println(selectFile);
+					if(newSessionOpen.isSelected())
+					{
+						core.getSession().createSession();
+					}
+					Session focus = core.getSession().getFocusSession();
+					if(tempLoad.isSelected())
+					{
+						focus.getTemplateManager().addTempleat(selectFile);
+					}
+					else
+					{
+						focus.LoadData(selectFile);
+					}
 				}
 			}
 		});
 		this.buttonPanel.add(this.dftLoad);
 		this.buttonPanel.add(this.innerLoad);
 		this.buttonPanel.add(this.cloudLoad);
-		this.buttonPanel.add(this.TempLoad);
+		this.buttonPanel.add(this.tempLoad);
 		this.buttonPanel.add(this.newSessionOpen);
 		this.buttonPanel.add(this.selectButton);
 		
@@ -2096,6 +2146,17 @@ class FileLoadPanel extends fileManagerWindow
 	}
 	private void showFileDescription()
 	{
+		Iterator<String> description = super.getDescription(super.selectFile).iterator();
+		if(description.hasNext())
+		{
+			this.descriptionTitle.setText(description.next());
+		}
+		String temp = "";
+		while(description.hasNext())
+		{
+			temp += description.next() + "\n";
+		}
+		this.descriptionText.setText(temp);
 		this.diaLog.setSize(720, 300);
 	}
 	private void deShowFileDescription()
@@ -2107,8 +2168,17 @@ class FileLoadPanel extends fileManagerWindow
 	{
 		this.selectButton.setEnabled(true);
 	}
+	@Override
+	protected void active(Session session)
+	{
+		super.active(session);
+		if(super.selectFile != null && super.selectFile.isFile())
+		{
+			this.showFileDescription();
+		}
+	}
 }
-class fileManagerWindow
+class FileManagerWindow
 {
 	protected Session focusSession;
 	protected JDialog diaLog;
@@ -2126,7 +2196,7 @@ class fileManagerWindow
 	
 	private JPanel cloudLoaderPanel;
 	
-	fileManagerWindow(LogicCore core)
+	FileManagerWindow(LogicCore core)
 	{
 		this.core = core;
 		
@@ -2160,7 +2230,6 @@ class fileManagerWindow
 		{
 			e1.printStackTrace();
 		}
-		
 		this.innerSelectPanel = new JPanel();
 		this.innerSelectPanel.setLayout(null);
 		this.innerSelectScroll = new JScrollPane();
@@ -2182,6 +2251,7 @@ class fileManagerWindow
 		JFrame mainFrame = this.core.getUI().getFrame();
 		this.diaLog.setLocation(mainFrame.getX() + (mainFrame.getWidth() / 2) - (this.diaLog.getWidth() / 2)
 				, mainFrame.getY() + (mainFrame.getHeight() / 2) - (this.diaLog.getHeight() / 2));
+		this.fileChooser.rescanCurrentDirectory();
 		this.diaLog.setVisible(true);
 	}
 	void disActive()
@@ -2236,6 +2306,46 @@ class fileManagerWindow
 			}
 		}
 	}
+	protected ArrayList<String> getDescription(File file)
+	{
+		ArrayList<String> dataList = new ArrayList<String>();
+		if(file != null)
+		{
+			try
+			{
+				BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+				String line = reader.readLine();
+				while(!line.contains("}"))
+				{
+					switch(line.replace("\t", "").split("=")[0])
+					{
+					case "name":
+						dataList.add(line.split("=")[1]);
+						break;
+					case "Description":
+						line = reader.readLine();
+						while(!line.contains("}"))
+						{
+							if(line.split("=").length > 1)
+							{
+								dataList.add(line.split("=")[1]);
+							}
+							
+							line = reader.readLine();
+						}
+						break;
+					}
+					line = reader.readLine();
+				}
+				reader.close();
+			}
+			catch(IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		return dataList;
+	}
 	protected void selectFile()
 	{
 		
@@ -2244,15 +2354,47 @@ class fileManagerWindow
 	{
 		private static final long serialVersionUID = 1L;
 		private File LoadFile;
+		private JTextArea descriptionArea;
 		
 		InnerSelectMember(File file)
 		{
 			innerSelects.add(this);
 			this.LoadFile = file;
 			this.setSize(473, 51);
-			this.setBasicImage(LogicCore.getResource().getImage("INNER_LOAD_DFT"));
-			this.setBasicPressImage(LogicCore.getResource().getImage("INNER_LOAD_PUSH"));
-			this.setOnMouseImage(LogicCore.getResource().getImage("INNER_LOAD_SELECT"));
+			
+			this.descriptionArea = new JTextArea();
+			this.descriptionArea.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(13F));
+			Iterator<String> description = getDescription(this.LoadFile).iterator();
+			String temp = "";
+			if(description.hasNext())
+			{
+				temp = "[" + description.next() + "] ";
+			}
+			while(description.hasNext())
+			{
+				temp += description.next() + " ";
+			}
+			this.descriptionArea.setText(temp);
+			this.descriptionArea.setBounds(5, 5, 463, 41);
+			this.descriptionArea.setBackground(new Color(0, 0, 0, 0));
+			this.descriptionArea.setLineWrap(true);
+			this.descriptionArea.updateUI();
+			for(MouseListener l : this.descriptionArea.getMouseListeners())
+			{
+				this.descriptionArea.removeMouseListener(l);
+				System.out.println("remove");
+			}
+			for(MouseMotionListener l : this.descriptionArea.getMouseMotionListeners())
+			{
+				this.descriptionArea.removeMouseMotionListener(l);
+			}
+			this.descriptionArea.addMouseListener(this);
+			this.descriptionArea.addMouseMotionListener(this);
+			
+			this.deSelectFocus();
+			
+			super.setLayout(null);
+			super.add(this.descriptionArea);
 		}
 		void selectFocus()
 		{

@@ -1,9 +1,21 @@
-name=안녕하세여
-description={
-	안녕하십니까
+Session={
+	name=noname
+	description={
+		asdsad
+		asdasd
+		ad
+		a
+		d
+		d
+		d
+		d
+		d
+		d
+		da
+	}
 }
 GridData={
-	id=9994ad4c-3003-4dee-9771-cacd54caf756
+	id=9d8124ad-d8a3-489f-93a3-5d30d94724ec
 	gridSizeX=30
 	gridSizeY=30
 	gridSizeNX=15
@@ -17,7 +29,7 @@ TaskManager={
 	focus = 0
 	snapShots_0={
 		stateLabel = 초기
-		timeLabel = 22:25:28
+		timeLabel = 14:10:17
 		beforeSnapShot={
 			createSnapMembers={
 			}
