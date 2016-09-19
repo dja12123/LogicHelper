@@ -189,10 +189,16 @@ public class UI
 					Grid grid = getGridArea().getGrid();
 					if(grid != null)
 					{
-						Point clickOnGrid = SwingUtilities.convertPoint(glassPane, e.getPoint(), grid.getGridPanel());
-						GridPanel gridPanel = getGridArea().getGrid().getGridPanel();
+						Component gridPanel = getGridArea().getGrid().getGridPanel();
+						Component gridView = getGridArea().getViewPort();
+						Point clickOnGrid = SwingUtilities.convertPoint(glassPane, e.getPoint(), gridPanel);
+						Point clickOnViewPort = SwingUtilities.convertPoint(glassPane, e.getPoint(), gridView);
+						
 						int x = clickOnGrid.x;
 						int y = clickOnGrid.y;
+						int vX = clickOnViewPort.x;
+						int vY = clickOnViewPort.y;
+						if(vX > 0 && vY > 0 && vX < gridView.getWidth() && vY < gridView.getHeight())
 						if(x > Size.MARGIN && y > Size.MARGIN && x < gridPanel.getWidth() - Size.MARGIN && y < gridPanel.getHeight() - Size.MARGIN)
 						{
 							trackedPane.addMemberOnGrid(x - Size.MARGIN, y - Size.MARGIN);
@@ -429,6 +435,10 @@ class GridArea implements LogicUIComponent, SizeUpdate
 	}
 	void setGrid(Grid grid)
 	{
+		if(this.grid != null)
+		{
+			this.grid.setViewLoc(this.getViewPosition());
+		}
 		if(grid != null)
 		{
 			this.grid = grid;
@@ -440,6 +450,14 @@ class GridArea implements LogicUIComponent, SizeUpdate
 				this.masterPanel.remove(this.dftPanel);
 				this.masterPanel.add(this.gridScrollPane, BorderLayout.CENTER);
 				this.gridScrollPane.updateUI();
+			}
+			if(this.grid.getViewLoc() != null)
+			{
+				this.setViewPosition(this.grid.getViewLoc());
+			}
+			else
+			{
+				this.setViewPosition(new Point(0, 0));
 			}
 			this.showGridOption = true;
 		}
@@ -454,6 +472,10 @@ class GridArea implements LogicUIComponent, SizeUpdate
 			}
 			this.showGridOption = false;
 		}
+	}
+	ViewPort getViewPort()
+	{
+		return this.viewPort;
 	}
 	Grid getGrid()
 	{
@@ -845,7 +867,7 @@ class ToolBar implements LogicUIComponent
 		this.rightSidePanel = new JPanel();
 		this.rightSidePanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		this.rightSidePanel.setBackground(new Color(255, 0, 0, 0));
-		this.rightSidePanel.setPreferredSize(new Dimension(230, 0));
+		this.rightSidePanel.setPreferredSize(new Dimension(110, 0));
 		
 		this.leftSidePanel = new JPanel();
 		this.leftSidePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -1319,7 +1341,10 @@ class PalettePanel implements LogicUIComponent
 				else if(button == 3)
 				{
 					selectControlPanel.setInfo(putMember);
-					logicUI.getGridArea().getGrid().deSelectAll();
+					if(logicUI.getGridArea().getGrid() != null)
+					{
+						logicUI.getGridArea().getGrid().deSelectAll();
+					}
 					logicUI.getBlockControlPanel().addControlPanel(selectControlPanel);
 				}
 			}
@@ -1389,15 +1414,32 @@ class TaskManagerPanel implements LogicUIComponent
 {
 	private JPanel taskManagerPanel;
 	
+	private TaskManager manager;
+	private boolean showManagerOption = true;
+	
+	private JPanel dftPanel;
+	private JLabel dftPanelLabel;
+	
+	private JPanel scrollMasterPanel;
 	private JScrollPane taskScrollPane;
 	private JPanel buttonAreaPanel;
-	private UIButton TaskUndoButton;
-	private UIButton TaskRedoButton;
-
+	private UIButton taskUndoButton;
+	private UIButton taskRedoButton;
 	
 	TaskManagerPanel()
 	{
 		this.taskManagerPanel = new JPanel();
+		
+		this.scrollMasterPanel = new JPanel(new BorderLayout());
+		this.scrollMasterPanel.setPreferredSize(new Dimension(0, 200));
+		
+		this.dftPanel = new JPanel(new BorderLayout());
+		this.dftPanelLabel = new JLabel();
+		this.dftPanelLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(18f));
+		this.dftPanelLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.dftPanelLabel.setText("선택한 세션이 없습니다");
+		this.dftPanel.add(this.dftPanelLabel, BorderLayout.CENTER);
+		this.dftPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
 		
 		this.taskManagerPanel.setLayout(new BorderLayout());
 		this.taskManagerPanel.setBorder(new PanelBorder("�۾�"));
@@ -1406,26 +1448,53 @@ class TaskManagerPanel implements LogicUIComponent
 		this.buttonAreaPanel.setPreferredSize(new Dimension(30, 0));
 		this.buttonAreaPanel.setLayout(null);
 		
-		this.TaskUndoButton = new UIButton(2, 4, 26, 26, null, null);
-		this.TaskRedoButton = new UIButton(2, 34, 26, 26, null, null);
+		this.taskUndoButton = new UIButton(2, 4, 26, 26, null, null);
+		this.taskRedoButton = new UIButton(2, 34, 26, 26, null, null);
 		
-		this.buttonAreaPanel.add(this.TaskUndoButton);
-		this.buttonAreaPanel.add(this.TaskRedoButton);
+		this.buttonAreaPanel.add(this.taskUndoButton);
+		this.buttonAreaPanel.add(this.taskRedoButton);
 		
 		this.taskScrollPane = new JScrollPane();
-		this.taskScrollPane.setPreferredSize(new Dimension(0, 200));
 		this.taskScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		this.taskScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
 		this.taskScrollPane.getVerticalScrollBar().setUnitIncrement(8);
 		
-		this.taskManagerPanel.add(this.taskScrollPane, BorderLayout.CENTER);
+		this.scrollMasterPanel.add(this.taskScrollPane, BorderLayout.CENTER);
+		
+		this.taskManagerPanel.add(this.scrollMasterPanel, BorderLayout.CENTER);
 		this.taskManagerPanel.add(this.buttonAreaPanel, BorderLayout.EAST);
 	}
 	void setManager(TaskManager manager)
 	{
-		this.taskScrollPane.setViewportView(manager.getPanel());
-		JScrollBar vertical = this.taskScrollPane.getVerticalScrollBar();
-		vertical.setValue(manager.getPanel().getHeight());
+		if(manager != null)
+		{
+			this.manager = manager;
+			this.taskScrollPane.setViewportView(manager.getPanel());
+			JScrollBar vertical = this.taskScrollPane.getVerticalScrollBar();
+			vertical.setValue(manager.getPanel().getHeight());
+			if(!this.showManagerOption)
+			{
+				this.taskRedoButton.setEnabled(true);
+				this.taskUndoButton.setEnabled(true);
+				this.scrollMasterPanel.remove(this.dftPanel);
+				this.scrollMasterPanel.add(this.taskScrollPane, BorderLayout.CENTER);
+				this.taskScrollPane.updateUI();
+			}
+			this.showManagerOption = true;
+		}
+		else
+		{
+			this.manager = null;
+			if(this.showManagerOption)
+			{
+				this.taskRedoButton.setEnabled(false);
+				this.taskUndoButton.setEnabled(false);
+				this.scrollMasterPanel.remove(this.taskScrollPane);
+				this.scrollMasterPanel.add(this.dftPanel, BorderLayout.CENTER);
+				this.dftPanel.updateUI();
+			}
+			this.showManagerOption = false;
+		}
 	}
 	@Override
 	public Component getComponent()
@@ -1726,10 +1795,8 @@ class TrackedPane extends JPanel implements SizeUpdate
 		SizeInfo gridSize = session.getGrid().getGridSize();
 		int stdX = (x / multiple) - (gridSize.getNX() * Size.REGULAR_SIZE);
 		int stdY = (y / multiple) - (gridSize.getNY() * Size.REGULAR_SIZE);
-		stdX = stdX > 0 ? stdX + (Size.REGULAR_SIZE) : stdX - (Size.REGULAR_SIZE);
-		stdY = stdY > 0 ? stdY + (Size.REGULAR_SIZE) : stdY - (Size.REGULAR_SIZE);
-		//stdX = (stdX / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
-		//stdY = (stdY / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
+		stdX = stdX > 0 ? stdX : stdX - (Size.REGULAR_SIZE);
+		stdY = stdY > 0 ? stdY : stdY - (Size.REGULAR_SIZE);
 		
 		for(GridMember member : members)
 		{

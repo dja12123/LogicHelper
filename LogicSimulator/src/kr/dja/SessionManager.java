@@ -80,7 +80,9 @@ public class SessionManager
 		{
 			this.focusSession = null;
 			this.core.getUI().getGridArea().setGrid(null);
+			this.core.getUI().getTaskManagerPanel().setManager(null);
 			this.core.getUI().getToolBar().setSaveButtonStatus(false);
+			this.core.getUI().getUnderBar().setGridSizeInfo(new SizeInfo(0, 0, 0, 0));
 		}
 	}
 	Session getFocusSession()

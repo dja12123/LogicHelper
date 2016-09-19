@@ -1,28 +1,101 @@
 Session={
 	name=noname
 	Description={
+		0=
 	}
 }
 Grid={
 	id=95cd78c7-cf4f-48aa-b850-22c431923cb4
 	gridSizeX=30
-	gridSizeY=29
+	gridSizeY=30
 	gridSizeNX=15
-	gridSizeNY=14
+	gridSizeNY=15
 	MAX_SIZE=100
 	MAX_ABSOLUTE=150
+	GridMember={
+		ClassPath=kr.dja.AND
+		id=27ccae47-456d-4243-b5dd-0f4e0e12a4bd
+		name=AND
+		UIabslocationX=-320
+		UIabslocationY=-480
+		UIabsSizeX=32
+		UIabsSizeY=32
+		placement=true
+		grid=95cd78c7-cf4f-48aa-b850-22c431923cb4
+		blocklocationX=-10
+		blocklocationY=-15
+		power=OFF
+		io_EAST=NONE_OFF
+		io_WEST=NONE_OFF
+		io_SOUTH=NONE_OFF
+		io_NORTH=NONE_OFF
+	}
+	GridMember={
+		ClassPath=kr.dja.AND
+		id=b91802f8-92a2-4aef-ac87-b420794dc4ab
+		name=AND
+		UIabslocationX=-320
+		UIabslocationY=-448
+		UIabsSizeX=32
+		UIabsSizeY=32
+		placement=true
+		grid=95cd78c7-cf4f-48aa-b850-22c431923cb4
+		blocklocationX=-10
+		blocklocationY=-14
+		power=OFF
+		io_EAST=TRANCE_OFF
+		io_WEST=NONE_OFF
+		io_SOUTH=TRANCE_OFF
+		io_NORTH=NONE_OFF
+	}
+	GridMember={
+		ClassPath=kr.dja.AND
+		id=a5d1a599-ca8c-4005-9836-1d6f65fdc296
+		name=AND
+		UIabslocationX=-320
+		UIabslocationY=-416
+		UIabsSizeX=32
+		UIabsSizeY=32
+		placement=true
+		grid=95cd78c7-cf4f-48aa-b850-22c431923cb4
+		blocklocationX=-10
+		blocklocationY=-13
+		power=OFF
+		io_EAST=NONE_OFF
+		io_WEST=NONE_OFF
+		io_SOUTH=NONE_OFF
+		io_NORTH=NONE_OFF
+	}
+	GridMember={
+		ClassPath=kr.dja.AND
+		id=4240ecf1-9a0c-4c16-bbae-5c3d3f00cc5b
+		name=AND
+		UIabslocationX=-288
+		UIabslocationY=-416
+		UIabsSizeX=32
+		UIabsSizeY=32
+		placement=true
+		grid=95cd78c7-cf4f-48aa-b850-22c431923cb4
+		blocklocationX=-9
+		blocklocationY=-13
+		power=OFF
+		io_EAST=NONE_OFF
+		io_WEST=NONE_OFF
+		io_SOUTH=NONE_OFF
+		io_NORTH=NONE_OFF
+	}
 }
 TaskManager={
-	focus=1
+	focus=5
 	TaskUnit={
 	}
 	TaskUnit={
 		PutMemberonGrid={
 			CommandPath=kr.dja.PutMemberOnGrid
-			CommandAbsX=-256
-			CommandAbsY=-480
+			CommandAbsX=-321
+			CommandAbsY=-499
 			ClassPath=kr.dja.AND
-			id=b26b16ee-ab7b-478b-ae0e-5418ee6fd0f3
+			id=27ccae47-456d-4243-b5dd-0f4e0e12a4bd
 			name=AND
 			UIabslocationX=0
 			UIabslocationY=0
@@ -41,19 +114,22 @@ TaskManager={
 			UndoData={
 			}
 		}
-		RemoveMemberOnGrid={
-			CommandPath=kr.dja.RemoveMemberOnGrid
+	}
+	TaskUnit={
+		PutMemberonGrid={
+			CommandPath=kr.dja.PutMemberOnGrid
+			CommandAbsX=-344
+			CommandAbsY=-468
 			ClassPath=kr.dja.AND
-			id=b26b16ee-ab7b-478b-ae0e-5418ee6fd0f3
+			id=b91802f8-92a2-4aef-ac87-b420794dc4ab
 			name=AND
-			UIabslocationX=-256
-			UIabslocationY=-480
+			UIabslocationX=0
+			UIabslocationY=0
 			UIabsSizeX=32
 			UIabsSizeY=32
-			placement=true
-			grid=95cd78c7-cf4f-48aa-b850-22c431923cb4
-			blocklocationX=-8
-			blocklocationY=-15
+			placement=false
+			blocklocationX=0
+			blocklocationY=0
 			power=OFF
 			io_EAST=NONE_OFF
 			io_WEST=NONE_OFF
@@ -64,20 +140,80 @@ TaskManager={
 			UndoData={
 			}
 		}
-		EditGridSize={
-			CommandPath=kr.dja.EditGridSize
-			Grid=95cd78c7-cf4f-48aa-b850-22c431923cb4
+	}
+	TaskUnit={
+		PutMemberonGrid={
+			CommandPath=kr.dja.PutMemberOnGrid
+			CommandAbsX=-325
+			CommandAbsY=-428
+			ClassPath=kr.dja.AND
+			id=a5d1a599-ca8c-4005-9836-1d6f65fdc296
+			name=AND
+			UIabslocationX=0
+			UIabslocationY=0
+			UIabsSizeX=32
+			UIabsSizeY=32
+			placement=false
+			blocklocationX=0
+			blocklocationY=0
+			power=OFF
+			io_EAST=NONE_OFF
+			io_WEST=NONE_OFF
+			io_SOUTH=NONE_OFF
+			io_NORTH=NONE_OFF
 			RedoData={
-				sizeX=30
-				sizeY=29
-				sizeNX=15
-				sizeNY=14
 			}
 			UndoData={
-				sizeX=30
-				sizeY=30
-				sizeNX=15
-				sizeNY=15
+			}
+		}
+	}
+	TaskUnit={
+		SetLogicBlockIO={
+			CommandPath=kr.dja.SetLogicBlockIO
+			Direction=EAST
+			LogicBlock=b91802f8-92a2-4aef-ac87-b420794dc4ab
+			RedoData={
+				IOStatus=TRANCE
+			}
+			UndoData={
+				IOStatus=NONE
+			}
+		}
+		SetLogicBlockIO={
+			CommandPath=kr.dja.SetLogicBlockIO
+			Direction=SOUTH
+			LogicBlock=b91802f8-92a2-4aef-ac87-b420794dc4ab
+			RedoData={
+				IOStatus=TRANCE
+			}
+			UndoData={
+				IOStatus=NONE
+			}
+		}
+	}
+	TaskUnit={
+		PutMemberonGrid={
+			CommandPath=kr.dja.PutMemberOnGrid
+			CommandAbsX=-297
+			CommandAbsY=-430
+			ClassPath=kr.dja.AND
+			id=4240ecf1-9a0c-4c16-bbae-5c3d3f00cc5b
+			name=AND
+			UIabslocationX=0
+			UIabslocationY=0
+			UIabsSizeX=32
+			UIabsSizeY=32
+			placement=false
+			blocklocationX=0
+			blocklocationY=0
+			power=OFF
+			io_EAST=NONE_OFF
+			io_WEST=NONE_OFF
+			io_SOUTH=NONE_OFF
+			io_NORTH=NONE_OFF
+			RedoData={
+			}
+			UndoData={
 			}
 		}
 	}

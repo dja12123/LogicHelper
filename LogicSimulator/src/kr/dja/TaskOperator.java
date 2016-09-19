@@ -34,21 +34,20 @@ public class TaskOperator
 			this.reserveTask.add(member);
 		}
 	}
+	@SuppressWarnings("unchecked")
 	void clearData(Grid grid)
 	{
-		Iterator<LogicBlock> itr = this.reserveTask.iterator();
-		while(itr.hasNext())
+		ArrayList<LogicBlock> temp = (ArrayList<LogicBlock>) this.reserveTask.clone();
+		for(LogicBlock block : temp)
 		{
-			LogicBlock block = itr.next();
 			if(block.getGrid() == grid)
 			{
 				this.reserveTask.remove(block);
 			}
 		}
-		itr = this.check.keySet().iterator();
-		while(itr.hasNext())
+		HashMap<LogicBlock, HashMap<Direction, Power>> temp1 = (HashMap<LogicBlock, HashMap<Direction, Power>>) this.check.clone();
+		for(LogicBlock block : temp1.keySet())
 		{
-			LogicBlock block = itr.next();
 			if(block.getGrid() == grid)
 			{
 				this.check.remove(block);

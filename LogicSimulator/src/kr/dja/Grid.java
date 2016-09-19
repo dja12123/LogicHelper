@@ -35,6 +35,8 @@ public class Grid
 	private Color selectSignColor = new Color(255, 255, 30, 0);
 	private Color selectColor = new Color(120, 180, 255, 50);
 	private Color selectFocusColor = new Color(120, 255, 180, 50);
+
+	private Point viewPoint;
 	
 	Grid(Session session, SizeInfo size, UUID id)
  	{
@@ -81,6 +83,7 @@ public class Grid
 	void removeGrid()
 	{
 		this.session.getCore().getTaskOperator().clearData(this);
+		this.deSelectAll();
 	}
 	Session getSession()
 	{
@@ -409,6 +412,14 @@ public class Grid
 			this.selectFocusMember = null;
 		}
 	}
+	void setViewLoc(Point point)
+	{
+		this.viewPoint = point;
+	}
+	Point getViewLoc()
+	{
+		return this.viewPoint;
+	}
 	class GridPanel extends JPanel implements SizeUpdate
 	{
 		private static final long serialVersionUID = 1L;
@@ -425,12 +436,10 @@ public class Grid
 			g.setColor(new Color(190, 190, 200));
 			for(int x = 0; x <= gridSize.getX(); x++)
 			{
-				//g.drawLine((x * core.getUI().getUISize().getWidth()) + Size.MARGIN, Size.MARGIN, (x * core.getUI().getUISize().getWidth()) + Size.MARGIN, (gridSize.getY() * core.getUI().getUISize().getWidth()) + Size.MARGIN);
 				g.fillRect((x * session.getCore().getUI().getUISize().getWidth()) + Size.MARGIN - 1, Size.MARGIN, 2, (gridSize.getY() * session.getCore().getUI().getUISize().getWidth()));
 			}
 			for(int y = 0; y <= gridSize.getY(); y++)
 			{
-				//g.drawLine(Size.MARGIN, (y * core.getUI().getUISize().getWidth()) + Size.MARGIN, (gridSize.getX() * core.getUI().getUISize().getWidth()) + Size.MARGIN, (y * core.getUI().getUISize().getWidth()) + Size.MARGIN);
 				g.fillRect(Size.MARGIN, (y * session.getCore().getUI().getUISize().getWidth()) + Size.MARGIN - 1, (gridSize.getX() * session.getCore().getUI().getUISize().getWidth()), 2);
 			}
 		}
