@@ -78,6 +78,10 @@ public class Grid
 		label.setBounds(0, 0, 200, 30);
 		this.gridPanel.add(label);
 	}
+	void removeGrid()
+	{
+		this.session.getCore().getTaskOperator().clearData(this);
+	}
 	Session getSession()
 	{
 		return this.session;
@@ -222,25 +226,21 @@ public class Grid
 	}
 	void addMember(GridMember member, int absX, int absY)
 	{
-		//if(absX < (this.gridSize.getX() - this.gridSize.getNX()) * Size.REGULAR_SIZE && absY < (this.gridSize.getY() - this.gridSize.getNY()) * Size.REGULAR_SIZE
-		//&& absX > - (this.gridSize.getNX() + 1) * Size.REGULAR_SIZE && absY > - (this.gridSize.getNY() + 1) * Size.REGULAR_SIZE)
-		//{
 		System.out.println("addMember " + id.toString());
-			member.put(absX, absY, this);
-			if(member instanceof LogicBlock)
+		member.put(absX, absY, this);
+		if(member instanceof LogicBlock)
+		{
+			LogicBlock logicMember = (LogicBlock)member;
+			if(!this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX())))
 			{
-				LogicBlock logicMember = (LogicBlock)member;
-				if(!this.logicMembers.containsKey(new Integer(logicMember.getBlockLocationX())))
-				{
-					this.logicMembers.put(new Integer(logicMember.getBlockLocationX()), new LinkedHashMap<Integer, LogicBlock>());
-				}
-				this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).put(new Integer(logicMember.getBlockLocationY()), logicMember);
-				this.session.getCore().getTaskOperator().checkAroundAndReserveTask(logicMember);
+				this.logicMembers.put(new Integer(logicMember.getBlockLocationX()), new LinkedHashMap<Integer, LogicBlock>());
 			}
-			this.members.put(member.getUUID(), member);
-			this.getGridPanel().add(member.getGridViewPane());
-			member.getGridViewPane().repaint();
-		//}
+			this.logicMembers.get(new Integer(logicMember.getBlockLocationX())).put(new Integer(logicMember.getBlockLocationY()), logicMember);
+			this.session.getCore().getTaskOperator().checkAroundAndReserveTask(logicMember);
+		}
+		this.members.put(member.getUUID(), member);
+		this.getGridPanel().add(member.getGridViewPane());
+		member.getGridViewPane().repaint();
 	}
 	void removeMember(UUID id)
 	{
@@ -264,24 +264,6 @@ public class Grid
 			this.session.getCore().getTaskOperator().checkAroundAndReserveTask(removeBlock);
 		}
 	}
-	/*void recover(LinkedHashMap<LinkedHashMap<String, String>, Boolean> dataMap, SizeInfo sizeInfo, boolean back)
-	{
-		this.gridResize(sizeInfo);
-		for(LinkedHashMap<String, String> data : dataMap.keySet())
-		{
-			boolean placeStatus = dataMap.get(data);
-			
-			if(placeStatus == back)
-			{
-				GridMember member = GridMember.Factory(this.session.getCore(), data);
-				member.put(member.getUIabsLocationX(), member.getUIabsLocationY(), this);
-			}
-			else
-			{
-				this.removeMember(UUID.fromString(data.get("id")));
-			}
-		}
-	}*/
 	LinkedHashMap<UUID, GridMember> getMembers()
 	{
 		return this.members;

@@ -16,21 +16,72 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
 public class SessionManager
 {
 	private LogicCore core;
 	private Session focusSession;
+	private ArrayList<Session> sessions;
 	
 	SessionManager(LogicCore core)
 	{
 		this.core = core;
+		this.sessions = new ArrayList<Session>();
 		this.createSession();
 	}
 	Session createSession()
 	{
 		Session session = new Session(this.core);
-		this.focusSession = session;
+		this.core.getUI().getToolBar().addSessionTabPanel(session.getSessionTab());
+		this.sessions.add(session);
+		this.setFocusSession(session);
 		return session;
+	}
+	void removeSession(Session session)
+	{
+		int index = this.sessions.indexOf(session);
+		this.sessions.remove(session);
+		if(this.focusSession == session)
+		{
+			if(this.sessions.size() > index)
+			{
+				System.out.println("1 " + index);
+				this.setFocusSession(this.sessions.get(index));
+			}
+			else if(index > 0)
+			{
+				System.out.println("2");
+				this.setFocusSession(this.sessions.get(index - 1));
+			}
+			else
+			{
+				this.setFocusSession(null);
+			}
+		}
+		this.core.getUI().getToolBar().removeSessionTabPanel(session.getSessionTab());
+		session.getGrid().removeGrid();
+	}
+	void setFocusSession(Session session)
+	{
+		if(this.focusSession != null)
+		{
+			this.focusSession.deFocus();
+		}
+		if(session != null)
+		{	
+			this.focusSession = session;
+			this.focusSession.setFocus();
+			this.core.getUI().getToolBar().setFocus(this.focusSession.getSessionTab());
+			this.core.getUI().getToolBar().setSaveButtonStatus(true);
+		}
+		else
+		{
+			this.focusSession = null;
+			this.core.getUI().getGridArea().setGrid(null);
+			this.core.getUI().getToolBar().setSaveButtonStatus(false);
+		}
 	}
 	Session getFocusSession()
 	{
@@ -47,14 +98,56 @@ class Session
 	private String name = "noname";
 	private String description = "";
 	
+	private ButtonPanel sessionTab;
+	private JLabel nameLabel;
+	private ButtonPanel closeButton;
+	
 	Session(LogicCore core)
 	{
 		this.core = core;
 		this.grid = new Grid(this, new SizeInfo(30, 30, 15, 15), UUID.randomUUID());
 		this.task = new TaskManager(this);
 		this.template = new TemplateManager(this);
-		this.core.getUI().getGridArea().setGrid(this.grid);
-		this.core.getUI().getTaskManagerPanel().setManager(this.task);
+		
+		this.sessionTab = new ButtonPanel()
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int button)
+			{
+				core.getSession().setFocusSession(Session.this);
+			}
+		};
+		this.sessionTab.setSize(120, 20);
+		this.sessionTab.setLayout(null);
+		this.sessionTab.setBasicImage(LogicCore.getResource().getImage("SESSION_TAB"));
+		this.sessionTab.setOnMouseImage(LogicCore.getResource().getImage("SESSION_TAB_SELECT"));
+		this.sessionTab.setBasicPressImage(LogicCore.getResource().getImage("SESSION_TAB_PUSH"));
+		
+		this.nameLabel = new JLabel();
+		this.nameLabel.setBounds(5, 0, 100, 20);
+		this.nameLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14F));
+		this.nameLabel.setText(this.name);
+		
+		this.closeButton = new ButtonPanel()
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int button)
+			{
+				core.getSession().removeSession(Session.this);
+			}
+		};
+		this.closeButton.setBounds(104, 4, 12, 12);
+		this.closeButton.setBasicImage(LogicCore.getResource().getImage("SESSION_CLOSE"));
+		this.closeButton.setBasicPressImage(LogicCore.getResource().getImage("SESSION_CLOSE_PUSH"));
+		
+		this.sessionTab.add(this.nameLabel);
+		this.sessionTab.add(this.closeButton);
+	}
+	ButtonPanel getSessionTab()
+	{
+		return this.sessionTab;
 	}
 	DataBranch getData()
 	{
@@ -89,6 +182,20 @@ class Session
 				break;
 			}
 		}
+	}
+	void setFocus()
+	{
+		this.core.getUI().getGridArea().setGrid(this.grid);
+		this.core.getUI().getTaskManagerPanel().setManager(this.task);
+		this.sessionTab.setBasicImage(LogicCore.getResource().getImage("SESSION_TAB_FOCUS"));
+		this.sessionTab.setOnMouseImage(LogicCore.getResource().getImage("SESSION_TAB_FOCUS_SELECT"));
+		this.sessionTab.setBasicPressImage(LogicCore.getResource().getImage("SESSION_TAB_FOCUS_PUSH"));
+	}
+	void deFocus()
+	{
+		this.sessionTab.setBasicImage(LogicCore.getResource().getImage("SESSION_TAB"));
+		this.sessionTab.setOnMouseImage(LogicCore.getResource().getImage("SESSION_TAB_SELECT"));
+		this.sessionTab.setBasicPressImage(LogicCore.getResource().getImage("SESSION_TAB_PUSH"));
 	}
 	void LoadData(File file)
 	{
@@ -228,6 +335,7 @@ class Session
 	void setName(String name)
 	{
 		this.name = name;
+		this.nameLabel.setText(this.name);
 	}
 	String getDescription()
 	{

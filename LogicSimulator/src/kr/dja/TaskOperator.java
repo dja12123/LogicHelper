@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -31,6 +32,27 @@ public class TaskOperator
 		if(!this.reserveTask.contains(member))
 		{
 			this.reserveTask.add(member);
+		}
+	}
+	void clearData(Grid grid)
+	{
+		Iterator<LogicBlock> itr = this.reserveTask.iterator();
+		while(itr.hasNext())
+		{
+			LogicBlock block = itr.next();
+			if(block.getGrid() == grid)
+			{
+				this.reserveTask.remove(block);
+			}
+		}
+		itr = this.check.keySet().iterator();
+		while(itr.hasNext())
+		{
+			LogicBlock block = itr.next();
+			if(block.getGrid() == grid)
+			{
+				this.check.remove(block);
+			}
 		}
 	}
 	void checkAroundAndReserveTask(LogicBlock block)

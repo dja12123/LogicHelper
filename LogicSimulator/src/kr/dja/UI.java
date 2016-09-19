@@ -20,6 +20,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -138,6 +141,13 @@ public class UI
 				LogicCore.removeInstance(core);
 			}
 		});
+		this.mainFrame.addComponentListener(new ComponentAdapter() 
+		{
+			public void componentResized(ComponentEvent e)
+			{
+				toolBar.setTabLocation();
+			}
+		});
 		this.gridArea = new GridArea(this);
 		this.taskOperatorPanel = new TaskOperatorPanel();
 		this.palettePanel = new PalettePanel(this);
@@ -175,18 +185,19 @@ public class UI
 					removeTrackedPane(trackedPane);
 				}
 				else if(e.getButton() == 1)
-				{ 
-					Component pointComp = mainFrame.getContentPane().getComponentAt(e.getX(), e.getY());
-					Component pointComp1 = pointComp.getComponentAt((int)(e.getX() - pointComp.getLocation().getX()), (int)(e.getY() - pointComp.getLocation().getY()));
-					int compX = (int)(e.getX() - pointComp.getLocation().getX() - pointComp1.getLocation().getX());
-					int compY = (int)(e.getY() - pointComp.getLocation().getY() - pointComp1.getLocation().getY());
-					Component pointComp2 = pointComp1.getComponentAt(compX, compY);
-					Component panelComp = pointComp2.getComponentAt(compX, compY);
-					if(panelComp == getGridArea().getGrid().getGridPanel())
+				{
+					Grid grid = getGridArea().getGrid();
+					if(grid != null)
 					{
-						Point loc = gridArea.getViewPosition().getLocation();
-						trackedPane.addMemberOnGrid((int)((compX + loc.getX()) - Size.MARGIN) / getUISize().getmultiple(), (int)((compY + loc.getY()) - Size.MARGIN) / getUISize().getmultiple());
-						removeTrackedPane(trackedPane);
+						Point clickOnGrid = SwingUtilities.convertPoint(glassPane, e.getPoint(), grid.getGridPanel());
+						GridPanel gridPanel = getGridArea().getGrid().getGridPanel();
+						int x = clickOnGrid.x;
+						int y = clickOnGrid.y;
+						if(x > Size.MARGIN && y > Size.MARGIN && x < gridPanel.getWidth() - Size.MARGIN && y < gridPanel.getHeight() - Size.MARGIN)
+						{
+							trackedPane.addMemberOnGrid(x - Size.MARGIN, y - Size.MARGIN);
+							removeTrackedPane(trackedPane);
+						}
 					}
 				}
 			}
@@ -199,14 +210,14 @@ public class UI
 		this.moveControlView.add(this.taskManagerPanel.getComponent(), BorderLayout.CENTER);
 		this.moveControlView.add(this.templatePanel.getComponent(), BorderLayout.SOUTH);
 		
-		this.controlView.add(moveControlView, BorderLayout.CENTER);
-		this.controlView.add(staticControlView, BorderLayout.NORTH);
+		this.controlView.add(this.moveControlView, BorderLayout.CENTER);
+		this.controlView.add(this.staticControlView, BorderLayout.NORTH);
 		
 		this.mainFrame.add(this.gridArea.getComponent(), BorderLayout.CENTER);
 		this.mainFrame.add(this.toolBar.getComponent(), BorderLayout.NORTH);
 		this.mainFrame.add(this.underBar.getComponent(), BorderLayout.SOUTH);
 		this.mainFrame.add(this.controlView, BorderLayout.EAST);
-
+		
 		this.mainFrame.setVisible(true);
 	}
 	JFrame getFrame()
@@ -241,6 +252,10 @@ public class UI
 	{
 		return this.core;
 	}
+	ToolBar getToolBar()
+	{
+		return this.toolBar;
+	}
 	UnderBar getUnderBar()
 	{
 		return this.underBar;
@@ -274,18 +289,35 @@ class GridArea implements LogicUIComponent, SizeUpdate
 	
 	private Grid grid;
 	
+	private JPanel masterPanel;
+	
 	private JScrollPane gridScrollPane;
 	private ViewPort viewPort;
 	private RulerPanel horizonRulerScrollPane;
 	private RulerPanel verticalRulerScrollPane;
 	private JPanel side;
+
+	private JPanel dftPanel;
+
+	private JLabel dftPanelLabel;
+
+	private boolean showGridOption = true;
 	
 	GridArea(UI ui)
 	{
 		this.logicUI = ui;
 		
-		this.gridScrollPane = new JScrollPane();
+		this.masterPanel = new JPanel(new BorderLayout());
 		
+		this.dftPanel = new JPanel(new BorderLayout());
+		this.dftPanelLabel = new JLabel();
+		this.dftPanelLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(32f));
+		this.dftPanelLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.dftPanelLabel.setText("선택한 세션이 없습니다");
+		this.dftPanel.add(this.dftPanelLabel, BorderLayout.CENTER);
+		this.dftPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+		
+		this.gridScrollPane = new JScrollPane();
 		this.gridScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		this.gridScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		this.gridScrollPane.getVerticalScrollBar().setUnitIncrement((int)(this.logicUI.getUISize().getWidth() / 2.5));
@@ -392,13 +424,36 @@ class GridArea implements LogicUIComponent, SizeUpdate
 		this.gridScrollPane.setCorner(JScrollPane.LOWER_LEFT_CORNER, this.side);
 		this.gridScrollPane.setCorner(JScrollPane.UPPER_LEFT_CORNER, this.side);
 		this.gridScrollPane.setCorner(JScrollPane.UPPER_RIGHT_CORNER, this.side);
+		
+		this.masterPanel.add(this.gridScrollPane, BorderLayout.CENTER);
 	}
 	void setGrid(Grid grid)
 	{
-		this.grid = grid;
-		this.viewPort.setView(this.grid.getGridPanel());
-		this.logicUI.getUnderBar().setGridSizeInfo(this.grid.getGridSize());
-		this.sizeUpdate();
+		if(grid != null)
+		{
+			this.grid = grid;
+			this.viewPort.setView(this.grid.getGridPanel());
+			this.logicUI.getUnderBar().setGridSizeInfo(this.grid.getGridSize());
+			this.sizeUpdate();
+			if(!this.showGridOption)
+			{
+				this.masterPanel.remove(this.dftPanel);
+				this.masterPanel.add(this.gridScrollPane, BorderLayout.CENTER);
+				this.gridScrollPane.updateUI();
+			}
+			this.showGridOption = true;
+		}
+		else
+		{
+			this.grid = null;
+			if(this.showGridOption)
+			{
+				this.masterPanel.remove(this.gridScrollPane);
+				this.masterPanel.add(this.dftPanel, BorderLayout.CENTER);
+				this.dftPanel.updateUI();
+			}
+			this.showGridOption = false;
+		}
 	}
 	Grid getGrid()
 	{
@@ -415,7 +470,7 @@ class GridArea implements LogicUIComponent, SizeUpdate
 	@Override
 	public Component getComponent()
 	{
-		return this.gridScrollPane;
+		return this.masterPanel;
 	}
 	private abstract class RulerPanel extends JPanel implements SizeUpdate
 	{
@@ -757,7 +812,7 @@ class ToolBar implements LogicUIComponent
 	private JPanel leftSidePanel;
 	private JPanel toolBarPanel;
 	private JPanel rightSidePanel;
-	private JLabel titleLabel;
+	private JLayeredPane sessionTabPanel;
 	private ButtonPanel saveButton;
 	private ButtonPanel optionSaveButton;
 	private ButtonPanel loadButton;
@@ -769,6 +824,10 @@ class ToolBar implements LogicUIComponent
 	private UIButton helpButton;
 	private UIButton newInstanceButton;
 	private UIButton controlOpenButton;
+	
+	private ArrayList<ButtonPanel> sessionTabList;
+	private ButtonPanel createSessionButton;
+	private ButtonPanel focus;
 	
 	ToolBar(LogicCore core)
 	{
@@ -786,15 +845,15 @@ class ToolBar implements LogicUIComponent
 		this.rightSidePanel = new JPanel();
 		this.rightSidePanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		this.rightSidePanel.setBackground(new Color(255, 0, 0, 0));
-		this.rightSidePanel.setPreferredSize(new Dimension(300, 0));
+		this.rightSidePanel.setPreferredSize(new Dimension(230, 0));
 		
 		this.leftSidePanel = new JPanel();
 		this.leftSidePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 		this.leftSidePanel.setBackground(new Color(255, 0, 0, 0));
-		this.leftSidePanel.setPreferredSize(new Dimension(300, 0));
+		this.leftSidePanel.setPreferredSize(new Dimension(230, 0));
 		
-		this.titleLabel = new JLabel("FileName");
-		this.titleLabel.setHorizontalAlignment(JLabel.CENTER);
+		this.sessionTabPanel = new JLayeredPane();
+		this.sessionTabPanel.setLayout(null);
 		
 		this.saveButton = new ButtonPanel(20, 20)
 		{
@@ -861,10 +920,77 @@ class ToolBar implements LogicUIComponent
 		this.rightSidePanel.add(this.newInstanceButton);
 		
 		this.toolBarPanel.add(this.leftSidePanel, BorderLayout.WEST);
-		this.toolBarPanel.add(this.titleLabel, BorderLayout.CENTER);
+		this.toolBarPanel.add(this.sessionTabPanel, BorderLayout.CENTER);
 		this.toolBarPanel.add(this.rightSidePanel, BorderLayout.EAST);
 		
+		this.sessionTabList = new ArrayList<ButtonPanel>();
+		this.createSessionButton = new ButtonPanel()
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int button)
+			{
+				core.getSession().createSession();
+			}
+		};
+		this.createSessionButton.setSize(16, 16);
+		this.createSessionButton.setBasicImage(LogicCore.getResource().getImage("SESSION_CREATE"));
+		this.createSessionButton.setBasicPressImage(LogicCore.getResource().getImage("SESSION_CREATE_PUSH"));
+		this.sessionTabPanel.add(this.createSessionButton);
+		
 		this.toolbar.add(toolBarPanel);
+	}
+	void addSessionTabPanel(ButtonPanel panel)
+	{
+		this.sessionTabList.add(panel);
+		this.sessionTabPanel.add(panel, new Integer(1));
+		this.setTabLocation();
+	}
+	void removeSessionTabPanel(ButtonPanel panel)
+	{
+		this.sessionTabList.remove(panel);
+		this.sessionTabPanel.remove(panel);
+		if(this.focus != null && this.focus == panel)
+		{
+			this.focus = null;
+		}
+		this.setTabLocation();
+	}
+	void setTabLocation()
+	{
+		int width = this.sessionTabPanel.getWidth() - 143 - (this.focus != null ? 120 : 0);
+		
+		int memberGab = 120 + 3;
+		int totalWidth = (this.sessionTabList.size() * memberGab);
+		if(width < totalWidth)
+		{
+			memberGab = (width) / this.sessionTabList.size();
+		}
+		int memberLocation = 0;
+		for(int i = 0; i < this.sessionTabList.size(); i++)
+		{
+			ButtonPanel btn = this.sessionTabList.get(i);
+			this.sessionTabPanel.setLayer(btn, new Integer(i));
+			btn.setLocation(memberLocation, 5);
+			if(btn == this.focus && this.focus != this.sessionTabList.get(this.sessionTabList.size() - 1))
+			{
+				memberLocation += 123 - memberGab;
+			}
+			memberLocation += memberGab;
+		}
+		memberLocation += 124 - memberGab;
+		this.createSessionButton.setLocation(memberLocation, 7);
+		this.toolbar.repaint();
+	}
+	void setFocus(ButtonPanel btn)
+	{
+		this.focus = btn;
+		this.setTabLocation();
+	}
+	void setSaveButtonStatus(boolean option)
+	{
+		this.saveButton.setEnable(option);
+		this.optionSaveButton.setEnable(option);
 	}
 	@Override
 	public Component getComponent()
@@ -1593,18 +1719,21 @@ class TrackedPane extends JPanel implements SizeUpdate
 		this.setSize((this.maxX - this.minX) * logicUI.getUISize().getmultiple(), (this.maxY - this.minY) * logicUI.getUISize().getmultiple());
 		this.repaint();
 	}
-	void addMemberOnGrid(int absX, int absY)
+	void addMemberOnGrid(int x, int y)
 	{
-		int stdX = absX - ((this.getWidth() / 2) / this.logicUI.getUISize().getmultiple()) - (this.logicUI.getGridArea().getGrid().getGridSize().getNX() * Size.REGULAR_SIZE);
-		int stdY = absY - ((this.getHeight() / 2) / this.logicUI.getUISize().getmultiple()) - (this.logicUI.getGridArea().getGrid().getGridSize().getNY() * Size.REGULAR_SIZE);
-		stdX = stdX > 0 ? stdX + (Size.REGULAR_SIZE / 2) : stdX - (Size.REGULAR_SIZE / 2);
-		stdY = stdY > 0 ? stdY + (Size.REGULAR_SIZE / 2) : stdY - (Size.REGULAR_SIZE / 2);
-		stdX = (stdX / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
-		stdY = (stdY / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
+		int multiple = this.logicUI.getUISize().getmultiple();
+		Session session = this.logicUI.getCore().getSession().getFocusSession();
+		SizeInfo gridSize = session.getGrid().getGridSize();
+		int stdX = (x / multiple) - (gridSize.getNX() * Size.REGULAR_SIZE);
+		int stdY = (y / multiple) - (gridSize.getNY() * Size.REGULAR_SIZE);
+		stdX = stdX > 0 ? stdX + (Size.REGULAR_SIZE) : stdX - (Size.REGULAR_SIZE);
+		stdY = stdY > 0 ? stdY + (Size.REGULAR_SIZE) : stdY - (Size.REGULAR_SIZE);
+		//stdX = (stdX / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
+		//stdY = (stdY / Size.REGULAR_SIZE) * Size.REGULAR_SIZE;
+		
 		for(GridMember member : members)
 		{
-			Session session = this.logicUI.getCore().getSession().getFocusSession();
-			SizeInfo gridSize = session.getGrid().getGridSize();
+			
 			if(stdX < (gridSize.getX() - gridSize.getNX()) * Size.REGULAR_SIZE && stdY < (gridSize.getY() - gridSize.getNY()) * Size.REGULAR_SIZE
 			&& stdX > - (gridSize.getNX() + 1) * Size.REGULAR_SIZE && stdY > - (gridSize.getNY() + 1) * Size.REGULAR_SIZE)
 			{
@@ -1624,10 +1753,13 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	private BufferedImage basicImage;
 	private BufferedImage onMouseImage;
 	private BufferedImage basicPressImage;
+	private BufferedImage disableImage;
 	private LinkedHashMap<Integer, BufferedImage> pressImages = new LinkedHashMap<Integer, BufferedImage>();
 	
 	private BufferedImage nowImage;
 	private int mouseButton = 0;
+	
+	private boolean enable = true;
 	
 	ButtonPanel()
 	{
@@ -1726,6 +1858,25 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	void pressed(int button)
 	{
 	}
+	void setEnable(boolean option)
+	{
+		if(this.enable != option)
+		{
+			this.enable = option;
+			if(option)
+			{
+				this.addMouseListener(this);
+				this.addMouseMotionListener(this);
+			}
+			else
+			{
+				this.removeMouseListener(this);
+				this.removeMouseMotionListener(this);
+				this.status = ButtonStatus.NONE;
+			}
+			this.imageSet();
+		}
+	}
 	void setBasicImage(BufferedImage img)
 	{
 		this.basicImage = img;
@@ -1735,6 +1886,11 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	void setBasicPressImage(BufferedImage img)
 	{
 		this.basicPressImage = img;
+		this.repaint();
+	}
+	void setBasicDisableImage(BufferedImage img)
+	{
+		this.disableImage = img;
 		this.repaint();
 	}
 	void setPressImage(int button, BufferedImage img)
@@ -1750,26 +1906,33 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	}
 	void imageSet()
 	{
-		if(status == ButtonStatus.PRESS)
+		if(this.enable)
 		{
-			if(this.pressImages.containsKey(new Integer(this.mouseButton)))
+			if(this.status == ButtonStatus.PRESS)
 			{
-				this.nowImage = this.pressImages.get(new Integer(this.mouseButton));
+				if(this.pressImages.containsKey(new Integer(this.mouseButton)))
+				{
+					this.nowImage = this.pressImages.get(new Integer(this.mouseButton));
+				}
+				else if(this.basicPressImage != null)
+				{
+					this.nowImage = this.basicPressImage;
+				}
+				else
+				{
+					this.nowImage = this.basicImage;
+				}
 			}
-			else if(this.basicPressImage != null)
+			else if(this.status == ButtonStatus.ONMOUSE)
 			{
-				this.nowImage = this.basicPressImage;
-			}
-			else
-			{
-				this.nowImage = this.basicImage;
-			}
-		}
-		else if(status == ButtonStatus.ONMOUSE)
-		{
-			if(this.onMouseImage != null)
-			{
-				this.nowImage = this.onMouseImage;
+				if(this.onMouseImage != null)
+				{
+					this.nowImage = this.onMouseImage;
+				}
+				else
+				{
+					this.nowImage = this.basicImage;
+				}
 			}
 			else
 			{
@@ -1778,7 +1941,7 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		}
 		else
 		{
-			this.nowImage = this.basicImage;
+			this.nowImage = this.disableImage;
 		}
 		super.repaint();
 	}

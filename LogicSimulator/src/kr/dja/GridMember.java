@@ -806,6 +806,19 @@ class LogicViewPane extends GridViewPane
 		}
 		g.drawImage(LogicCore.getResource().getImage(super.member.getCore().getUI().getUISize().getTag() + "_BLOCK_" + logicMember.getPower().getTag())
 				, 7 * super.member.getCore().getUI().getUISize().getmultiple(), 7 * super.member.getCore().getUI().getUISize().getmultiple(), this);
+		
+		/*BufferedImage img = LogicCore.getResource().getImage("led");
+		BufferedImage test = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+		for(int i = 0; i < img.getWidth(); i++)
+		{
+			for(int j = 0; j < img.getHeight(); j++)
+			{
+				Color c = new Color(img.getRGB(i, j));
+				test.setRGB(i, j, new Color(c.getRed(), c.getRed(), c.getRed(), 255 - c.getGreen()).getRGB());
+			}
+		}
+		
+		g.drawImage(test, 0, 0, this);*/
 		super.paintChildren(g);
 	}
 	@Override
