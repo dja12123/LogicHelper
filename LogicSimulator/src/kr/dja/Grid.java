@@ -228,7 +228,7 @@ public class Grid
 		return this.gridPanel;
 	}
 	void addMember(GridMember member, int absX, int absY)
-	{
+	{//반드시 커맨드로부터 호출할것
 		System.out.println("addMember " + id.toString());
 		member.put(absX, absY, this);
 		if(member instanceof LogicBlock)
@@ -246,7 +246,7 @@ public class Grid
 		member.getGridViewPane().repaint();
 	}
 	void removeMember(UUID id)
-	{
+	{//반드시 커맨드로부터 호출할것
 		System.out.println("removeMember " + id.toString());
 
 		GridMember removeMember = this.members.get(id);
@@ -322,7 +322,7 @@ public class Grid
 		}
 		else if(this.selectMembers.size() > 0)
 		{
-			new ManySelectEditPanel(this.selectMembers, this.session.getCore().getUI().getBlockControlPanel());
+			new ManySelectEditPanel(this, this.selectMembers, this.session.getCore().getUI().getBlockControlPanel());
 		}
 		else if(this.selectFocusMember == null)
 		{
@@ -350,7 +350,7 @@ public class Grid
 		}
 		if(this.selectMembers.size() > 0)
 		{
-			new ManySelectEditPanel(this.selectMembers, this.session.getCore().getUI().getBlockControlPanel());
+			new ManySelectEditPanel(this, this.selectMembers, this.session.getCore().getUI().getBlockControlPanel());
 		}
 		else if(this.selectFocusMember == null)
 		{
@@ -493,6 +493,14 @@ class SizeInfo
 	int getNY()
 	{
 		return this.negativeExtendsY;
+	}
+	int getPX()
+	{
+		return sizeX - this.negativeExtendsX;
+	}
+	int getPY()
+	{
+		return sizeY - this.negativeExtendsY;
 	}
 	void setData(SizeInfo info)
 	{

@@ -30,7 +30,7 @@ public class TaskManager
 	
 	private JPanel taskPanel;
 	public static final int HGAP = 1;
-	public static final int WGAP = 1;
+	public static final int WGAP = 0;
 	public static final int COMPW = 325;
 	
 	private ArrayList<TaskUnit> snapShots = new ArrayList<TaskUnit>();

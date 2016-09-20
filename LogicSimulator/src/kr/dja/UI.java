@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -249,6 +250,10 @@ public class UI
 	TaskManagerPanel getTaskManagerPanel()
 	{
 		return this.taskManagerPanel;
+	}
+	TemplatePanel getTemplatePanel()
+	{
+		return this.templatePanel;
 	}
 	Size getUISize()
 	{
@@ -1363,13 +1368,29 @@ class TemplatePanel implements LogicUIComponent
 	private JPanel buttonAreaPanel;
 	private JPanel clipBoardPanel;
 	private JScrollPane templateScrollPane;
-	private UIButton addTemplateButton;
-	private UIButton putGridButton;
+	private ButtonPanel addTemplateButton;
 	private UIButton removeTemplateButton;
+	private ButtonPanel checkAllButton;
+
+	private TemplateManager manager;
+
+	private boolean showManagerOption = true;
+
+	private JPanel dftPanel;
+
+	private JLabel dftPanelLabel;
 
 	TemplatePanel()
 	{
 		this.templatePanel = new JPanel();
+		
+		this.dftPanel = new JPanel(new BorderLayout());
+		this.dftPanelLabel = new JLabel();
+		this.dftPanelLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(18f));
+		this.dftPanelLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.dftPanelLabel.setText("선택한 세션이 없습니다");
+		this.dftPanel.add(this.dftPanelLabel, BorderLayout.CENTER);
+		this.dftPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
 		
 		this.templatePanel.setLayout(new BorderLayout());
 		this.templatePanel.setBorder(new PanelBorder("���ø�"));
@@ -1381,28 +1402,87 @@ class TemplatePanel implements LogicUIComponent
 		this.buttonAreaPanel.setPreferredSize(new Dimension(30, 0));
 		this.buttonAreaPanel.setLayout(null);
 		
-		this.addTemplateButton = new UIButton(2, 4, 26, 26, null, null);
-		this.putGridButton = new UIButton(2, 38, 26, 26, null, null);
-		this.removeTemplateButton = new UIButton(2, 68, 26, 26, null, null);
+		this.addTemplateButton = new ButtonPanel(2, 4, 26, 26)
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int button)
+			{
+				manager.addTempleat();
+			}
+		};
+		if(ClipBoardPanel.clipBoard == null)
+		{
+			this.addTemplateButton.setEnable(false);
+		}
+		this.removeTemplateButton = new UIButton(2, 38, 26, 26, null, null);
+		this.checkAllButton = new ButtonPanel();
+		this.checkAllButton.setBounds(2, 68, 26, 26);
 		
 		this.buttonAreaPanel.add(this.addTemplateButton);
-		this.buttonAreaPanel.add(this.putGridButton);
 		this.buttonAreaPanel.add(this.removeTemplateButton);
+		this.buttonAreaPanel.add(this.checkAllButton);
 		
 		this.clipBoardPanel = new JPanel();
-		this.clipBoardPanel.setPreferredSize(new Dimension(0, 34));
+		this.clipBoardPanel.setLayout(null);
+		this.clipBoardPanel.setPreferredSize(new Dimension(0, 35));
 		this.clipBoardPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
 		
 		this.templateScrollPane = new JScrollPane();
-		this.templateScrollPane.setPreferredSize(new Dimension(0, 200));
 		this.templateScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		this.templateScrollPane.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+		this.templateScrollPane.getVerticalScrollBar().setUnitIncrement(8);
+		
+		this.templateAreaPanel.setPreferredSize(new Dimension(0, 200));
 		this.templateAreaPanel.add(this.templateScrollPane, BorderLayout.CENTER);
 		this.templateAreaPanel.add(this.clipBoardPanel, BorderLayout.NORTH);
 		
 		this.templatePanel.add(this.templateAreaPanel, BorderLayout.CENTER);
 		this.templatePanel.add(this.buttonAreaPanel, BorderLayout.EAST);
-		
+	}
+	void setAddButtonActive()
+	{
+		this.addTemplateButton.setEnable(true);
+	}
+	void setClipBoard(ClipBoardPanel panel)
+	{
+		panel.setLocation(2, 2);
+		this.clipBoardPanel.add(panel);
+		this.clipBoardPanel.repaint();
+	}
+	void setManager(TemplateManager manager)
+	{
+		if(manager != null)
+		{
+			this.manager = manager;
+			this.templateScrollPane.setViewportView(manager.getPanel());
+			JScrollBar vertical = this.templateScrollPane.getVerticalScrollBar();
+			vertical.setValue(manager.getPanel().getHeight());
+			if(!this.showManagerOption)
+			{
+				this.removeTemplateButton.setEnabled(true);
+				this.templateAreaPanel.remove(this.dftPanel);
+				this.templateAreaPanel.add(this.templateScrollPane, BorderLayout.CENTER);
+				this.templateScrollPane.updateUI();
+			}
+			this.showManagerOption = true;
+		}
+		else
+		{
+			this.manager = null;
+			if(this.showManagerOption)
+			{
+				this.removeTemplateButton.setEnabled(false);
+				this.templateAreaPanel.remove(this.templateScrollPane);
+				this.templateAreaPanel.add(this.dftPanel, BorderLayout.CENTER);
+				this.dftPanel.updateUI();
+			}
+			this.showManagerOption = false;
+		}
+	}
+	void updateUI()
+	{
+		this.templateScrollPane.revalidate();
 	}
 	@Override
 	public Component getComponent()
@@ -1537,13 +1617,13 @@ class ManySelectEditPanel extends JPanel
 {
 	private static final long serialVersionUID = 1L;
 	private JLabel numberLabel;
-	private UIButton copyButton;
+	private ButtonPanel copyButton;
 	private UIButton cutButton;
 	private UIButton createTempButton;
 	private UIButton exportTempButton;
 	private UIButton restoreButton;
 	private UIButton removeButton;
-	ManySelectEditPanel(ArrayList<GridMember> selectMembers, BlockControlPanel blockControl)
+	ManySelectEditPanel(Grid grid, ArrayList<GridMember> selectMembers, BlockControlPanel blockControl)
 	{
 		super();
 		this.setLayout(null);
@@ -1552,7 +1632,23 @@ class ManySelectEditPanel extends JPanel
 		this.numberLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16F));
 		this.numberLabel.setBounds(0, 0, 373, 20);
 		this.numberLabel.setText(Integer.toString(selectMembers.size()) + " ���� ��� ����");
-		this.copyButton = new UIButton(66, 25, 40, 40, null, null);
+		this.copyButton = new ButtonPanel(66, 25, 40, 40)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void pressed(int button)
+			{
+				DataBranch tree = new DataBranch("ManySelectClipBoard");
+				for(GridMember member : selectMembers)
+				{
+					DataBranch branch = new DataBranch("GridMember");
+					member.getData(branch);
+					tree.addLowerBranch(branch);
+				}
+				ClipBoardPanel.setClipBoard(tree);
+			}
+		};
 		this.cutButton = new UIButton(166, 25, 40, 40, null, null);
 		this.removeButton = new UIButton(266, 25, 40, 40, null, null);
 		this.createTempButton = new UIButton(66, 75, 40, 40, null, null);
@@ -1750,26 +1846,41 @@ class LogicTREditPane extends EditPane
 class TrackedPane extends JPanel implements SizeUpdate
 {
 	private static final long serialVersionUID = 1L;
-	private List<GridMember> members;
+	private ArrayList<GridMember> members;
+	private HashMap<GridMember, BufferedImage> images;
 	private int maxX, maxY, minX, minY;
 	private UI logicUI;
-	TrackedPane(List<GridMember> members, UI logicUI)
+	TrackedPane(ArrayList<GridMember> members, UI logicUI)
 	{
 		this.logicUI = logicUI;
 		this.members = members;
-		this.setBackground(new Color(0, 255, 0, 0));
+		this.images = new HashMap<GridMember, BufferedImage>();
+		for(GridMember member : this.members)
+		{
+			BufferedImage temp = member.getSnapShot();
+			for(int x = 0; x < temp.getWidth(); x++)
+			{
+				for(int y = 0; y < temp.getHeight(); y++)
+				{
+					Color c = new Color(temp.getRGB(x, y));
+					temp.setRGB(x, y, new Color(c.getRed(), c.getGreen(), c.getRed(), 150).getRGB());
+				}
+			}
+			images.put(member, temp);
+		}
+		
+		this.setOpaque(false);
 		this.sizeUpdate();
 	}
 	@Override
 	public void paint(Graphics g)
 	{
-		BufferedImage img;
+		super.paint(g);
 		for(GridMember member : members)
 		{
-			img = member.getSnapShot();
-			g.drawImage(img, (member.getUIabsLocationX() - minX) * logicUI.getUISize().getmultiple(), (member.getUIabsLocationY() - minY) * logicUI.getUISize().getmultiple(), this);
+			g.drawImage(images.get(member), (member.getUIabsLocationX() - minX) * logicUI.getUISize().getmultiple()
+					, (member.getUIabsLocationY() - minY) * logicUI.getUISize().getmultiple(), this);
 		}
-		super.paint(g);
 	}
 	@Override
 	public void sizeUpdate()
@@ -1795,18 +1906,19 @@ class TrackedPane extends JPanel implements SizeUpdate
 		SizeInfo gridSize = session.getGrid().getGridSize();
 		int stdX = (x / multiple) - (gridSize.getNX() * Size.REGULAR_SIZE);
 		int stdY = (y / multiple) - (gridSize.getNY() * Size.REGULAR_SIZE);
-		stdX = stdX > 0 ? stdX : stdX - (Size.REGULAR_SIZE);
-		stdY = stdY > 0 ? stdY : stdY - (Size.REGULAR_SIZE);
-		
 		for(GridMember member : members)
 		{
+			int placeAbsX = stdX + member.getUIabsLocationX() - minX - ((this.getWidth() / 2) / multiple);
+			int placeAbsY = stdY + member.getUIabsLocationY() - minY - ((this.getHeight() / 2) / multiple);
+			System.out.println(gridSize.getPX() + " " + gridSize.getNX());
+			placeAbsX = placeAbsX > 0 ? placeAbsX + member.getUIabsSizeX() / 2 : placeAbsX - member.getUIabsSizeX() / 2;
+			placeAbsY = placeAbsY > 0 ? placeAbsY + member.getUIabsSizeY() / 2 : placeAbsY - member.getUIabsSizeY() / 2;
 			
-			if(stdX < (gridSize.getX() - gridSize.getNX()) * Size.REGULAR_SIZE && stdY < (gridSize.getY() - gridSize.getNY()) * Size.REGULAR_SIZE
-			&& stdX > - (gridSize.getNX() + 1) * Size.REGULAR_SIZE && stdY > - (gridSize.getNY() + 1) * Size.REGULAR_SIZE)
+			if(placeAbsX < gridSize.getPX() * Size.REGULAR_SIZE && placeAbsX > -(gridSize.getNX() + 1) * Size.REGULAR_SIZE
+			&& placeAbsY < gridSize.getPY() * Size.REGULAR_SIZE && placeAbsY > -(gridSize.getNY() + 1) * Size.REGULAR_SIZE)
 			{
-				session.getTaskManager().setTask().addCommand(new PutMemberOnGrid(session.getGrid(), member, stdX, stdY));
+				session.getTaskManager().setTask().addCommand(new PutMemberOnGrid(session.getGrid(), member, placeAbsX, placeAbsY));
 			}
-			//TODO
 		}
 		this.removeAll();
 	}
@@ -2008,7 +2120,14 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		}
 		else
 		{
-			this.nowImage = this.disableImage;
+			if(this.disableImage == null)
+			{
+				this.nowImage = this.basicImage;
+			}
+			else
+			{
+				this.nowImage = this.disableImage;
+			}
 		}
 		super.repaint();
 	}

@@ -81,6 +81,7 @@ public class SessionManager
 			this.focusSession = null;
 			this.core.getUI().getGridArea().setGrid(null);
 			this.core.getUI().getTaskManagerPanel().setManager(null);
+			this.core.getUI().getTemplatePanel().setManager(null);
 			this.core.getUI().getToolBar().setSaveButtonStatus(false);
 			this.core.getUI().getUnderBar().setGridSizeInfo(new SizeInfo(0, 0, 0, 0));
 		}
@@ -189,6 +190,7 @@ class Session
 	{
 		this.core.getUI().getGridArea().setGrid(this.grid);
 		this.core.getUI().getTaskManagerPanel().setManager(this.task);
+		this.core.getUI().getTemplatePanel().setManager(this.template);
 		this.sessionTab.setBasicImage(LogicCore.getResource().getImage("SESSION_TAB_FOCUS"));
 		this.sessionTab.setOnMouseImage(LogicCore.getResource().getImage("SESSION_TAB_FOCUS_SELECT"));
 		this.sessionTab.setBasicPressImage(LogicCore.getResource().getImage("SESSION_TAB_FOCUS_PUSH"));

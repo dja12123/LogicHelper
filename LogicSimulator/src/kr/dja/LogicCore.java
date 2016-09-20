@@ -128,7 +128,15 @@ public class LogicCore
 	{
 		this.logicUI = new UI(this);
 		this.session = new SessionManager(this);
+		
 		this.taskOperator = new TaskOperator(this);
+		
+		ClipBoardPanel.addInstance(this);
+		/*누수 테스트용 코드
+		while(true)
+		{
+			session.removeSession(session.createSession());
+		}*/
 	}
 	SessionManager getSession()
 	{

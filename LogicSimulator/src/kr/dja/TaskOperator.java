@@ -264,7 +264,7 @@ class GraphViewPanel extends JPanel
 		g.drawRect(this.graphLocX, this.graphLocY, this.graphSizeX, this.graphSizeY);
 		for(int i = 0; i < this.graphBar.size(); i++)
 		{
-			g.drawLine(i + graphLocX, graphLocY + graphSizeY - 1, i + graphLocX, this.graphBar.get(i) + graphLocY + graphSizeY - 1);
+			g.drawLine(i + graphLocX, graphLocY + graphSizeY - 1, i + graphLocX, graphLocY + graphSizeY - 1 - this.graphBar.get(i));
 		}
 	}
 	void setGraph(int stdTime, long time)
