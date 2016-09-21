@@ -229,7 +229,7 @@ public class Grid
 	}
 	void addMember(GridMember member, int absX, int absY)
 	{//반드시 커맨드로부터 호출할것
-		System.out.println("addMember " + id.toString());
+		System.out.println("addMember " + member.getUUID().toString());
 		member.put(absX, absY, this);
 		if(member instanceof LogicBlock)
 		{
@@ -250,9 +250,9 @@ public class Grid
 		System.out.println("removeMember " + id.toString());
 
 		GridMember removeMember = this.members.get(id);
+		this.deSelect(removeMember);
 		removeMember.remove();
 		this.members.remove(id);
-		this.deSelect(removeMember);
 		this.getGridPanel().remove(removeMember.getGridViewPane());
 		this.getGridPanel().repaint();
 		if(removeMember instanceof LogicBlock)

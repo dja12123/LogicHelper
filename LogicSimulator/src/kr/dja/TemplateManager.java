@@ -44,16 +44,32 @@ public class TemplateManager
 	{
 		
 	}
-	void addTempleat(File file)
+	void addTemplate(File file)
 	{
 		
 	}
-	void addTempleat()
+	void addTemplate()
 	{
 		System.out.println("call");
-		Template temp = new Template(ClipBoardPanel.clipBoard);
+		DataBranch data = ClipBoardPanel.clipBoard;
+		data.setData("label", ClipBoardPanel.getTag());
+		Template temp = new Template(this.session.getCore(), data);
 		this.templates.add(temp);
 		this.templatePanel.add(temp);
+		this.sortManagerPane();
+	}
+	void removeSelectTemplate()
+	{
+		@SuppressWarnings("unchecked")
+		ArrayList<Template> templates = (ArrayList<Template>) this.templates.clone();
+		for(Template template : templates)
+		{
+			if(template.isSelected())
+			{
+				this.templates.remove(template);
+				this.templatePanel.remove(template);
+			}
+		}
 		this.sortManagerPane();
 	}
 	JPanel getPanel()
@@ -138,6 +154,10 @@ class ClipBoardPanel extends ButtonPanel
 			this.editTextButton.setEnable(false);
 		}
 	}
+	static String getTag()
+	{
+		return sharedTag;
+	}
 	static void addInstance(LogicCore core)
 	{
 		ClipBoardPanel c = new ClipBoardPanel(core);
@@ -192,36 +212,77 @@ class ClipBoardPanel extends ButtonPanel
 class Template extends ButtonPanel
 {
 	private static final long serialVersionUID = 1L;
-
+	
+	private LogicCore core;
 	private DataBranch data;
+
+	private boolean isSelected;
+	private ButtonPanel checkBox;
 	
-	private JCheckBox checkBox;
+	private JLabel label;
 	
-	Template(DataBranch data)
+	Template(LogicCore core, DataBranch data)
 	{
-		this.checkBox = new JCheckBox();
+		this.core = core;
+		this.data = data;
+		this.checkBox = new ButtonPanel()
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void pressed(int button)
+			{
+				setSelect(!isSelected);
+			}
+		};
 		this.checkBox.setBounds(3, 7, 16, 16);
+		this.checkBox.setBasicImage(LogicCore.getResource().getImage("TEMP_MEMBER_DESELECT"));
+		this.checkBox.setBasicPressImage(LogicCore.getResource().getImage("TEMP_MEMBER_DESELECT_PUSH"));
+		this.label = new JLabel(data.getData("label"));
+		this.label.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
+		this.label.setBounds(25, 0, 300, 30);
 		this.setLayout(null);
 		this.setSize(325, 30);
 		this.setBasicImage(LogicCore.getResource().getImage("MANAGER_DFT"));
 		this.setOnMouseImage(LogicCore.getResource().getImage("MANAGER_SELECT"));
 		this.setBasicPressImage(LogicCore.getResource().getImage("MANAGER_PUSH"));
 		this.add(this.checkBox);
+		this.add(this.label);
 	}
 	DataBranch getData()
 	{
 		return this.data;
 	}
-	void putTempleat()
-	{
-		
-	}
 	boolean isSelected()
 	{
-		return this.checkBox.isSelected();
+		return this.isSelected;
 	}
 	void setSelect(boolean status)
 	{
-		this.checkBox.setSelected(status);
+		if(this.isSelected != status)
+		{
+			this.isSelected = status;
+			if(status)
+			{
+				this.checkBox.setBasicImage(LogicCore.getResource().getImage("TEMP_MEMBER_SELECT"));
+				this.checkBox.setBasicPressImage(LogicCore.getResource().getImage("TEMP_MEMBER_SELECT_PUSH"));
+			}
+			else
+			{
+				this.checkBox.setBasicImage(LogicCore.getResource().getImage("TEMP_MEMBER_DESELECT"));
+				this.checkBox.setBasicPressImage(LogicCore.getResource().getImage("TEMP_MEMBER_DESELECT_PUSH"));
+			}
+		}
+	}
+	@Override
+	void pressed(int button)
+	{
+		ArrayList<GridMember> list = new ArrayList<GridMember>();
+		Iterator<DataBranch> itr =  this.data.getLowerBranchIterator();
+		while(itr.hasNext())
+		{
+			list.add(GridMember.Factory(core, itr.next()));
+		}
+		core.getUI().addTrackedPane(new TrackedPane(list, core.getUI()));
 	}
 }

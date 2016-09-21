@@ -1129,7 +1129,7 @@ class TaskOperatorPanel implements LogicUIComponent
 	{
 		this.operator = operator;
 		this.graphPanel = operator.getGraphPanel();
-		this.graphPanel.setBounds(8, 20, 148, 90);
+		this.graphPanel.setLocation(8, 20);
 		this.graphPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
 		this.taskOperatorPanel.add(this.graphPanel);
 		this.taskOperatorPanel.repaint();
@@ -1369,7 +1369,7 @@ class TemplatePanel implements LogicUIComponent
 	private JPanel clipBoardPanel;
 	private JScrollPane templateScrollPane;
 	private ButtonPanel addTemplateButton;
-	private UIButton removeTemplateButton;
+	private ButtonPanel removeTemplateButton;
 	private ButtonPanel checkAllButton;
 
 	private TemplateManager manager;
@@ -1408,15 +1408,46 @@ class TemplatePanel implements LogicUIComponent
 			@Override
 			void pressed(int button)
 			{
-				manager.addTempleat();
+				manager.addTemplate();
 			}
 		};
+		
 		if(ClipBoardPanel.clipBoard == null)
 		{
 			this.addTemplateButton.setEnable(false);
 		}
-		this.removeTemplateButton = new UIButton(2, 38, 26, 26, null, null);
-		this.checkAllButton = new ButtonPanel();
+		this.removeTemplateButton = new ButtonPanel(2, 38, 26, 26)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void pressed(int button)
+			{
+				if(manager != null)
+				{
+					manager.removeSelectTemplate();
+				}
+			}
+		};
+		this.checkAllButton = new ButtonPanel()
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int button)
+			{
+				if(manager != null)
+				{
+					if(button == 1)
+					{
+						manager.setSelectAll(true);
+					}
+					else
+					{
+						manager.setSelectAll(false);
+					}
+				}
+			}
+		};
 		this.checkAllButton.setBounds(2, 68, 26, 26);
 		
 		this.buttonAreaPanel.add(this.addTemplateButton);
@@ -1911,8 +1942,8 @@ class TrackedPane extends JPanel implements SizeUpdate
 			int placeAbsX = stdX + member.getUIabsLocationX() - minX - ((this.getWidth() / 2) / multiple);
 			int placeAbsY = stdY + member.getUIabsLocationY() - minY - ((this.getHeight() / 2) / multiple);
 			System.out.println(gridSize.getPX() + " " + gridSize.getNX());
-			placeAbsX = placeAbsX > 0 ? placeAbsX + member.getUIabsSizeX() / 2 : placeAbsX - member.getUIabsSizeX() / 2;
-			placeAbsY = placeAbsY > 0 ? placeAbsY + member.getUIabsSizeY() / 2 : placeAbsY - member.getUIabsSizeY() / 2;
+			placeAbsX = placeAbsX > 0 ? (placeAbsX + member.getUIabsSizeX() / 2) - 1 : placeAbsX - member.getUIabsSizeX() / 2;
+			placeAbsY = placeAbsY > 0 ? (placeAbsY + member.getUIabsSizeY() / 2) - 1 : placeAbsY - member.getUIabsSizeY() / 2;
 			
 			if(placeAbsX < gridSize.getPX() * Size.REGULAR_SIZE && placeAbsX > -(gridSize.getNX() + 1) * Size.REGULAR_SIZE
 			&& placeAbsY < gridSize.getPY() * Size.REGULAR_SIZE && placeAbsY > -(gridSize.getNY() + 1) * Size.REGULAR_SIZE)
@@ -2472,7 +2503,7 @@ class FileLoadPanel extends FileManagerWindow
 					Session focus = core.getSession().getFocusSession();
 					if(tempLoad.isSelected())
 					{
-						focus.getTemplateManager().addTempleat(selectFile);
+						focus.getTemplateManager().addTemplate(selectFile);
 					}
 					else
 					{

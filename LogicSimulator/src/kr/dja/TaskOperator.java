@@ -8,6 +8,7 @@ import java.util.Iterator;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 
 public class TaskOperator
 {
@@ -15,16 +16,15 @@ public class TaskOperator
 	
 	private int taskTick = 500;
 	public final int MAX_TASK_TICK = 5000;
-	public final int MIN_TASK_TICK = 3;
+	public final int MIN_TASK_TICK = 10;
 	private GraphViewPanel graphPanel;
 	
-	private volatile ArrayList<LogicBlock> reserveTask = new ArrayList<LogicBlock>();
-	private volatile HashMap<LogicBlock, HashMap<Direction, Power>> check = new HashMap<LogicBlock, HashMap<Direction, Power>>();
+	private ArrayList<LogicBlock> reserveTask = new ArrayList<LogicBlock>();
+	private HashMap<LogicBlock, HashMap<Direction, Power>> check = new HashMap<LogicBlock, HashMap<Direction, Power>>();
 	
 	TaskOperator(LogicCore core)
 	{
-		this.graphPanel = new GraphViewPanel();
-		this.graphPanel.setLayout(null);
+		this.graphPanel = new GraphViewPanel(this);
 		core.getUI().getTaskOperatorPanel().setOperator(this);
 	}
 	void addReserveTask(LogicBlock member)
@@ -139,6 +139,7 @@ public class TaskOperator
 	}
 	private void doTask()
 	{
+		boolean graphFlag = false;
 		long taskStartTime = System.currentTimeMillis();
 		for(LogicBlock member : this.check.keySet())
 		{
@@ -151,13 +152,17 @@ public class TaskOperator
 		this.check = new HashMap<LogicBlock, HashMap<Direction, Power>>();
 		@SuppressWarnings("unchecked")
 		ArrayList<LogicBlock> taskTemp = (ArrayList<LogicBlock>)this.reserveTask.clone(); //ConcurrentModificationException 방지
+		if(this.reserveTask.size() != 0)
+		{
+			graphFlag = true;
+		}
 		for(LogicBlock member : taskTemp)
 		{
 			this.reserveTask.remove(member);
 			member.ping();
 			recursiveTask(member, new ArrayList<LogicBlock>());
 		}
-		if(this.reserveTask.size() != 0)
+		if(graphFlag)
 		{
 			this.graphPanel.setGraph(this.taskTick, System.currentTimeMillis() - taskStartTime);
 		}
@@ -249,41 +254,55 @@ public class TaskOperator
 }
 class GraphViewPanel extends JPanel
 {
-	private ArrayList<JLabel> multipleLabel = new ArrayList<JLabel>();
+	private static final long serialVersionUID = 1L;
+	
+	private TaskOperator operator;
+	
 	private ArrayList<Integer> graphBar = new ArrayList<Integer>();
-	private int graphLocX = 20, graphLocY = 5, graphSizeX = 123, graphSizeY = 80;
-	private int multiple = 2;
-	GraphViewPanel()
+	private int graphLocX = 4, graphLocY = 5, graphSizeX = 141, graphSizeY = 82;
+	private int highest = 1;
+	private JLabel multipleLabel;
+	GraphViewPanel(TaskOperator operator)
 	{
-		this.setMultipleLabel();
+		this.operator = operator;
+		this.setLayout(null);
+		this.setSize(148, 90);
+		this.multipleLabel = new JLabel("배수: 0.0%", SwingConstants.CENTER);
+		this.multipleLabel.setForeground(new Color(255, 0, 0, 128));
+		this.multipleLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(14.0F));
+		this.multipleLabel.setBounds(0, 30, this.getWidth(), 20);
+		this.add(this.multipleLabel);
 	}
 	@Override
 	public void paint(Graphics g)
 	{
 		super.paint(g);
-		g.drawRect(this.graphLocX, this.graphLocY, this.graphSizeX, this.graphSizeY);
+		g.setColor(Color.gray);
 		for(int i = 0; i < this.graphBar.size(); i++)
 		{
-			g.drawLine(i + graphLocX, graphLocY + graphSizeY - 1, i + graphLocX, graphLocY + graphSizeY - 1 - this.graphBar.get(i));
+			g.drawLine(i + graphLocX, graphLocY + graphSizeY - 1, i + graphLocX, graphLocY + graphSizeY - 1
+					- (int)((double)this.graphBar.get(i) / this.highest * this.graphSizeY));
 		}
+		this.paintChildren(g);
 	}
 	void setGraph(int stdTime, long time)
 	{
-		System.out.println(time);
+		this.highest = 1;
 		this.graphBar.add((int)time);
-		this.repaint();
 		if(this.graphBar.size() > this.graphSizeX)
 		{
 			this.graphBar.remove(0);
 		}
-	}
-	private void setMultipleLabel()
-	{
-		JLabel label = new JLabel("x1");
-		label.setFont(LogicCore.RES.BAR_FONT.deriveFont(10.0F));
-		label.setBounds(5, 5, 20, 20);
-		this.add(label);
-		this.multipleLabel.add(label);
+		for(int height : this.graphBar)
+		{
+			if(this.highest < height)
+			{
+				this.highest = height;
+			}
+		}
+		this.multipleLabel.setText("배수: " + Double.parseDouble(String.format("%.3f", this.highest / (double)this.operator.getTaskTick() * 100)) + "%");
+		this.repaint();
+		System.out.println("걸린시간: " + time);
 	}
 }
 interface LogicWire
