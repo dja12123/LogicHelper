@@ -573,7 +573,14 @@ class GridArea implements LogicUIComponent, SizeUpdate
 							@Override
 							void actionFinal()
 							{
-								grid.select(super.selectMember);
+								if(super.selectMember.size() > 0)
+								{
+									grid.select(super.selectMember);
+								}
+								else
+								{
+									logicUI.getBlockControlPanel().removeControlPane();
+								}
 							}
 						};
 						
@@ -1080,7 +1087,8 @@ class TaskOperatorPanel implements LogicUIComponent
 	private JPanel taskOperatorPanel;
 	
 	private JPanel graphPanel;
-	private PauseButton pauseButton;
+	private ButtonPanel pauseButton;
+	private JLabel pauseButtonLabel;
 	private TimeSetButton subTime1Button;
 	private TimeSetButton subTime10Button;
 	private TimeSetButton subTime100Button;
@@ -1099,7 +1107,22 @@ class TaskOperatorPanel implements LogicUIComponent
 		this.taskOperatorPanel.setBounds(230, 295, 165, 180);
 		this.taskOperatorPanel.setBorder(new PanelBorder("����"));
 		
-		this.pauseButton = new PauseButton(8, 145, 148, 25);
+		this.pauseButton = new ButtonPanel(8, 145, 148, 25)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void pressed(int button)
+			{
+				operator.toggleTask();
+			}
+		};
+		this.pauseButton.setLayout(null);
+		this.pauseButtonLabel = new JLabel();
+		this.pauseButtonLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14.0f));
+		this.pauseButtonLabel.setBounds(0, 0, 148, 25);
+		this.pauseButtonLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.pauseButton.add(this.pauseButtonLabel);
 		
 		this.subTime1Button = new TimeSetButton(42, 120, 15, 20, null, null, -1);
 		this.subTime10Button = new TimeSetButton(25, 120, 15, 20, null, null, -10);
@@ -1134,11 +1157,29 @@ class TaskOperatorPanel implements LogicUIComponent
 		this.taskOperatorPanel.add(this.graphPanel);
 		this.taskOperatorPanel.repaint();
 		this.taskIntervalLabel.setText(Integer.toString(operator.getTaskTick()));
+		this.setPauseButtonStatus(false);
 	}
 	@Override
 	public Component getComponent()
 	{
 		return this.taskOperatorPanel;
+	}
+	void setPauseButtonStatus(boolean status)
+	{
+		if(status)
+		{
+			this.pauseButtonLabel.setText("작동중");
+			this.pauseButton.setBasicImage(LogicCore.getResource().getImage("OPERATOR_RUN"));
+			this.pauseButton.setOnMouseImage(LogicCore.getResource().getImage("OPERATOR_RUN_SELECT"));
+			this.pauseButton.setBasicPressImage(LogicCore.getResource().getImage("OPERATOR_RUN_PUSH"));
+		}
+		else
+		{
+			this.pauseButtonLabel.setText("정지중");
+			this.pauseButton.setBasicImage(LogicCore.getResource().getImage("OPERATOR_PAUSE"));
+			this.pauseButton.setOnMouseImage(LogicCore.getResource().getImage("OPERATOR_PAUSE_SELECT"));
+			this.pauseButton.setBasicPressImage(LogicCore.getResource().getImage("OPERATOR_PAUSE_PUSH"));
+		}
 	}
 	private class TimeSetButton extends UIButton implements ActionListener
 	{
@@ -1167,40 +1208,11 @@ class TaskOperatorPanel implements LogicUIComponent
 			taskIntervalLabel.setText(Integer.toString(operator.getTaskTick()));
 		}
 	}
-	private class PauseButton extends JButton implements ActionListener
-	{
-		private static final long serialVersionUID = 1L;
-		
-		private boolean pauseStatus = true;
-		PauseButton(int locationX, int locationY,int sizeX, int sizeY)
-		{
-			super();
-			this.setBounds(locationX, locationY, sizeX, sizeY);
-			this.addActionListener(this);
-		}
-		@Override
-		public void actionPerformed(ActionEvent e)
-		{
-			if(pauseStatus)
-			{//�۾� ����
-				pauseStatus = false;
-				this.setText("����");
-				operator.taskStart();
-			}
-			else
-			{//�۾� ����
-				pauseStatus = true;
-				this.setText("����");
-				operator.taskPause();
-			}
-			
-		}
-		
-	}
 }
 class BlockControlPanel implements LogicUIComponent
 {
 	private JPanel blockControlPanel;
+	private JPanel control;
 	
 	private DefaultPane defaultPane;
 
@@ -1216,15 +1228,23 @@ class BlockControlPanel implements LogicUIComponent
 	}
 	void addControlPanel(JPanel panel)
 	{
+		this.control = panel;
 		this.blockControlPanel.removeAll();
-		this.blockControlPanel.repaint();
 		panel.setBounds(8, 20, 373, 121);
 		this.blockControlPanel.add(panel);
+		this.blockControlPanel.repaint();
 	}
 	void removeControlPane()
 	{
 		this.blockControlPanel.removeAll();
 		this.addControlPanel(defaultPane);
+	}
+	void updateMemberStatus()
+	{
+		if(this.control != null && this.control instanceof EditPane)
+		{
+			((EditPane)this.control).updateMemberStatus();
+		}
 	}
 	@Override
 	public Component getComponent()
@@ -1278,6 +1298,7 @@ class PalettePanel implements LogicUIComponent
 		this.palettePanel.setBorder(new PanelBorder("�ȷ�Ʈ"));
 		LogicTREditPane DFTLogicControl = new LogicTREditPane();
 		
+		new PaletteMember(new Wire(this.logicUI.getCore()), new WireEditPane());
 		new PaletteMember(new AND(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new OR(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new NOT(this.logicUI.getCore()), DFTLogicControl);
@@ -1293,7 +1314,6 @@ class PalettePanel implements LogicUIComponent
 				if(j < 5)
 				{
 					p.setBounds(j * 42 + 9, i * 42 + 20, 38, 38);
-					System.out.println(i + " " + j);
 					j++;
 				}
 				else
@@ -1766,6 +1786,7 @@ class EditPane extends JPanel
 		this.add(this.disableButton);
 		this.add(this.restoreButton);
 	}
+	void updateMemberStatus(){};
 	void setInfo(GridMember member)
 	{
 		this.member = member;
@@ -1777,34 +1798,20 @@ class LogicTREditPane extends EditPane
 	
 	private JLabel text = new JLabel();
 	private JLabel locationText = new JLabel();
-	private LogicBlock logicMember;
-	private ArrayList<IOControlButton> IOEditButton = new ArrayList<IOControlButton>();
+	protected LogicBlock logicMember;
+	protected ArrayList<IOControlButton> IOEditButton = new ArrayList<IOControlButton>();
+
+	protected JPanel editViewPanel;
 	
-	private JPanel editViewPanel = new JPanel()
-	{
-		private static final long serialVersionUID = 1L;
-		@Override
-		public void paint(Graphics g)
-		{
-			super.paint(g);
-			g.drawRect(0, 0, 119, 119);
-		}
-	};
 	
 	LogicTREditPane()
 	{
-		
-		this.IOEditButton.add(new IOControlButton(100, 28, 16, 64, Direction.EAST));
-		this.IOEditButton.add(new IOControlButton(4, 28, 16, 64, Direction.WEST));
-		this.IOEditButton.add(new IOControlButton(28, 100, 64, 16, Direction.SOUTH));
-		this.IOEditButton.add(new IOControlButton(28, 4, 64, 16, Direction.NORTH));
-		
-		this.editViewPanel.setLayout(null);
+		this.setIOSwitch();
+		this.add(this.editViewPanel);
 		for(IOControlButton btn : this.IOEditButton)
 		{
 			this.editViewPanel.add(btn);
 		}
-		
 		this.text.setHorizontalAlignment(SwingConstants.CENTER);
 		this.text.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
 		this.text.setBounds(135, 0, 223, 20);
@@ -1812,13 +1819,31 @@ class LogicTREditPane extends EditPane
 		this.locationText.setHorizontalAlignment(SwingConstants.CENTER);
 		this.locationText.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
 		this.locationText.setBounds(135, 100, 135, 20);
+			
+		this.add(this.text);
+		this.add(this.locationText);
+		
+	}
+	void setIOSwitch()
+	{
+		this.editViewPanel = new JPanel()
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			public void paint(Graphics g)
+			{
+				super.paint(g);
+				g.drawRect(0, 0, 119, 119);
+			}
+		};
+		this.editViewPanel.setLayout(null);
+		this.IOEditButton.add(new IOControlButton(100, 28, 16, 64, Direction.EAST));
+		this.IOEditButton.add(new IOControlButton(4, 28, 16, 64, Direction.WEST));
+		this.IOEditButton.add(new IOControlButton(28, 100, 64, 16, Direction.SOUTH));
+		this.IOEditButton.add(new IOControlButton(28, 4, 64, 16, Direction.NORTH));
 		
 		this.editViewPanel.setBounds(5, 0, 120, 120);
 		this.editViewPanel.setBackground(new Color(200, 200, 200));
-		
-		this.add(this.text);
-		this.add(this.locationText);
-		this.add(this.editViewPanel);
 	}
 	@Override
 	void setInfo(GridMember member)
@@ -1836,42 +1861,139 @@ class LogicTREditPane extends EditPane
 		this.text.setText(super.member.getName() + " ����Ʈ ����");
 		for(IOControlButton btn : this.IOEditButton)
 		{
+			btn.setLogicBlock(this.logicMember);
 			btn.setImage();
 		}
 	}
-	private class IOControlButton extends ButtonPanel
+}
+class IOControlButton extends ButtonPanel
+{
+	private static final long serialVersionUID = 1L;
+	
+	protected LogicBlock logicMember;
+	protected Direction ext;
+	
+	IOControlButton(int locX, int locY, int sizeX, int sizeY, Direction ext)
+	{
+		super(locX, locY, sizeX, sizeY);
+		this.ext = ext;
+	}
+	void setLogicBlock(LogicBlock logicMember)
+	{
+		this.logicMember = logicMember;
+	}
+	@Override
+	public void pressed(int mouse)
+	{
+		if(this.logicMember.getGrid() != null)
+		{
+			TaskUnit task = this.logicMember.getGrid().getSession().getTaskManager().setTask();
+			task.addCommand(new SetLogicBlockIO(this.logicMember, ext, this.logicMember.getGrid().getSession()));
+		}
+		else
+		{
+			this.logicMember.toggleIO(ext);
+		}
+		this.setImage();
+	}
+	void setImage()
+	{
+		super.setBasicImage(LogicCore.getResource().getImage("TR_BLOCK_EDIT_" + this.logicMember.getIOStatus(this.ext).getTag() + "_BASIC_" + ext));
+		super.setBasicPressImage(LogicCore.getResource().getImage("TR_BLOCK_EDIT_" + this.logicMember.getIOStatus(this.ext).getTag() + "_PUSH_" + ext));
+	}
+}
+class WireEditPane extends LogicTREditPane
+{
+	private Wire wire;
+	
+	private ModSelectButton standardModButton;
+	private ModSelectButton crossAModButton;
+	private ModSelectButton crossBModButton;
+	private ModSelectButton crossCModButton;
+	
+	private static final long serialVersionUID = 1L;
+	
+	WireEditPane()
+	{
+		super();
+		this.standardModButton = new ModSelectButton(170, 40, 30, 30, WireType.Standard);
+		this.crossAModButton = new ModSelectButton(215, 40, 30, 30, WireType.Cross_A);
+		this.crossBModButton = new ModSelectButton(260, 40, 30, 30, WireType.Cross_B);
+		this.crossCModButton = new ModSelectButton(305, 40, 30, 30, WireType.Cross_C);
+		this.add(this.standardModButton);
+		this.add(this.crossAModButton);
+		this.add(this.crossBModButton);
+		this.add(this.crossCModButton);
+	}
+	@Override
+	void setIOSwitch()
+	{
+		super.editViewPanel = new JPanel()
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			public void paint(Graphics g)
+			{
+				super.paint(g);
+				g.drawImage(LogicCore.getResource().getImage("WIRE_TYPE_" + wire.getType().getImageTag()), 44, 44, this);
+				g.drawRect(0, 0, 119, 119);
+			}
+		};
+		super.editViewPanel.setLayout(null);
+		super.IOEditButton.add(new WireIOControlButton(72, 52, 44, 16, Direction.EAST));
+		super.IOEditButton.add(new WireIOControlButton(4, 52, 44, 16, Direction.WEST));
+		super.IOEditButton.add(new WireIOControlButton(52, 72, 16, 44, Direction.SOUTH));
+		super.IOEditButton.add(new WireIOControlButton(52, 4, 16, 44, Direction.NORTH));
+		
+		super.editViewPanel.setBounds(5, 0, 120, 120);
+		super.editViewPanel.setBackground(new Color(200, 200, 200));
+	}
+	@Override
+	void setInfo(GridMember member)
+	{
+		super.setInfo(member);
+		this.wire = (Wire)member;
+	}
+	@Override
+	void updateMemberStatus()
+	{
+		super.editViewPanel.repaint();
+	}
+	private class ModSelectButton extends ButtonPanel
 	{
 		private static final long serialVersionUID = 1L;
 		
-		int locX, locY, sizeX, sizeY;
-		Direction ext;
-		
-		IOControlButton(int locX, int locY, int sizeX, int sizeY, Direction ext)
+		private final WireType type;
+		ModSelectButton(int x, int y, int w, int h, WireType type)
 		{
-			this.locX = locX; this.locY = locY; this.sizeX = sizeX; this.sizeY = sizeY;
-			this.setBounds(locX, locY, sizeX, sizeY);
-			this.ext = ext;
+			super(x, y, w, h);
+			this.type = type;
 		}
 		@Override
-		public void pressed(int mouse)
+		void pressed(int mouse)
 		{
-			if(logicMember.getGrid() != null)
+			wire.setWireType(type);
+			editViewPanel.repaint();
+			for(IOControlButton io : IOEditButton)
 			{
-				TaskUnit task = logicMember.getGrid().getSession().getTaskManager().setTask();
-				task.addCommand(new SetLogicBlockIO(logicMember, ext, logicMember.getGrid().getSession()));
+				io.setImage();
 			}
-			else
-			{
-				logicMember.toggleIO(ext);
-			}
-			
-			this.setImage();
 		}
-		void setImage()
-		{
-			super.setBasicImage(LogicCore.getResource().getImage("TR_BLOCK_EDIT_" + logicMember.getIOStatus(ext).getTag() + "_BASIC_" + ext));
-			super.setBasicPressImage(LogicCore.getResource().getImage("TR_BLOCK_EDIT_" + logicMember.getIOStatus(ext).getTag() + "_PUSH_" + ext));
-		}
+	}
+}
+class WireIOControlButton extends IOControlButton
+{
+	private static final long serialVersionUID = 1L;
+	
+	WireIOControlButton(int locX, int locY, int sizeX, int sizeY, Direction ext)
+	{
+		super(locX, locY, sizeX, sizeY, ext);
+	}
+	@Override
+	void setImage()
+	{
+		super.setBasicImage(LogicCore.getResource().getImage("TR_WIRE_EDIT_" + super.logicMember.getIOStatus(super.ext).getTag() + "_BASIC_" + this.ext));
+		super.setBasicPressImage(LogicCore.getResource().getImage("TR_WIRE_EDIT_" + super.logicMember.getIOStatus(super.ext).getTag() + "_PUSH_" + this.ext));
 	}
 }
 class TrackedPane extends JPanel implements SizeUpdate
@@ -1949,6 +2071,14 @@ class TrackedPane extends JPanel implements SizeUpdate
 			&& placeAbsY < gridSize.getPY() * Size.REGULAR_SIZE && placeAbsY > -(gridSize.getNY() + 1) * Size.REGULAR_SIZE)
 			{
 				session.getTaskManager().setTask().addCommand(new PutMemberOnGrid(session.getGrid(), member, placeAbsX, placeAbsY));
+			}
+		}
+		if(this.members.size() == 1)
+		{
+			GridMember member = this.members.get(0);
+			if(member.isPlacement())
+			{
+				member.getGrid().selectFocus(member);
 			}
 		}
 		this.removeAll();

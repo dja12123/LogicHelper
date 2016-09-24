@@ -13,6 +13,7 @@ import javax.swing.SwingConstants;
 public class TaskOperator
 {
 	private Signaller signaller;
+	private LogicCore core;
 	
 	private int taskTick = 500;
 	public final int MAX_TASK_TICK = 5000;
@@ -22,10 +23,36 @@ public class TaskOperator
 	private ArrayList<LogicBlock> reserveTask = new ArrayList<LogicBlock>();
 	private HashMap<LogicBlock, HashMap<Direction, Power>> check = new HashMap<LogicBlock, HashMap<Direction, Power>>();
 	
+	private boolean task;
+	
 	TaskOperator(LogicCore core)
 	{
+		this.core = core;
 		this.graphPanel = new GraphViewPanel(this);
 		core.getUI().getTaskOperatorPanel().setOperator(this);
+	}
+	void toggleTask()
+	{
+		if(!this.task)
+		{
+			if(this.signaller != null)
+			{
+				this.signaller.taskStop();
+			}
+			this.signaller = new Signaller();
+			this.signaller.start();
+			this.task = true;
+		}
+		else
+		{
+			if(this.signaller != null)
+			{
+				this.signaller.taskStop();
+				this.signaller = null;
+			}
+			this.task = false;
+		}
+		this.core.getUI().getTaskOperatorPanel().setPauseButtonStatus(this.task);
 	}
 	void addReserveTask(LogicBlock member)
 	{
@@ -43,6 +70,7 @@ public class TaskOperator
 			if(block.getGrid() == grid)
 			{
 				this.reserveTask.remove(block);
+				block.endTimer();
 			}
 		}
 		HashMap<LogicBlock, HashMap<Direction, Power>> temp1 = (HashMap<LogicBlock, HashMap<Direction, Power>>) this.check.clone();
@@ -51,6 +79,20 @@ public class TaskOperator
 			if(block.getGrid() == grid)
 			{
 				this.check.remove(block);
+			}
+		}
+		if(this.task)
+		{
+			this.toggleTask();
+		}
+	}
+	void checkAroundAndReserveTask(Grid grid)
+	{
+		for(GridMember member : grid.getMembers().values())
+		{
+			if(member instanceof LogicBlock)
+			{
+				this.checkAroundAndReserveTask((LogicBlock)member);
 			}
 		}
 	}
@@ -199,21 +241,6 @@ public class TaskOperator
 			}
 		}
 	}
-	void taskStart()
-	{
-		if(this.signaller == null)
-		{
-			this.signaller = new Signaller();
-			this.signaller.start();
-		}
-	}
-	void taskPause()
-	{
-		if(this.signaller != null)
-		{
-			this.signaller.taskStop();
-		}
-	}
 	void setTaskTick(int tick)
 	{
 		this.taskTick = tick;
@@ -234,6 +261,7 @@ public class TaskOperator
 		{
 			while(this.taskFlag)
 			{
+				System.out.println("오퍼레이터" + this.taskFlag);
 				doTask();
 				try
 				{
@@ -244,7 +272,6 @@ public class TaskOperator
 					e.printStackTrace();
 				}
 			}
-			signaller = null;
 		}
 		void taskStop()
 		{
@@ -267,7 +294,7 @@ class GraphViewPanel extends JPanel
 		this.operator = operator;
 		this.setLayout(null);
 		this.setSize(148, 90);
-		this.multipleLabel = new JLabel("배수: 0.0%", SwingConstants.CENTER);
+		this.multipleLabel = new JLabel("지연: 0.0%", SwingConstants.CENTER);
 		this.multipleLabel.setForeground(new Color(255, 0, 0, 128));
 		this.multipleLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(14.0F));
 		this.multipleLabel.setBounds(0, 30, this.getWidth(), 20);
@@ -300,7 +327,7 @@ class GraphViewPanel extends JPanel
 				this.highest = height;
 			}
 		}
-		this.multipleLabel.setText("배수: " + Double.parseDouble(String.format("%.3f", this.highest / (double)this.operator.getTaskTick() * 100)) + "%");
+		this.multipleLabel.setText("지연: " + Double.parseDouble(String.format("%.3f", this.highest / (double)this.operator.getTaskTick() * 100)) + "%");
 		this.repaint();
 		System.out.println("걸린시간: " + time);
 	}

@@ -58,7 +58,7 @@ public class TaskManager
 			switch(branch.getName())
 			{
 			case "TaskUnit":
-				TaskUnit createTask = new TaskUnit(this, session, branch);
+				TaskUnit createTask = new TaskUnit(this, branch);
 				createTask.getView().setLocation(WGAP, this.snapShots.size() * (createTask.getView().getHeight() + HGAP));
 				this.taskPanel.add(createTask.getView());
 				this.snapShots.add(createTask);
@@ -155,6 +155,7 @@ public class TaskManager
 		this.setFocus(unit);
 		int nowFocusIndex = this.snapShots.indexOf(this.focusUnit);
 		int startIndex = this.snapShots.indexOf(unit);
+		boolean taskEnable = false;
 		for(TaskUnit task : this.snapShots)
 		{
 			if(this.snapShots.indexOf(task) != startIndex)
@@ -174,12 +175,19 @@ public class TaskManager
 			TaskUnit task = this.snapShots.get(i);
 			System.out.println("REDO " + i);
 			task.redo();
+			taskEnable = true;
 		}
 		for(int i = oldFocusIndex; i > nowFocusIndex; i--)
 		{
 			TaskUnit task = this.snapShots.get(i);
 			System.out.println("UNDO " + this.snapShots.indexOf(task));
 			task.undo();
+			taskEnable = true;
+		}
+		if(taskEnable)
+		{
+			this.session.getCore().getTaskOperator().clearData(this.session.getGrid());
+			this.session.getCore().getTaskOperator().checkAroundAndReserveTask(this.session.getGrid());
 		}
 	}
 	private void checkSnapShotCount()
@@ -250,7 +258,7 @@ class TaskUnit
 		this.snapShotView.add(this.timeLabel);
 		this.commandList = new LinkedList<Command>();
 	}
-	TaskUnit(TaskManager manager, Session session, DataBranch data)
+	TaskUnit(TaskManager manager, DataBranch data)
 	{
 		this(manager);
 		Iterator<DataBranch> itr = data.getLowerBranchIterator();
@@ -258,7 +266,7 @@ class TaskUnit
 		{
 			DataBranch info = itr.next();
 			System.out.println(info.getName());
-			Command cmd = TaskUnit.Factory(info, session);
+			Command cmd = TaskUnit.Factory(info, manager.getSession());
 			this.commandList.add(cmd);
 			this.addLabel(cmd);
 		}

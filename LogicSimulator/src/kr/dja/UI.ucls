@@ -1,0 +1,1063 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<class-diagram version="1.1.11" icons="true" always-add-relationships="false" generalizations="true" realizations="true" 
+  associations="true" dependencies="false" nesting-relationships="true" router="FAN">  
+  <class id="1" language="java" name="kr.dja.TrackedPane" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="268" width="303" x="1472" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <interface id="2" language="java" name="kr.dja.SizeUpdate" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="88" width="125" x="881" y="1611"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </interface>  
+  <class id="3" language="java" name="kr.dja.PanelBorder" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="106" width="153" x="497" y="256"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="4" language="java" name="kr.dja.UI" project="LogicSimulator" file="/LogicSimulator/src/kr/dja/UI.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="502" width="276" x="2148" y="636"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="5" language="java" name="kr.dja.UIButton" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="124" width="230" x="4082" y="1611"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="6" language="java" name="kr.dja.LogicTREditPane.IOControlButton" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="232" width="249" x="914" y="2243"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="7" language="java" name="kr.dja.FileManagerWindow.InnerSelectMember" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="196" width="181" x="597" y="2243"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="8" language="java" name="kr.dja.UnderBar" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="214" width="194" x="2382" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="9" language="java" name="kr.dja.GridArea.ViewPort.ExpansionPane" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="124" width="176" x="921" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <enumeration id="10" language="java" name="kr.dja.ButtonPanel.ButtonStatus" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="142" width="177" x="1980" y="2243"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </enumeration>  
+  <class id="11" language="java" name="kr.dja.EditPane" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="142" width="169" x="1137" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="12" language="java" name="kr.dja.TaskManagerPanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="268" width="205" x="3358" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="13" language="java" name="kr.dja.BlockControlPanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="160" width="194" x="2148" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="14" language="java" name="kr.dja.InfoPanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="142" width="188" x="2616" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="15" language="java" name="kr.dja.ButtonPanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="592" width="359" x="1390" y="1611"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="16" language="java" name="kr.dja.DefaultPane" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="124" width="153" x="2148" y="1611"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="17" language="java" name="kr.dja.FileSavePanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="358" width="228" x="1203" y="2243"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="18" language="java" name="kr.dja.GridArea.ViewPort.ExpansionPane.SizeEditButton" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="160" width="228" x="1712" y="2243"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="19" language="java" name="kr.dja.ManySelectEditPanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="124" width="437" x="3603" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="20" language="java" name="kr.dja.LogicTREditPane" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="196" width="172" x="1046" y="1611"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="21" language="java" name="kr.dja.PalettePanel.PaletteMember" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="160" width="296" x="2621" y="2243"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="22" language="java" name="kr.dja.GridArea.ViewPort.Selector" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="393" width="260" x="600" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="23" language="java" name="kr.dja.GridArea" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="340" width="188" x="921" y="256"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="24" language="java" name="kr.dja.GridArea.ViewPort" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="214" width="188" x="921" y="636"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="25" language="java" name="kr.dja.TaskOperatorPanel.PauseButton" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="142" width="223" x="3053" y="1611"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="26" language="java" name="kr.dja.TaskOperatorPanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="214" width="205" x="3071" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <enumeration id="27" language="java" name="kr.dja.Size" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="268" width="145" x="2844" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </enumeration>  
+  <class id="28" language="java" name="kr.dja.TemplatePanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="340" width="230" x="1815" y="1178"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="29" language="java" name="kr.dja.PalettePanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="142" width="221" x="3010" y="256"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="30" language="java" name="kr.dja.FileLoadPanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="358" width="201" x="1471" y="2243"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="31" language="java" name="kr.dja.SelectControlPanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="142" width="290" x="267" y="1611"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="32" language="java" name="kr.dja.FileManagerWindow" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="412" width="244" x="597" y="1611"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="33" language="java" name="kr.dja.GridArea.RulerPanel" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="177" width="206" x="333" y="636"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="34" language="java" name="kr.dja.TaskOperatorPanel.TimeSetButton" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="142" width="284" x="2957" y="2243"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="35" language="java" name="kr.dja.ToolBar" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="304" width="272" x="4040" y="256"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <interface id="36" language="java" name="kr.dja.LogicUIComponent" project="LogicSimulator" 
+    file="/LogicSimulator/src/kr/dja/UI.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="88" width="188" x="2633" y="1611"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </interface>  
+  <nesting id="37">    
+    <end type="SOURCE" refId="24"/>    
+    <end type="TARGET" refId="22"/>  
+  </nesting>  
+  <association id="38">    
+    <end type="SOURCE" refId="19" navigable="false">      
+      <attribute id="39" name="removeButton"/>      
+      <multiplicity id="40" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="41">    
+    <bendpoint x="1441" y="636"/>    
+    <bendpoint x="1420" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="42" name="optionSaveButton"/>      
+      <multiplicity id="43" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting id="44">    
+    <bendpoint x="2938" y="1611"/>    
+    <end type="SOURCE" refId="26"/>    
+    <end type="TARGET" refId="34"/>  
+  </nesting>  
+  <association id="45">    
+    <end type="SOURCE" refId="12" navigable="false">      
+      <attribute id="46" name="taskUndoButton"/>      
+      <multiplicity id="47" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="48">    
+    <end type="SOURCE" refId="24" navigable="false">      
+      <attribute id="49" name="selecter"/>      
+      <multiplicity id="50" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="22" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="51">    
+    <end type="SOURCE" refId="20" navigable="false">      
+      <attribute id="52" name="IOEditButton"/>      
+      <multiplicity id="53" minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" refId="6" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="54">    
+    <bendpoint x="3001" y="1611"/>    
+    <end type="SOURCE" refId="26" navigable="false">      
+      <attribute id="55" name="subTime10Button"/>      
+      <multiplicity id="56" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="34" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="57">    
+    <end type="SOURCE" refId="1" navigable="false">      
+      <attribute id="58" name="logicUI"/>      
+      <multiplicity id="59" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="4" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="60">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="61" name="taskOperatorPanel"/>      
+      <multiplicity id="62" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="26" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="63">    
+    <bendpoint x="2896" y="1611"/>    
+    <end type="SOURCE" refId="26" navigable="false">      
+      <attribute id="64" name="subTime100Button"/>      
+      <multiplicity id="65" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="34" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="66">    
+    <bendpoint x="2917" y="1611"/>    
+    <end type="SOURCE" refId="26" navigable="false">      
+      <attribute id="67" name="addTime100Button"/>      
+      <multiplicity id="68" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="34" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="69">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="70" name="trackedPane"/>      
+      <multiplicity id="71" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="1" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting id="72">    
+    <bendpoint x="1325" y="1611"/>    
+    <end type="SOURCE" refId="9"/>    
+    <end type="TARGET" refId="18"/>  
+  </nesting>  
+  <association id="73">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="74" name="gridArea"/>      
+      <multiplicity id="75" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="23" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="76">    
+    <end type="SOURCE" refId="19" navigable="false">      
+      <attribute id="77" name="createTempButton"/>      
+      <multiplicity id="78" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="79">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="80" name="underBar"/>      
+      <multiplicity id="81" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="8" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="82">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="83" name="UI_Size"/>      
+      <multiplicity id="84" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="27" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting id="85">    
+    <bendpoint x="3327" y="636"/>    
+    <bendpoint x="3327" y="1178"/>    
+    <bendpoint x="3327" y="1611"/>    
+    <end type="SOURCE" refId="29"/>    
+    <end type="TARGET" refId="21"/>  
+  </nesting>  
+  <association id="86">    
+    <end type="SOURCE" refId="24" navigable="false">      
+      <attribute id="87" name="southExpansionPane"/>      
+      <multiplicity id="88" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="9" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="89">    
+    <bendpoint x="4217" y="636"/>    
+    <bendpoint x="4217" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="90" name="newInstanceButton"/>      
+      <multiplicity id="91" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="92">    
+    <bendpoint x="2117" y="1178"/>    
+    <bendpoint x="2117" y="1611"/>    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="93" name="fileLoadPanel"/>      
+      <multiplicity id="94" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="30" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="95">    
+    <bendpoint x="2096" y="1178"/>    
+    <bendpoint x="2096" y="1611"/>    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="96" name="fileSavePanel"/>      
+      <multiplicity id="97" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="17" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting id="98">    
+    <end type="SOURCE" refId="23"/>    
+    <end type="TARGET" refId="24"/>  
+  </nesting>  
+  <association id="99">    
+    <end type="SOURCE" refId="23" navigable="false">      
+      <attribute id="100" name="verticalRulerScrollPane"/>      
+      <multiplicity id="101" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="33" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="102">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="103" name="blockControlPanel"/>      
+      <multiplicity id="104" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="13" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="105">    
+    <end type="SOURCE" refId="34"/>    
+    <end type="TARGET" refId="5"/>  
+  </generalization>  
+  <association id="106">    
+    <end type="SOURCE" refId="23" navigable="false">      
+      <attribute id="107" name="logicUI"/>      
+      <multiplicity id="108" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="4" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="109">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="110" name="infoPanel"/>      
+      <multiplicity id="111" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="14" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="112">    
+    <end type="SOURCE" refId="14"/>    
+    <end type="TARGET" refId="36"/>  
+  </realization>  
+  <association id="113">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="114" name="toolBar"/>      
+      <multiplicity id="115" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="35" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="116">    
+    <bendpoint x="1462" y="636"/>    
+    <bendpoint x="1441" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="117" name="saveButton"/>      
+      <multiplicity id="118" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="119">    
+    <bendpoint x="4175" y="636"/>    
+    <bendpoint x="4175" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="120" name="controlOpenButton"/>      
+      <multiplicity id="121" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="122">    
+    <end type="SOURCE" refId="24" navigable="false">      
+      <attribute id="123" name="northExpansionPane"/>      
+      <multiplicity id="124" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="9" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="125">    
+    <end type="SOURCE" refId="8"/>    
+    <end type="TARGET" refId="36"/>  
+  </realization>  
+  <realization id="126">    
+    <end type="SOURCE" refId="13"/>    
+    <end type="TARGET" refId="36"/>  
+  </realization>  
+  <realization id="127">    
+    <bendpoint x="3019" y="636"/>    
+    <bendpoint x="3019" y="1178"/>    
+    <end type="SOURCE" refId="29"/>    
+    <end type="TARGET" refId="36"/>  
+  </realization>  
+  <association id="128">    
+    <bendpoint x="1378" y="636"/>    
+    <bendpoint x="1378" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="129" name="focus"/>      
+      <multiplicity id="130" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="131">    
+    <end type="SOURCE" refId="11" navigable="false">      
+      <attribute id="132" name="restoreButton"/>      
+      <multiplicity id="133" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="134">    
+    <end type="SOURCE" refId="19" navigable="false">      
+      <attribute id="135" name="restoreButton"/>      
+      <multiplicity id="136" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="137">    
+    <bendpoint x="3040" y="636"/>    
+    <bendpoint x="3040" y="1178"/>    
+    <end type="SOURCE" refId="35"/>    
+    <end type="TARGET" refId="36"/>  
+  </realization>  
+  <generalization id="138">    
+    <end type="SOURCE" refId="21"/>    
+    <end type="TARGET" refId="15"/>  
+  </generalization>  
+  <realization id="139">    
+    <end type="SOURCE" refId="26"/>    
+    <end type="TARGET" refId="36"/>  
+  </realization>  
+  <generalization id="140">    
+    <end type="SOURCE" refId="18"/>    
+    <end type="TARGET" refId="15"/>  
+  </generalization>  
+  <realization id="141">    
+    <end type="SOURCE" refId="28"/>    
+    <end type="TARGET" refId="36"/>  
+  </realization>  
+  <generalization id="142">    
+    <end type="SOURCE" refId="30"/>    
+    <end type="TARGET" refId="32"/>  
+  </generalization>  
+  <nesting id="143">    
+    <end type="SOURCE" refId="15"/>    
+    <end type="TARGET" refId="10"/>  
+  </nesting>  
+  <association id="144">    
+    <end type="SOURCE" refId="23" navigable="false">      
+      <attribute id="145" name="viewPort"/>      
+      <multiplicity id="146" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="24" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="147">    
+    <end type="SOURCE" refId="23" navigable="false">      
+      <attribute id="148" name="horizonRulerScrollPane"/>      
+      <multiplicity id="149" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="33" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="150">    
+    <end type="SOURCE" refId="28" navigable="false">      
+      <attribute id="151" name="checkAllButton"/>      
+      <multiplicity id="152" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="153">    
+    <end type="SOURCE" refId="28" navigable="false">      
+      <attribute id="154" name="addTemplateButton"/>      
+      <multiplicity id="155" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="156">    
+    <bendpoint x="548" y="1178"/>    
+    <end type="SOURCE" refId="33"/>    
+    <end type="TARGET" refId="2"/>  
+  </realization>  
+  <association id="157">    
+    <bendpoint x="1357" y="636"/>    
+    <bendpoint x="1357" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="158" name="loadButton"/>      
+      <multiplicity id="159" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="160">    
+    <end type="SOURCE" refId="1"/>    
+    <end type="TARGET" refId="2"/>  
+  </realization>  
+  <association id="161">    
+    <end type="SOURCE" refId="26" navigable="false">      
+      <attribute id="162" name="pauseButton"/>      
+      <multiplicity id="163" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="25" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="164">    
+    <bendpoint x="1336" y="636"/>    
+    <bendpoint x="1336" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="165" name="sessionTabList"/>      
+      <multiplicity id="166" minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="167">    
+    <end type="SOURCE" refId="11" navigable="false">      
+      <attribute id="168" name="removeButton"/>      
+      <multiplicity id="169" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="170">    
+    <end type="SOURCE" refId="29" navigable="false">      
+      <attribute id="171" name="logicUI"/>      
+      <multiplicity id="172" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="4" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="173">    
+    <end type="SOURCE" refId="12" navigable="false">      
+      <attribute id="174" name="taskRedoButton"/>      
+      <multiplicity id="175" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="176">    
+    <bendpoint x="3306" y="636"/>    
+    <bendpoint x="3306" y="1178"/>    
+    <bendpoint x="3306" y="1611"/>    
+    <end type="SOURCE" refId="29" navigable="false">      
+      <attribute id="177" name="paletteMembers"/>      
+      <multiplicity id="178" minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" refId="21" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="179">    
+    <bendpoint x="4196" y="636"/>    
+    <bendpoint x="4196" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="180" name="sizeDownButton"/>      
+      <multiplicity id="181" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="182">    
+    <bendpoint x="4133" y="636"/>    
+    <bendpoint x="4133" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="183" name="helpButton"/>      
+      <multiplicity id="184" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="185">    
+    <end type="SOURCE" refId="20"/>    
+    <end type="TARGET" refId="11"/>  
+  </generalization>  
+  <association id="186">    
+    <end type="SOURCE" refId="19" navigable="false">      
+      <attribute id="187" name="cutButton"/>      
+      <multiplicity id="188" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="189">    
+    <bendpoint x="3022" y="1611"/>    
+    <end type="SOURCE" refId="26" navigable="false">      
+      <attribute id="190" name="subTime1Button"/>      
+      <multiplicity id="191" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="34" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="192">    
+    <end type="SOURCE" refId="15" navigable="false">      
+      <attribute id="193" name="status"/>      
+      <multiplicity id="194" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="10" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="195">    
+    <bendpoint x="1359" y="1611"/>    
+    <end type="SOURCE" refId="21" navigable="false">      
+      <attribute id="196" name="selectControlPanel"/>      
+      <multiplicity id="197" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="11" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting id="198">    
+    <end type="SOURCE" refId="32"/>    
+    <end type="TARGET" refId="7"/>  
+  </nesting>  
+  <realization id="199">    
+    <bendpoint x="569" y="636"/>    
+    <bendpoint x="569" y="1178"/>    
+    <end type="SOURCE" refId="23"/>    
+    <end type="TARGET" refId="2"/>  
+  </realization>  
+  <realization id="200">    
+    <bendpoint x="1420" y="636"/>    
+    <bendpoint x="2075" y="1178"/>    
+    <end type="SOURCE" refId="23"/>    
+    <end type="TARGET" refId="36"/>  
+  </realization>  
+  <nesting id="201">    
+    <end type="SOURCE" refId="26"/>    
+    <end type="TARGET" refId="25"/>  
+  </nesting>  
+  <association id="202">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="203" name="taskManagerPanel"/>      
+      <multiplicity id="204" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="12" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="205">    
+    <bendpoint x="2980" y="1611"/>    
+    <end type="SOURCE" refId="26" navigable="false">      
+      <attribute id="206" name="addTime1Button"/>      
+      <multiplicity id="207" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="34" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="208">    
+    <bendpoint x="4112" y="636"/>    
+    <bendpoint x="4112" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="209" name="setViewButton"/>      
+      <multiplicity id="210" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="211">    
+    <end type="SOURCE" refId="13" navigable="false">      
+      <attribute id="212" name="defaultPane"/>      
+      <multiplicity id="213" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="16" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="214">    
+    <end type="SOURCE" refId="19" navigable="false">      
+      <attribute id="215" name="exportTempButton"/>      
+      <multiplicity id="216" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="217">    
+    <bendpoint x="4154" y="636"/>    
+    <bendpoint x="4154" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="218" name="consolButton"/>      
+      <multiplicity id="219" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="220">    
+    <end type="SOURCE" refId="24" navigable="false">      
+      <attribute id="221" name="westExpansionPane"/>      
+      <multiplicity id="222" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="9" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting id="223">    
+    <end type="SOURCE" refId="24"/>    
+    <end type="TARGET" refId="9"/>  
+  </nesting>  
+  <association id="224">    
+    <bendpoint x="1399" y="636"/>    
+    <bendpoint x="1399" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="225" name="createSessionButton"/>      
+      <multiplicity id="226" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="227">    
+    <end type="SOURCE" refId="11" navigable="false">      
+      <attribute id="228" name="copyButton"/>      
+      <multiplicity id="229" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="230">    
+    <bendpoint x="890" y="1178"/>    
+    <end type="SOURCE" refId="24"/>    
+    <end type="TARGET" refId="2"/>  
+  </realization>  
+  <association id="231">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="232" name="templatePanel"/>      
+      <multiplicity id="233" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="28" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting id="234">    
+    <end type="SOURCE" refId="20"/>    
+    <end type="TARGET" refId="6"/>  
+  </nesting>  
+  <association id="235">    
+    <end type="SOURCE" refId="32" navigable="false">      
+      <attribute id="236" name="focusMember"/>      
+      <multiplicity id="237" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="7" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="238">    
+    <end type="SOURCE" refId="17"/>    
+    <end type="TARGET" refId="32"/>  
+  </generalization>  
+  <association id="239">    
+    <end type="SOURCE" refId="24" navigable="false">      
+      <attribute id="240" name="eastExpansionPane"/>      
+      <multiplicity id="241" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="9" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="242">    
+    <end type="SOURCE" refId="6"/>    
+    <end type="TARGET" refId="15"/>  
+  </generalization>  
+  <association id="243">    
+    <bendpoint x="4091" y="636"/>    
+    <bendpoint x="4091" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="244" name="sizeUpButton"/>      
+      <multiplicity id="245" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="246">    
+    <end type="SOURCE" refId="28" navigable="false">      
+      <attribute id="247" name="removeTemplateButton"/>      
+      <multiplicity id="248" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="249">    
+    <end type="SOURCE" refId="11" navigable="false">      
+      <attribute id="250" name="disableButton"/>      
+      <multiplicity id="251" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="252">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="253" name="palettePanel"/>      
+      <multiplicity id="254" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="29" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="255">    
+    <bendpoint x="4070" y="636"/>    
+    <bendpoint x="4070" y="1178"/>    
+    <end type="SOURCE" refId="35" navigable="false">      
+      <attribute id="256" name="createNewfileButton"/>      
+      <multiplicity id="257" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="258">    
+    <end type="SOURCE" refId="12"/>    
+    <end type="TARGET" refId="36"/>  
+  </realization>  
+  <generalization id="259">    
+    <end type="SOURCE" refId="7"/>    
+    <end type="TARGET" refId="15"/>  
+  </generalization>  
+  <association id="260">    
+    <end type="SOURCE" refId="19" navigable="false">      
+      <attribute id="261" name="copyButton"/>      
+      <multiplicity id="262" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting id="263">    
+    <end type="SOURCE" refId="23"/>    
+    <end type="TARGET" refId="33"/>  
+  </nesting>  
+  <association id="264">    
+    <end type="SOURCE" refId="32" navigable="false">      
+      <attribute id="265" name="innerSelects"/>      
+      <multiplicity id="266" minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" refId="7" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="267">    
+    <end type="SOURCE" refId="22" navigable="false">      
+      <attribute id="268" name="selectControlPanel"/>      
+      <multiplicity id="269" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="31" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="270">    
+    <bendpoint x="2959" y="1611"/>    
+    <end type="SOURCE" refId="26" navigable="false">      
+      <attribute id="271" name="addTime10Button"/>      
+      <multiplicity id="272" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="34" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <classifier-display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+    sort-features="false" accessors="true" visibility="true">    
+    <attributes public="true" package="true" protected="true" private="true" static="true"/>    
+    <operations public="true" package="true" protected="true" private="true" static="true"/>  
+  </classifier-display>  
+  <association-display labels="true" multiplicity="true"/>
+</class-diagram>

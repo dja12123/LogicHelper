@@ -28,7 +28,6 @@ public abstract class GridMember implements SizeUpdate
 	protected Grid grid;
 	private UUID id;
 	private boolean placement = false;
-	private TaskUnit taskUnit = null;
 
 	protected GridMember(LogicCore core, String name)
 	{
@@ -36,8 +35,12 @@ public abstract class GridMember implements SizeUpdate
 		this.id = UUID.randomUUID();
 		this.name = name;
 		this.layeredPane = new GridLayeredPane();
-		this.gridViewPane = new GridViewPane(this);
-		this.layeredPane.add(this.gridViewPane, new Integer(1));
+		this.gridViewPane = this.createViewPane();
+		this.layeredPane.add(this.gridViewPane, new Integer(0));
+	}
+	protected GridViewPane createViewPane()
+	{
+		return new GridViewPane(this);
 	}
 	public void setData(DataBranch branch)
 	{
@@ -154,7 +157,7 @@ public abstract class GridMember implements SizeUpdate
 	{
 		private static final long serialVersionUID = 1L;
 		
-		Color rectColor;
+		private Color rectColor;
 		
 		GridLayeredPane()
 		{
@@ -255,13 +258,15 @@ abstract class LogicBlock extends GridMember
 		super(core, name);
 		super.UIabsSizeX = 32;
 		super.UIabsSizeY = 32;
-		super.layeredPane.removeAll();
-		super.gridViewPane = new LogicViewPane(this);
-		super.layeredPane.add(super.gridViewPane, new Integer(0));
-		this.io.put(Direction.EAST, new IOPanel(this, Direction.EAST));
-		this.io.put(Direction.WEST, new IOPanel(this, Direction.WEST));
-		this.io.put(Direction.SOUTH, new IOPanel(this, Direction.SOUTH));
-		this.io.put(Direction.NORTH, new IOPanel(this, Direction.NORTH));
+		this.io.put(Direction.EAST, new IOPanel(this, Direction.EAST, "BASIC"));
+		this.io.put(Direction.WEST, new IOPanel(this, Direction.WEST, "BASIC"));
+		this.io.put(Direction.SOUTH, new IOPanel(this, Direction.SOUTH, "BASIC"));
+		this.io.put(Direction.NORTH, new IOPanel(this, Direction.NORTH, "BASIC"));
+	}
+	@Override
+	protected GridViewPane createViewPane()
+	{
+		return new StandardLogicViewPane(this);
 	}
 	@Override
 	public void setData(DataBranch branch)
@@ -273,16 +278,15 @@ abstract class LogicBlock extends GridMember
 		{
 			this.setTimer(0);
 			String data = branch.getData("io_" + ext);
-			IOPanel ioPanel = new IOPanel(this, ext);
-			this.io.put(ext, ioPanel);
-			ioPanel.setStatus(IOStatus.valueOf(data.split("_")[0]));
-			ioPanel.setOnOffStatus(Power.valueOf(data.split("_")[1]));
+			io.get(ext).setStatus(IOStatus.valueOf(data.split("_")[0]));
+			io.get(ext).setOnOffStatus(Power.valueOf(data.split("_")[1]));
 			this.calculate();
 		}
 		if(super.isPlacement())
 		{
 			super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		}
+		this.calculate();
 		super.setData(branch);
 	}
 	@Override
@@ -393,9 +397,9 @@ abstract class LogicBlock extends GridMember
 		if(this.io.get(ext).getStatus() == IOStatus.RECEIV)
 		{
 			this.io.get(ext).setOnOffStatus(power);
+			this.calculate();
+			super.layeredPane.repaint();
 		}
-		this.calculate();
-		super.layeredPane.repaint();
 	}
 	Power getIOPower(Direction ext)
 	{
@@ -432,8 +436,10 @@ abstract class LogicBlock extends GridMember
 		}
 		this.operatorPing();
 	}
-	protected abstract void operatorPing();
-	
+	protected void operatorPing()
+	{
+		
+	}
 	final void setTimer(int time)
 	{
 		this.timer = time;
@@ -443,7 +449,10 @@ abstract class LogicBlock extends GridMember
 		return this.timer;
 	}
 	protected void activeTimer(){}
-	protected void endTimer(){}
+	protected void endTimer()
+	{
+		this.timer = 0;
+	}
 	IOStatus getIOStatus(Direction ext)
 	{
 		return this.io.get(ext).getStatus();
@@ -453,6 +462,117 @@ abstract class LogicBlock extends GridMember
 		return this.power;
 	}
 	void calculate(){}
+}
+class Wire extends LogicBlock implements LogicWire
+{
+	private WireType wireType;
+	Wire(LogicCore core)
+	{
+		super(core, "Wire");
+		this.wireType = WireType.Standard;
+		for(Direction ext : Direction.values())
+		{
+			super.io.get(ext).setImgTag("WIRE");
+		}
+	}
+	@Override
+	protected GridViewPane createViewPane()
+	{
+		return new WireViewPane(this);
+	}
+	public void setData(DataBranch branch)
+	{
+		super.setData(branch);
+		this.setWireType(WireType.valueOf(branch.getData("WireType")));
+	}
+	public DataBranch getData(DataBranch branch)
+	{
+		super.getData(branch);
+		branch.setData("WireType", this.wireType.toString());
+		return branch;
+	}
+	@Override
+	void setIOResivePower(Direction ext, Power power)
+	{
+		this.io.get(ext).setOnOffStatus(power);
+		for(Direction changeExt : this.wireType.getFromTo(ext))
+		{
+			super.io.get(changeExt).setOnOffStatus(power);
+		}
+	}
+	@Override
+	protected void doToggleIO(Direction ext)
+	{
+		if(this.wireType != WireType.Standard)
+		{
+			this.setWireType(WireType.Standard);
+			super.getCore().getUI().getBlockControlPanel().updateMemberStatus();
+		}
+		if(super.getIOStatus(ext) == IOStatus.NONE)
+		{
+			super.io.get(ext).setStatus(IOStatus.TRANCE);
+		}
+		else
+		{
+			super.io.get(ext).setStatus(IOStatus.NONE);
+		}
+		super.layeredPane.repaint();
+	}
+	void setWireType(WireType wireType)
+	{
+		this.wireType = wireType;
+		
+		if(this.wireType != WireType.Standard)
+		{
+			for(IOPanel io : super.io.values())
+			{
+				io.setStatus(IOStatus.TRANCE);
+			}
+		}
+		super.layeredPane.repaint();
+	}
+	WireType getType()
+	{
+		return this.wireType;
+	}
+}
+enum WireType
+{
+	Standard("STANDARD", new Direction[]{Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH})
+	, Cross_A("CROSS_A", new Direction[]{Direction.NORTH, Direction.WEST}, new Direction[]{Direction.EAST, Direction.SOUTH})
+	, Cross_B("CROSS_B", new Direction[]{Direction.NORTH, Direction.EAST}, new Direction[]{Direction.WEST, Direction.SOUTH})
+	, Cross_C("CROSS_C", new Direction[]{Direction.NORTH, Direction.SOUTH}, new Direction[]{Direction.EAST, Direction.WEST});
+	private final String imageTag;
+	private ArrayList<ArrayList<Direction>> fromTo = new ArrayList<ArrayList<Direction>>();
+	WireType(String tag, Direction[]... fromTo)
+	{
+		this.imageTag = tag;
+	
+		for(Direction[] dir : fromTo)
+		{
+			ArrayList<Direction> temp = new ArrayList<Direction>();
+			for(Direction ext : dir)
+			{
+				temp.add(ext);
+			}
+			this.fromTo.add(temp);
+		}
+	}
+	String getImageTag()
+	{
+		return this.imageTag;
+	}
+	ArrayList<Direction> getFromTo(Direction from)
+	{
+		for(ArrayList<Direction> dir : this.fromTo)
+		{
+			if(dir.contains(from))
+			{
+				return dir;
+			}
+		}
+		return null;
+	}
 }
 class AND extends LogicBlock
 {
@@ -480,11 +600,6 @@ class AND extends LogicBlock
 		{
 			super.setPowerStatus(Power.OFF);
 		}
-	}
-	@Override
-	protected void operatorPing()
-	{
-		
 	}
 }
 class OR extends LogicBlock
@@ -641,6 +756,7 @@ class Button extends LogicBlock
 	@Override
 	protected void endTimer()
 	{
+		super.endTimer();
 		this.timeLabel.setText("");
 		this.setPowerStatus(Power.OFF);
 		this.btn.imageSet();
@@ -707,10 +823,13 @@ class IOPanel
 	private final Direction ext;
 	private final LogicBlock member;
 	private BufferedImage image;
-	IOPanel(LogicBlock logicMember, Direction ext)
+	private String imgTag;
+	
+	IOPanel(LogicBlock logicMember, Direction ext, String imgTag)
 	{
 		this.member = logicMember;
 		this.ext = ext;
+		this.imgTag = imgTag;
 	}
 	void setStatus(IOStatus status)
 	{
@@ -724,8 +843,13 @@ class IOPanel
 			this.power = Power.OFF;
 			this.member.calculate();
 		}
-		
-		this.image = LogicCore.RES.getImage(member.getCore().getUI().getUISize().getTag() + "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
+		System.out.println(member.getCore().getUI());
+		this.image = LogicCore.RES.getImage(member.getCore().getUI().getUISize().getTag() + "_" + this.imgTag
+				+ "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
+	}
+	void setImgTag(String tag)
+	{
+		this.imgTag = tag;
 	}
 	IOStatus getStatus()
 	{
@@ -734,7 +858,8 @@ class IOPanel
 	void setOnOffStatus(Power power)
 	{
 		this.power = power;
-		this.image = LogicCore.RES.getImage(member.getCore().getUI().getUISize().getTag() + "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
+		this.image = LogicCore.RES.getImage(member.getCore().getUI().getUISize().getTag() + "_" + this.imgTag
+				+ "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
 	}
 	Power getOnOffStatus()
 	{
@@ -747,13 +872,6 @@ class IOPanel
 	BufferedImage getImage()
 	{
 		return this.image;
-	}
-	IOPanel clone(LogicBlock logicMember)
-	{
-		IOPanel cloneIO = new IOPanel(logicMember, this.ext);
-		cloneIO.power = this.power;
-		cloneIO.setStatus(this.getStatus());
-		return cloneIO;
 	}
 }
 class GridViewPane extends JPanel implements SizeUpdate
@@ -774,11 +892,11 @@ class GridViewPane extends JPanel implements SizeUpdate
 				, this.member.getUIabsSizeX() * this.member.getCore().getUI().getUISize().getmultiple());
 	}
 }
-class LogicViewPane extends GridViewPane
+abstract class LogicViewPane extends GridViewPane
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final LogicBlock logicMember;
+	protected final LogicBlock logicMember;
 	LogicViewPane(LogicBlock member)
 	{
 		super(member);
@@ -787,38 +905,8 @@ class LogicViewPane extends GridViewPane
 	@Override
 	public void paint(Graphics g)
 	{
+		super.paint(g);
 		g.drawImage(LogicCore.getResource().getImage(super.member.getCore().getUI().getUISize().getTag() + "_BLOCK_BACKGROUND"), 0, 0, this);
-		if(logicMember.getIOStatus(Direction.EAST) != IOStatus.NONE)
-		{
-			g.drawImage(logicMember.getIOImage(Direction.EAST), 25 * super.member.getCore().getUI().getUISize().getmultiple(), 7 * super.member.getCore().getUI().getUISize().getmultiple(), this);
-		}
-		if(logicMember.getIOStatus(Direction.WEST) != IOStatus.NONE)
-		{
-			g.drawImage(logicMember.getIOImage(Direction.WEST), 1 * super.member.getCore().getUI().getUISize().getmultiple(), 7 * super.member.getCore().getUI().getUISize().getmultiple(), this);
-		}
-		if(logicMember.getIOStatus(Direction.SOUTH) != IOStatus.NONE)
-		{
-			g.drawImage(logicMember.getIOImage(Direction.SOUTH), 7 * super.member.getCore().getUI().getUISize().getmultiple(), 25 * super.member.getCore().getUI().getUISize().getmultiple(), this);
-		}
-		if(logicMember.getIOStatus(Direction.NORTH) != IOStatus.NONE)
-		{
-			g.drawImage(logicMember.getIOImage(Direction.NORTH), 7 *super.member.getCore().getUI().getUISize().getmultiple(), 1 * super.member.getCore().getUI().getUISize().getmultiple(), this);
-		}
-		g.drawImage(LogicCore.getResource().getImage(super.member.getCore().getUI().getUISize().getTag() + "_BLOCK_" + logicMember.getPower().getTag())
-				, 7 * super.member.getCore().getUI().getUISize().getmultiple(), 7 * super.member.getCore().getUI().getUISize().getmultiple(), this);
-		
-		/*BufferedImage img = LogicCore.getResource().getImage("led");
-		BufferedImage test = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
-		for(int i = 0; i < img.getWidth(); i++)
-		{
-			for(int j = 0; j < img.getHeight(); j++)
-			{
-				Color c = new Color(img.getRGB(i, j));
-				test.setRGB(i, j, new Color(c.getRed(), c.getRed(), c.getRed(), 255 - c.getGreen()).getRGB());
-			}
-		}
-		
-		g.drawImage(test, 0, 0, this);*/
 		super.paintChildren(g);
 	}
 	@Override
@@ -827,6 +915,74 @@ class LogicViewPane extends GridViewPane
 		this.setBounds(super.member.getCore().getUI().getUISize().getmultiple(), super.member.getCore().getUI().getUISize().getmultiple()
 				, member.getUIabsSizeX() * super.member.getCore().getUI().getUISize().getmultiple() - (super.member.getCore().getUI().getUISize().getmultiple() * 2)
 				, member.getUIabsSizeX() * super.member.getCore().getUI().getUISize().getmultiple() - (super.member.getCore().getUI().getUISize().getmultiple() * 2));
+	}
+}
+class StandardLogicViewPane extends LogicViewPane
+{
+	private static final long serialVersionUID = 1L;
+	
+	StandardLogicViewPane(LogicBlock member)
+	{
+		super(member);
+	}
+	@Override
+	public void paint(Graphics g)
+	{
+		super.paint(g);
+		for(Direction ext : Direction.values())
+		{
+			if(super.logicMember.getIOStatus(ext) != IOStatus.NONE)
+			{
+				g.drawImage(super.logicMember.getIOImage(ext), 0, 0, this);
+			}
+		}
+		g.drawImage(LogicCore.getResource().getImage(super.member.getCore().getUI().getUISize().getTag() + "_BLOCK_" + logicMember.getPower().getTag()), 0, 0, this);
+		super.paintChildren(g);
+	}
+}
+class WireViewPane extends LogicViewPane
+{
+	private static final long serialVersionUID = 1L;
+	
+	private Wire wire;
+
+	WireViewPane(Wire wire)
+	{
+		super(wire);
+		this.wire = wire;
+	}
+	@Override
+	public void paint(Graphics g)
+	{
+		super.paint(g);
+		switch(this.wire.getType())
+		{
+		case Standard:
+			if(this.wire.getType() == WireType.Standard)
+			{
+				for(Direction ext : Direction.values())
+				{
+					if(this.wire.getIOStatus(ext) != IOStatus.NONE)
+					{
+						g.drawImage(this.wire.getIOImage(ext), 0, 0, this);
+					}
+				}
+			}
+			break;
+		case Cross_A: case Cross_B:
+			g.drawImage(LogicCore.getResource().getImage(wire.getCore().getUI().getUISize().getTag() + "_WIRE_" + this.wire.getType().getImageTag()
+					+ "_" + this.wire.getIOPower(Direction.NORTH).getTag() + "_TOP"), 0, 0, this);
+			g.drawImage(LogicCore.getResource().getImage(wire.getCore().getUI().getUISize().getTag() + "_WIRE_" + this.wire.getType().getImageTag()
+					+ "_" + this.wire.getIOPower(Direction.SOUTH).getTag() + "_BOTTOM"), 0, 0, this);
+			break;
+		case Cross_C:
+			g.drawImage(LogicCore.getResource().getImage(wire.getCore().getUI().getUISize().getTag() + "_WIRE_CROSS_C_"
+		+ this.wire.getIOPower(Direction.EAST).getTag() + "_HORIZON"), 0, 0, this);
+			g.drawImage(LogicCore.getResource().getImage(wire.getCore().getUI().getUISize().getTag() + "_WIRE_CROSS_C_"
+		+ this.wire.getIOPower(Direction.NORTH).getTag() + "_VERTICAL"), 0, 0, this);
+			break;
+		}
+		super.paintChildren(g);
 	}
 }
 enum IOStatus

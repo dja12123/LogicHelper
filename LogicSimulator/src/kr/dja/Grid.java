@@ -75,6 +75,7 @@ public class Grid
 				this.addMember(member, member.getUIabsLocationX(), member.getUIabsLocationY());
 			}
 		}
+		session.getCore().getTaskOperator().checkAroundAndReserveTask(this);
 		Grid.count++;
 		JLabel label = new JLabel(Integer.toString(Grid.count) + " 번째 생성된 그리드");
 		label.setBounds(0, 0, 200, 30);
@@ -512,19 +513,22 @@ class SizeInfo
 }
 enum Direction
 {
-	EAST("EAST", 1, 0, "WEST"), WEST("WEST", -1, 0, "EAST"), SOUTH("SOUTH", 0, 1, "NORTH"), NORTH("NORTH", 0, -1, "SOUTH");
+	EAST("EAST", 1, 0, "WEST", "SOUTH"), WEST("WEST", -1, 0, "EAST", "NORTH")
+	, SOUTH("SOUTH", 0, 1, "NORTH", "EAST"), NORTH("NORTH", 0, -1, "SOUTH", "WEST");
 	
 	public final String tag;
 	public final int wayX;
 	public final int wayY;
 	public final String across;
+	public final String right;
 	
-	private Direction(String tag, int wayX, int wayY, String across)
+	private Direction(String tag, int wayX, int wayY, String across, String right)
 	{
 		this.tag = tag;
 		this.wayX = wayX;
 		this.wayY = wayY;
 		this.across = across;
+		this.right = right;
 	}
 	public int getWayX()
 	{
@@ -541,5 +545,9 @@ enum Direction
 	public Direction getAcross()
 	{
 		return Direction.valueOf(this.across);
+	}
+	public Direction getRight()
+	{
+		return Direction.valueOf(this.right);
 	}
 }

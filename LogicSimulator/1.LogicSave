@@ -1,7 +1,6 @@
 Session={
 	name=noname
 	Description={
-		0=
 	}
 }
 Grid={
@@ -888,10 +887,10 @@ Grid={
 		grid=4b2f65b8-2e1e-4541-a1a3-1d66f537803a
 		blocklocationX=-14
 		blocklocationY=-15
-		power=ON
+		power=OFF
 		io_EAST=NONE_OFF
 		io_WEST=NONE_OFF
-		io_SOUTH=TRANCE_ON
+		io_SOUTH=TRANCE_OFF
 		io_NORTH=NONE_OFF
 		basicTime=30
 	}
