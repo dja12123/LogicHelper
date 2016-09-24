@@ -380,6 +380,10 @@ public class Grid
 		}
 		return false;
 	}
+	GridMember getFocusSelectMember()
+	{
+		return this.selectFocusMember;
+	}
 	void deSelectAll()
 	{
 		this.session.getCore().getUI().getBlockControlPanel().removeControlPane();

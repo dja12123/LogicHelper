@@ -577,13 +577,17 @@ class GridArea implements LogicUIComponent, SizeUpdate
 								{
 									grid.select(super.selectMember);
 								}
+								else if(grid.getFocusSelectMember() != null)
+								{
+									EditPane editer = logicUI.getPalettePanel().getControl(grid.getFocusSelectMember());
+									logicUI.getBlockControlPanel().addControlPanel(editer);
+								}
 								else
 								{
 									logicUI.getBlockControlPanel().removeControlPane();
 								}
 							}
 						};
-						
 					}
 					else if(e.getButton() == 3)
 					{

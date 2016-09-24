@@ -143,7 +143,7 @@ public abstract class GridMember implements SizeUpdate
 		this.sizeUpdate();
 		return this.layeredPane;
 	}
-	Grid getGrid()
+	public Grid getGrid()
 	{
 		return this.grid;
 	}
@@ -319,11 +319,11 @@ abstract class LogicBlock extends GridMember
 	{
 		super.remove();
 	}
-	int getBlockLocationX()
+	public int getBlockLocationX()
 	{
 		return this.blocklocationX;
 	}
-	int getBlockLocationY()
+	public int getBlockLocationY()
 	{
 		return this.blocklocationY;
 	}
@@ -401,7 +401,7 @@ abstract class LogicBlock extends GridMember
 			super.layeredPane.repaint();
 		}
 	}
-	Power getIOPower(Direction ext)
+	public Power getIOPower(Direction ext)
 	{
 		return this.io.get(ext).getOnOffStatus();
 	}
@@ -436,10 +436,6 @@ abstract class LogicBlock extends GridMember
 		}
 		this.operatorPing();
 	}
-	protected void operatorPing()
-	{
-		
-	}
 	final void setTimer(int time)
 	{
 		this.timer = time;
@@ -448,6 +444,7 @@ abstract class LogicBlock extends GridMember
 	{
 		return this.timer;
 	}
+	protected void operatorPing(){}
 	protected void activeTimer(){}
 	protected void endTimer()
 	{
@@ -462,6 +459,18 @@ abstract class LogicBlock extends GridMember
 		return this.power;
 	}
 	void calculate(){}
+}
+interface LogicWire
+{
+	ArrayList<LogicWire> getRemoteWire();
+	void setRemotePowerStatus(Power power);
+	void setIOResivePower(Direction ext, Power power);
+	Power getIOPower(Direction ext);
+	Grid getGrid();
+	int getBlockLocationX();
+	int getBlockLocationY();
+	boolean isWireValid(Direction ext);
+	boolean isLinkedWire(Direction from, Direction to);
 }
 class Wire extends LogicBlock implements LogicWire
 {
@@ -480,11 +489,13 @@ class Wire extends LogicBlock implements LogicWire
 	{
 		return new WireViewPane(this);
 	}
+	@Override
 	public void setData(DataBranch branch)
 	{
 		super.setData(branch);
 		this.setWireType(WireType.valueOf(branch.getData("WireType")));
 	}
+	@Override
 	public DataBranch getData(DataBranch branch)
 	{
 		super.getData(branch);
@@ -492,13 +503,32 @@ class Wire extends LogicBlock implements LogicWire
 		return branch;
 	}
 	@Override
-	void setIOResivePower(Direction ext, Power power)
+	public void setIOResivePower(Direction ext, Power power)
 	{
 		this.io.get(ext).setOnOffStatus(power);
 		for(Direction changeExt : this.wireType.getFromTo(ext))
 		{
 			super.io.get(changeExt).setOnOffStatus(power);
 		}
+		super.layeredPane.repaint();
+	}
+	@Override
+	public boolean isWireValid(Direction ext)
+	{
+		if(super.getIOStatus(ext) != IOStatus.NONE)
+		{
+			return true;
+		}
+		return false;
+	}
+	@Override
+	public boolean isLinkedWire(Direction from, Direction to)
+	{
+		if(this.wireType.getFromTo(from).contains(to))
+		{
+			return true;
+		}
+		return false;
 	}
 	@Override
 	protected void doToggleIO(Direction ext)
@@ -534,6 +564,16 @@ class Wire extends LogicBlock implements LogicWire
 	WireType getType()
 	{
 		return this.wireType;
+	}
+	@Override
+	public ArrayList<LogicWire> getRemoteWire()
+	{
+		return null;
+	}
+	@Override
+	public void setRemotePowerStatus(Power power)
+	{
+		
 	}
 }
 enum WireType

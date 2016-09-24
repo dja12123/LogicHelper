@@ -1,10 +1,12 @@
 package kr.dja;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -218,28 +220,126 @@ public class TaskOperator
 			LogicBlock outputExtBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX()
 					, block.getBlockLocationY() + ext.getWayY());
 	
-			if(outputExtBlock != null && outputExtBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV
-					&& block.getPower() != outputExtBlock.getIOPower(ext.getAcross()))
+			if(outputExtBlock != null)
 			{
-				Power power = outputExtBlock.getPower();
-				System.out.println("isResive" + power);
-				outputExtBlock.setIOResivePower(ext.getAcross(), block.getPower());
-				if(power != outputExtBlock.getPower())
+				if(outputExtBlock instanceof LogicWire)
 				{
-					System.out.println("Task");
-					if(!taskList.contains(outputExtBlock))
+					LogicWire wire = (LogicWire)outputExtBlock;
+					if(wire.isWireValid(ext.getAcross()))
 					{
-						taskList.add(outputExtBlock);
-						recursiveTask(outputExtBlock, copyTaskFlag ? (ArrayList<LogicBlock>) taskList.clone() : taskList);
-						copyTaskFlag = true;
+						this.wireTask(wire, ext.getAcross());
 					}
-					else
+				}
+				else if(outputExtBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV
+					&& block.getPower() != outputExtBlock.getIOPower(ext.getAcross()))
+				{
+					Power power = outputExtBlock.getPower();
+					System.out.println("isResive" + power);
+					outputExtBlock.setIOResivePower(ext.getAcross(), block.getPower());
+					if(power != outputExtBlock.getPower())
 					{
-						System.out.println("회로가 통구이가 되었습니다" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
+						System.out.println("Task");
+						if(!taskList.contains(outputExtBlock))
+						{
+							taskList.add(outputExtBlock);
+							recursiveTask(outputExtBlock, copyTaskFlag ? (ArrayList<LogicBlock>) taskList.clone() : taskList);
+							copyTaskFlag = true;
+						}
+						else
+						{
+							System.out.println("회로가 통구이가 되었습니다" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
+						}
 					}
 				}
 			}
 		}
+	}
+	private void wireTask(LogicWire wire, Direction ext)
+	{
+		LinkedHashMap<LogicWire, ArrayList<Direction>> linkedWire = new LinkedHashMap<LogicWire, ArrayList<Direction>>();
+		LinkedHashMap<LogicBlock, ArrayList<Direction>> linkedBlock = new LinkedHashMap<LogicBlock, ArrayList<Direction>>();
+		ArrayList<Direction> temp = new ArrayList<Direction>();
+		temp.add(ext);
+		linkedWire.put(wire, temp);
+		Power power = this.recursiveWireTask(wire, linkedWire, linkedBlock, ext, Power.OFF);
+		System.out.println("블록상태" + power);
+		for(LogicWire editWire : linkedWire.keySet())
+		{
+			for(Direction editExt : linkedWire.get(editWire))
+			{
+				editWire.setIOResivePower(editExt, power);
+				System.out.println("wireTask연산");
+			}
+		}
+		for(LogicBlock editBlock : linkedBlock.keySet())
+		{
+			for(Direction editExt : linkedBlock.get(editBlock))
+			{
+				editBlock.setIOResivePower(editExt, power);
+			}
+		}
+	}
+	private Power recursiveWireTask(LogicWire wire, LinkedHashMap<LogicWire, ArrayList<Direction>> linkedWire
+			, LinkedHashMap<LogicBlock, ArrayList<Direction>> linkedBlock, Direction from, Power power)
+	{
+		for(Direction ext : Direction.values())
+		{
+			if(wire.isLinkedWire(from, ext))
+			{
+				System.out.println("확인" + wire.isWireValid(ext));
+				LogicBlock extBlock = wire.getGrid().getLogicBlock(wire.getBlockLocationX()
+						+ ext.getWayX(), wire.getBlockLocationY() + ext.getWayY());
+				if(extBlock != null)
+				{
+					if(extBlock instanceof LogicWire)
+					{
+						if(wire.isWireValid(ext))
+						{
+							System.out.println("이프통과" + wire.isWireValid(ext));
+							LogicWire extWire = (LogicWire)extBlock;
+							if(extWire.isWireValid(ext.getAcross()))
+							{
+								if(linkedWire.containsKey(extWire))
+								{
+									linkedWire.get(extWire).add(ext.getAcross());
+								}
+								else
+								{
+									ArrayList<Direction> temp = new ArrayList<Direction>();
+									temp.add(ext.getAcross());
+									linkedWire.put(extWire, temp);
+									power = this.recursiveWireTask(extWire, linkedWire, linkedBlock, ext.getAcross(), power);
+								}
+							}
+						}
+					}
+					else if(!power.getBool() && extBlock.getIOStatus(ext.getAcross()) == IOStatus.TRANCE && extBlock.getIOPower(ext.getAcross()).getBool())
+					{
+						System.out.println("블록감지" + wire.isWireValid(ext));
+						if(wire.isWireValid(ext))
+						{
+							power = Power.ON;
+							System.out.println(power);
+						}
+					}
+					else if(extBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV)
+					{
+						if(linkedBlock.containsKey(extBlock))
+						{
+							linkedBlock.get(extBlock).add(ext.getAcross());
+						}
+						else
+						{
+							ArrayList<Direction> temp = new ArrayList<Direction>();
+							temp.add(ext.getAcross());
+							linkedBlock.put(extBlock, temp);
+						}
+					}
+				}
+			}
+			
+		}
+		return power;
 	}
 	void setTaskTick(int tick)
 	{
@@ -261,7 +361,6 @@ public class TaskOperator
 		{
 			while(this.taskFlag)
 			{
-				System.out.println("오퍼레이터" + this.taskFlag);
 				doTask();
 				try
 				{
@@ -295,8 +394,8 @@ class GraphViewPanel extends JPanel
 		this.setLayout(null);
 		this.setSize(148, 90);
 		this.multipleLabel = new JLabel("지연: 0.0%", SwingConstants.CENTER);
-		this.multipleLabel.setForeground(new Color(255, 0, 0, 128));
-		this.multipleLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(14.0F));
+		this.multipleLabel.setForeground(new Color(255, 0, 0, 70));
+		this.multipleLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(Font.BOLD, 14.0F));
 		this.multipleLabel.setBounds(0, 30, this.getWidth(), 20);
 		this.add(this.multipleLabel);
 	}
@@ -304,7 +403,7 @@ class GraphViewPanel extends JPanel
 	public void paint(Graphics g)
 	{
 		super.paint(g);
-		g.setColor(Color.gray);
+		g.setColor(new Color(185, 205, 229));
 		for(int i = 0; i < this.graphBar.size(); i++)
 		{
 			g.drawLine(i + graphLocX, graphLocY + graphSizeY - 1, i + graphLocX, graphLocY + graphSizeY - 1
@@ -329,10 +428,5 @@ class GraphViewPanel extends JPanel
 		}
 		this.multipleLabel.setText("지연: " + Double.parseDouble(String.format("%.3f", this.highest / (double)this.operator.getTaskTick() * 100)) + "%");
 		this.repaint();
-		System.out.println("걸린시간: " + time);
 	}
-}
-interface LogicWire
-{
-	
 }
