@@ -1306,18 +1306,22 @@ class PalettePanel implements LogicUIComponent
 		new PaletteMember(new AND(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new OR(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new NOT(this.logicUI.getCore()), DFTLogicControl);
-		new PaletteMember(new Button(this.logicUI.getCore()), DFTLogicControl);
+		new PaletteMember(new NAND(this.logicUI.getCore()), DFTLogicControl);
+		new PaletteMember(new NOR(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new XOR(this.logicUI.getCore()), DFTLogicControl);
+		new PaletteMember(new XNOR(this.logicUI.getCore()), DFTLogicControl);
+		new PaletteMember(new Button(this.logicUI.getCore()), DFTLogicControl);
 		System.out.println(paletteMembers.keySet().size());
 		int i = 0, j = 0;
 		for(String str : paletteMembers.keySet())
 		{
 			PaletteMember p = this.paletteMembers.get(str);
-			if(i < 4)
+			if(i < 3)
 			{
-				if(j < 5)
+				p.setBounds(j * 42 + 9, i * 42 + 20, 38, 38);
+				if(j < 4)
 				{
-					p.setBounds(j * 42 + 9, i * 42 + 20, 38, 38);
+					
 					j++;
 				}
 				else
@@ -1325,10 +1329,7 @@ class PalettePanel implements LogicUIComponent
 					j = 0;
 					i++;
 				}
-			}
-			else
-			{
-				i = 0;
+				
 			}
 			this.palettePanel.add(p);
 		}

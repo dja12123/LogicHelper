@@ -104,9 +104,21 @@ public class TaskOperator
 		{
 			for(Direction ext : Direction.values())
 			{
+				if(block instanceof LogicWire)
+				{
+					this.wireTask((LogicWire)block, ext, false);
+				}
 				LogicBlock extBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
 				if(extBlock != null)
 				{
+					if(extBlock instanceof LogicWire)
+					{
+						LogicWire wire = (LogicWire)extBlock;
+						if(wire.isWireValid(ext.getAcross()))
+						{
+							this.wireTask(wire, ext.getAcross(), false);
+						}
+					}
 					if(block.getIOStatus(ext) == IOStatus.RECEIV)
 					{
 						if(extBlock.getIOStatus(ext.getAcross()) == IOStatus.TRANCE && block.getIOPower(ext) != extBlock.getIOPower(ext.getAcross()))
@@ -127,6 +139,21 @@ public class TaskOperator
 					, block.getBlockLocationY() + ext.getWayY()) : null;
 			if(extBlock != null)
 			{
+				if(extBlock instanceof LogicWire)
+				{
+					LogicWire wire = (LogicWire)extBlock;
+					if(wire.isWireValid(ext.getAcross()))
+					{
+						if(extBlock.getIOPower(ext.getAcross()) !=  block.getIOPower(ext))
+						{
+							this.checkHashPut(extBlock, ext.getAcross(), block.getIOPower(ext));
+						}
+						else
+						{
+							this.checkHashRemove(extBlock, ext.getAcross());
+						}
+					}
+				}
 				if(block.getIOStatus(ext) == IOStatus.TRANCE)
 				{
 					if(extBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV)
@@ -225,9 +252,9 @@ public class TaskOperator
 				if(outputExtBlock instanceof LogicWire)
 				{
 					LogicWire wire = (LogicWire)outputExtBlock;
-					if(wire.isWireValid(ext.getAcross()))
+					if(wire.isWireValid(ext.getAcross()) && wire.getIOPower(ext.getAcross()) != block.getIOPower(ext))
 					{
-						this.wireTask(wire, ext.getAcross());
+						this.wireTask(wire, ext.getAcross(), true);
 					}
 				}
 				else if(outputExtBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV
@@ -254,8 +281,8 @@ public class TaskOperator
 			}
 		}
 	}
-	private void wireTask(LogicWire wire, Direction ext)
-	{
+	private void wireTask(LogicWire wire, Direction ext, boolean memberTask)
+	{//와이어는 다른 연산방식 필요
 		LinkedHashMap<LogicWire, ArrayList<Direction>> linkedWire = new LinkedHashMap<LogicWire, ArrayList<Direction>>();
 		LinkedHashMap<LogicBlock, ArrayList<Direction>> linkedBlock = new LinkedHashMap<LogicBlock, ArrayList<Direction>>();
 		ArrayList<Direction> temp = new ArrayList<Direction>();
@@ -271,11 +298,25 @@ public class TaskOperator
 				System.out.println("wireTask연산");
 			}
 		}
-		for(LogicBlock editBlock : linkedBlock.keySet())
+		if(memberTask)
 		{
-			for(Direction editExt : linkedBlock.get(editBlock))
+			for(LogicBlock editBlock : linkedBlock.keySet())
 			{
-				editBlock.setIOResivePower(editExt, power);
+				for(Direction editExt : linkedBlock.get(editBlock))
+				{
+					editBlock.setIOResivePower(editExt, power);
+				}
+				this.recursiveTask(editBlock, new ArrayList<LogicBlock>());
+			}
+		}
+		else
+		{
+			for(LogicBlock editBlock : linkedBlock.keySet())
+			{
+				for(Direction editExt : linkedBlock.get(editBlock))
+				{
+					this.checkHashPut(editBlock, editExt, power);
+				}
 			}
 		}
 	}
@@ -284,46 +325,48 @@ public class TaskOperator
 	{
 		for(Direction ext : Direction.values())
 		{
-			if(wire.isLinkedWire(from, ext))
+			if(wire.isLinkedWire(from, ext) && wire.isWireValid(ext))
 			{
-				System.out.println("확인" + wire.isWireValid(ext));
-				LogicBlock extBlock = wire.getGrid().getLogicBlock(wire.getBlockLocationX()
-						+ ext.getWayX(), wire.getBlockLocationY() + ext.getWayY());
+				//System.out.println("확인" + wire.isWireValid(ext));
+				LogicBlock extBlock = wire.getGrid().getLogicBlock(wire.getBlockLocationX() + ext.getWayX(), wire.getBlockLocationY() + ext.getWayY());
 				if(extBlock != null)
 				{
 					if(extBlock instanceof LogicWire)
 					{
-						if(wire.isWireValid(ext))
+						//System.out.println("이프통과" + wire.isWireValid(ext));
+						LogicWire extWire = (LogicWire)extBlock;
+						if(extWire.isWireValid(ext.getAcross()))
 						{
-							System.out.println("이프통과" + wire.isWireValid(ext));
-							LogicWire extWire = (LogicWire)extBlock;
-							if(extWire.isWireValid(ext.getAcross()))
+							if(linkedWire.containsKey(extWire))
 							{
-								if(linkedWire.containsKey(extWire))
+								if(!linkedWire.get(extWire).contains(ext.getAcross()))
 								{
 									linkedWire.get(extWire).add(ext.getAcross());
-								}
-								else
-								{
-									ArrayList<Direction> temp = new ArrayList<Direction>();
-									temp.add(ext.getAcross());
-									linkedWire.put(extWire, temp);
 									power = this.recursiveWireTask(extWire, linkedWire, linkedBlock, ext.getAcross(), power);
+									
 								}
+							}
+							else
+							{
+								ArrayList<Direction> temp = new ArrayList<Direction>();
+								temp.add(ext.getAcross());
+								linkedWire.put(extWire, temp);
+								power = this.recursiveWireTask(extWire, linkedWire, linkedBlock, ext.getAcross(), power);
 							}
 						}
 					}
 					else if(!power.getBool() && extBlock.getIOStatus(ext.getAcross()) == IOStatus.TRANCE && extBlock.getIOPower(ext.getAcross()).getBool())
 					{
-						System.out.println("블록감지" + wire.isWireValid(ext));
-						if(wire.isWireValid(ext))
-						{
-							power = Power.ON;
-							System.out.println(power);
-						}
+						//System.out.println("공급자 감지" + wire.isWireValid(ext));
+					
+						power = Power.ON;
+						System.out.println(power);
+						
 					}
-					else if(extBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV)
+					if(extBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV)
 					{
+						//System.out.println("공급함" + ext.toString() + from.toString());
+						
 						if(linkedBlock.containsKey(extBlock))
 						{
 							linkedBlock.get(extBlock).add(ext.getAcross());
@@ -334,10 +377,10 @@ public class TaskOperator
 							temp.add(ext.getAcross());
 							linkedBlock.put(extBlock, temp);
 						}
+						
 					}
 				}
 			}
-			
 		}
 		return power;
 	}

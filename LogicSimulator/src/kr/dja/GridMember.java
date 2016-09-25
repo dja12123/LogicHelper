@@ -273,20 +273,21 @@ abstract class LogicBlock extends GridMember
 	{
 		this.blocklocationX = new Integer(branch.getData("blocklocationX"));
 		this.blocklocationY = new Integer(branch.getData("blocklocationY"));
-		this.power = Power.valueOf(Power.OFF.toString());
+		this.setTimer(new Integer(branch.getData("timer")));
+		this.power = Power.valueOf(branch.getData("power"));
 		for(Direction ext : Direction.values())
 		{
-			this.setTimer(0);
 			String data = branch.getData("io_" + ext);
 			io.get(ext).setStatus(IOStatus.valueOf(data.split("_")[0]));
 			io.get(ext).setOnOffStatus(Power.valueOf(data.split("_")[1]));
-			this.calculate();
 		}
+		this.calculate();
 		if(super.isPlacement())
 		{
 			super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		}
 		this.calculate();
+		this.core.getTaskOperator().addReserveTask(this);
 		super.setData(branch);
 	}
 	@Override
@@ -295,6 +296,7 @@ abstract class LogicBlock extends GridMember
 		super.getData(branch);
 		branch.setData("blocklocationX", Integer.toString(this.blocklocationX));
 		branch.setData("blocklocationY", Integer.toString(this.blocklocationY));
+		branch.setData("timer", Integer.toString(this.timer));
 		branch.setData("power", power.toString());
 		for(Direction ext : Direction.values())
 		{
@@ -546,7 +548,6 @@ class Wire extends LogicBlock implements LogicWire
 		{
 			super.io.get(ext).setStatus(IOStatus.NONE);
 		}
-		super.layeredPane.repaint();
 	}
 	void setWireType(WireType wireType)
 	{
@@ -558,6 +559,10 @@ class Wire extends LogicBlock implements LogicWire
 			{
 				io.setStatus(IOStatus.TRANCE);
 			}
+		}
+		if(super.isPlacement())
+		{
+			super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		}
 		super.layeredPane.repaint();
 	}
@@ -652,47 +657,15 @@ class OR extends LogicBlock
 	void calculate()
 	{
 		ArrayList<Power> cal = super.getResiveIOPower();
-		boolean powerActive = false;
+		Power powerActive = Power.OFF;
 		for(Power power : cal)
 		{
 			if(power.getBool())
 			{
-				powerActive = true;
+				powerActive = Power.ON;
 			}
 		}
-		if(powerActive)
-		{
-			super.setPowerStatus(Power.ON);
-		}
-		else
-		{
-			super.setPowerStatus(Power.OFF);
-		}
-	}
-	@Override
-	protected void operatorPing()
-	{
-		// TODO Auto-generated method stub
-		
-	}
-}
-class XOR extends LogicBlock
-{
-	XOR(LogicCore core)
-	{
-		super(core, "XOR");
-	}
-	@Override
-	void calculate()
-	{
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	protected void operatorPing()
-	{
-		// TODO Auto-generated method stub
-		
+		super.setPowerStatus(powerActive);
 	}
 }
 class NOT extends LogicBlock
@@ -732,11 +705,99 @@ class NOT extends LogicBlock
 			this.setPowerStatus(Power.ON);
 		}
 	}
-	@Override
-	protected void operatorPing()
+}
+class NAND extends LogicBlock
+{
+	NAND(LogicCore core)
 	{
-		// TODO Auto-generated method stub
-		
+		super(core, "NAND");
+	}
+	@Override
+	void calculate()
+	{
+		ArrayList<Power> cal = super.getResiveIOPower();
+		Power powerActive = Power.OFF;
+		for(Power power : cal)
+		{
+			if(!power.getBool())
+			{
+				powerActive = Power.ON;
+			}
+		}
+		super.setPowerStatus(powerActive);
+	}
+}
+class NOR extends LogicBlock
+{
+	NOR(LogicCore core)
+	{
+		super(core, "NOR");
+	}
+	@Override
+	void calculate()
+	{
+		ArrayList<Power> cal = super.getResiveIOPower();
+		Power powerActive = Power.ON;
+		for(Power power : cal)
+		{
+			if(power.getBool())
+			{
+				powerActive = Power.OFF;
+			}
+		}
+		super.setPowerStatus(powerActive);
+	}
+}
+class XOR extends LogicBlock
+{
+	XOR(LogicCore core)
+	{
+		super(core, "XOR");
+	}
+	@Override
+	void calculate()
+	{
+		ArrayList<Power> cal = super.getResiveIOPower();
+		Power powerStatus = Power.OFF;
+		Power powerActive = null;
+		for(Power power : cal)
+		{
+			if(powerActive == null)
+			{
+				powerActive = power;
+			}
+			if(power != powerActive)
+			{
+				powerStatus = Power.ON;
+			}
+		}
+		super.setPowerStatus(powerStatus);
+	}
+}
+class XNOR extends LogicBlock
+{
+	XNOR(LogicCore core)
+	{
+		super(core, "XNOR");
+	}
+	@Override
+	void calculate()
+	{
+		ArrayList<Power> cal = super.getResiveIOPower();
+		Power powerStatus = Power.ON;
+		Power powerActive = null;
+		for(Power power : cal)
+		{
+			if(powerActive == null)
+			{
+				powerActive = power;
+			}
+			if(power != powerActive)
+			{
+				powerStatus = Power.OFF;
+			}
+		}
+		super.setPowerStatus(powerStatus);
 	}
 }
 class Button extends LogicBlock
@@ -760,6 +821,7 @@ class Button extends LogicBlock
 	{
 		super.setData(branch);
 		this.basicTime = new Integer(branch.getData("basicTime"));
+		this.btn.imageSet();
 	}
 	@Override
 	public DataBranch getData(DataBranch branch)
