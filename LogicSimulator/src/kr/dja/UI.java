@@ -26,6 +26,8 @@ import java.awt.event.ComponentListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -66,6 +68,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
@@ -498,6 +501,10 @@ class GridArea implements LogicUIComponent, SizeUpdate
 	public Component getComponent()
 	{
 		return this.masterPanel;
+	}
+	JLayeredPane getLayeredPane()
+	{
+		return this.viewPort.layeredPane;
 	}
 	private abstract class RulerPanel extends JPanel implements SizeUpdate
 	{
@@ -1311,6 +1318,8 @@ class PalettePanel implements LogicUIComponent
 		new PaletteMember(new XOR(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new XNOR(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new Button(this.logicUI.getCore()), DFTLogicControl);
+		new PaletteMember(new Tag(this.logicUI.getCore()), new TagEditPane());
+		
 		System.out.println(paletteMembers.keySet().size());
 		int i = 0, j = 0;
 		for(String str : paletteMembers.keySet())
@@ -1341,7 +1350,6 @@ class PalettePanel implements LogicUIComponent
 	}
 	EditPane getControl(GridMember member)
 	{
-		
 		EditPane edit = this.paletteMembers.get(member.getName()).getControl();
 		edit.setInfo(member);
 		return edit;
@@ -1352,10 +1360,10 @@ class PalettePanel implements LogicUIComponent
 		
 		private GridMember putMember;
 		private EditPane selectControlPanel;
-		PaletteMember(GridMember member, LogicTREditPane control)
+		PaletteMember(GridMember member, EditPane editPane)
 		{
 			paletteMembers.put(member.getName(), this);
-			this.selectControlPanel = control;
+			this.selectControlPanel = editPane;
 			this.putMember = member;
 		}
 		@Override
@@ -1762,6 +1770,164 @@ class DefaultPane extends JPanel
 		this.add(this.text);
 	}
 }
+class ColorSelector extends JPanel
+{
+	private static final long serialVersionUID = 1L;
+	
+	private JPanel samplePanel = new JPanel();
+
+	private ColorSlider rSlider = new ColorSlider(0, 255);
+	private ColorSlider gSlider = new ColorSlider(20, 230);
+	private ColorSlider bSlider = new ColorSlider(40, 153);
+	
+	ColorSelector()
+	{
+		this.setLayout(null);
+		this.setSize(300, 80);
+		
+		JPanel tempPanel = new JPanel();
+		tempPanel.setLayout(null);
+		tempPanel.setBorder(new EtchedBorder(EtchedBorder.RAISED));
+		this.samplePanel.setBounds(2, 2, 36, 36);
+		tempPanel.setBounds(255, 10, 40, 40);
+		
+		tempPanel.add(this.samplePanel);
+		this.add(tempPanel);
+		
+		this.add(this.rSlider);
+		this.add(this.gSlider);
+		this.add(this.bSlider);
+		
+		this.add(new ColorPicker(new Color(255, 0, 0), 5));
+		this.add(new ColorPicker(new Color(255, 128, 64), 30));
+		this.add(new ColorPicker(new Color(128, 255, 128), 55));
+		this.add(new ColorPicker(new Color(9, 181, 247), 80));
+		this.add(new ColorPicker(new Color(128, 0, 255), 105));
+		this.add(new ColorPicker(new Color(255, 0, 255), 130));
+		this.add(new ColorPicker(new Color(255, 255, 0), 155));
+		this.add(new ColorPicker(new Color(255, 230, 153), 180));
+		this.add(new ColorPicker(new Color(0, 0, 0), 205));
+		this.add(new ColorPicker(new Color(255, 255, 255), 230));
+		
+		this.samplePanel.setBackground(this.getColor());
+	}
+	Color getColor()
+	{
+		Color color = this.samplePanel.getBackground();
+		try
+		{
+			color = new Color(this.rSlider.getValue(), this.gSlider.getValue(), this.bSlider.getValue());
+		}
+		catch(Exception e)
+		{
+			
+		}
+		return color;
+	}
+	void setColor(Color color)
+	{
+		this.rSlider.setValue(color.getRed());
+		this.gSlider.setValue(color.getGreen());
+		this.bSlider.setValue(color.getBlue());
+	}
+	private void setSample()
+	{
+		this.samplePanel.setBackground(this.getColor());
+	}
+	private class ColorSlider extends JPanel
+	{
+		private static final long serialVersionUID = 1L;
+		private JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 255, 0);
+		private JTextField textField = new JTextField();
+		private boolean scrollCheckFlag = true;
+		
+		ColorSlider(int y, int color)
+		{
+			this.setLayout(null);
+			this.setBounds(0, y, 250, 20);
+			this.slider.setBounds(0, 0, 215, 20);
+			this.slider.addChangeListener(new ChangeListener()
+			{
+				@Override
+				public void stateChanged(ChangeEvent arg0)
+				{
+					if(scrollCheckFlag)
+					{
+						textField.setText(Integer.toString(slider.getValue()));
+					}
+					setSample();
+				}
+			});
+			this.textField.setBounds(220, 0, 30, 18);
+			this.textField.setBorder(null);
+			this.textField.addKeyListener(new KeyAdapter() 
+			{
+				@Override
+				public void keyTyped(KeyEvent e) 
+		        {
+					int nowInt = 0;
+					char c = e.getKeyChar();
+					if (!((c >= '0') && (c <= '9') || (c == KeyEvent.VK_BACK_SPACE) || (c == KeyEvent.VK_DELETE)))
+					{
+						nowInt = Integer.parseInt(textField.getText());
+		        	}
+					else
+					{
+						if((c >= '0') && (c <= '9') && !textField.getText().equals(""))
+						{
+							nowInt = Integer.parseInt(textField.getText() + Character.toString(c));
+							if(nowInt > 255)
+							{
+								nowInt = 255;
+							}
+						}
+					}
+					e.consume();
+					textField.setText(Integer.toString(nowInt));
+					scrollCheckFlag = false;
+					System.out.println(nowInt);
+					slider.setValue(nowInt);
+					scrollCheckFlag = true;
+		        }
+			});
+			this.setValue(color);
+			this.add(this.slider);
+			this.add(this.textField);
+		}
+		void setValue(int num)
+		{
+			this.slider.setValue(num);
+		}
+		int getValue()
+		{
+			return this.slider.getValue();
+		}
+	}
+	private class ColorPicker extends ButtonPanel
+	{
+		private static final long serialVersionUID = 1L;
+		
+		private final Color color;
+		private JPanel colorPanel = new JPanel();
+		
+		ColorPicker(Color color, int x)
+		{
+			this.color = color;
+			this.setBackground(new Color(200, 200, 200));
+			this.setLayout(null);
+			this.setBounds(x, 60, 20, 20);
+			this.setBorder(new EtchedBorder(EtchedBorder.RAISED));
+			this.colorPanel.setBounds(2, 2, 16, 16);
+			this.colorPanel.setBackground(color);
+			this.add(this.colorPanel);
+		}
+		@Override
+		void pressed(int button)
+		{
+			setColor(this.color);
+		}
+	}
+}
 class EditPane extends JPanel
 {
 	private static final long serialVersionUID = 1L;
@@ -1795,6 +1961,52 @@ class EditPane extends JPanel
 	void setInfo(GridMember member)
 	{
 		this.member = member;
+	}
+}
+class TagEditPane extends EditPane
+{
+	private static final long serialVersionUID = 1L;
+	
+	private Tag tag;
+	private ColorSelector colorSelector;
+	private ButtonPanel textEditButton;
+	private ButtonPanel colorSetButton;
+	
+	TagEditPane()
+	{
+		super();
+		this.colorSelector = new ColorSelector();
+		this.colorSelector.setLocation(10, 10);
+		this.textEditButton = new ButtonPanel(340, 10, 30, 30)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void pressed(int button)
+			{
+				tag.toggleModeActive();
+			}
+		};
+		this.colorSetButton = new ButtonPanel(340, 50, 30, 30)
+		{
+			private static final long serialVersionUID = 1L;
+			
+			@Override
+			void pressed(int button)
+			{
+				tag.setColor(colorSelector.getColor());
+			}
+		};
+		this.add(this.colorSelector);
+		this.add(this.textEditButton);
+		this.add(this.colorSetButton);
+	}
+	@Override
+	void setInfo(GridMember member)
+	{
+		super.setInfo(member);
+		this.tag = (Tag)member;
+		colorSelector.setColor(this.tag.getColor());
 	}
 }
 class LogicTREditPane extends EditPane
@@ -2069,8 +2281,6 @@ class TrackedPane extends JPanel implements SizeUpdate
 			int placeAbsX = stdX + member.getUIabsLocationX() - minX - ((this.getWidth() / 2) / multiple);
 			int placeAbsY = stdY + member.getUIabsLocationY() - minY - ((this.getHeight() / 2) / multiple);
 			System.out.println(gridSize.getPX() + " " + gridSize.getNX());
-			placeAbsX = placeAbsX > 0 ? (placeAbsX + member.getUIabsSizeX() / 2) - 1 : placeAbsX - member.getUIabsSizeX() / 2;
-			placeAbsY = placeAbsY > 0 ? (placeAbsY + member.getUIabsSizeY() / 2) - 1 : placeAbsY - member.getUIabsSizeY() / 2;
 			
 			if(placeAbsX < gridSize.getPX() * Size.REGULAR_SIZE && placeAbsX > -(gridSize.getNX() + 1) * Size.REGULAR_SIZE
 			&& placeAbsY < gridSize.getPY() * Size.REGULAR_SIZE && placeAbsY > -(gridSize.getNY() + 1) * Size.REGULAR_SIZE)

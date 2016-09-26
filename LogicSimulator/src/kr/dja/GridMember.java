@@ -1,9 +1,19 @@
 package kr.dja;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -13,7 +23,9 @@ import java.util.UUID;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.border.EtchedBorder;
 
 public abstract class GridMember implements SizeUpdate
 {
@@ -96,6 +108,19 @@ public abstract class GridMember implements SizeUpdate
 	{
 		return this.name;
 	}
+	void setSize(int x, int y, int w, int h)
+	{
+		Size size = this.getCore().getUI().getUISize();
+		SizeInfo gSize = grid.getGridSize();
+		this.UIabslocationX = x;
+		this.UIabslocationY = y;
+		this.layeredPane.setLocation((x + gSize.getNX() * Size.REGULAR_SIZE) * size.getmultiple() + Size.MARGIN
+								   , (y + gSize.getNY() * Size.REGULAR_SIZE) * size.getmultiple() + Size.MARGIN);
+		System.out.println(this.layeredPane.getLocation());
+		this.UIabsSizeX = w;
+		this.UIabsSizeY = h;
+		this.sizeUpdate();
+	}
 	int getUIabsLocationX()
 	{
 		return UIabslocationX;
@@ -153,45 +178,16 @@ public abstract class GridMember implements SizeUpdate
 		this.gridViewPane.sizeUpdate();
 		this.layeredPane.setSize(UIabsSizeX * core.getUI().getUISize().getmultiple(), UIabsSizeY * core.getUI().getUISize().getmultiple());
 	}
-	class GridLayeredPane extends JLayeredPane
+	class GridLayeredPane extends JLayeredPane implements MouseListener, MouseMotionListener
 	{
 		private static final long serialVersionUID = 1L;
 		
 		private Color rectColor;
-		
+		boolean onMouseFlag;
 		GridLayeredPane()
 		{
-			MouseAdapter adaptor = new MouseAdapter()
-			{
-				boolean onMouseFlag;
-				@Override
-				public final void mouseEntered(MouseEvent e)
-				{
-					this.onMouseFlag = true;
-				}
-				@Override
-				public final void mouseExited(MouseEvent e)
-				{
-					this.onMouseFlag = false;
-				}
-				@Override
-				public final void mouseReleased(MouseEvent e)
-				{
-					if(this.onMouseFlag)
-					{
-						if(grid.isSelect(GridMember.this))
-						{
-							grid.deSelect(GridMember.this);
-						}
-						else
-						{
-							grid.selectFocus(GridMember.this);
-						}
-					}
-				}
-			};
-			this.addMouseListener(adaptor);
-			this.addMouseMotionListener(adaptor);
+			this.addMouseListener(this);
+			this.addMouseMotionListener(this);
 		}
 		void selectShow(Color color)
 		{
@@ -213,6 +209,39 @@ public abstract class GridMember implements SizeUpdate
 				g.fillRect(gridViewPane.getX(), gridViewPane.getY(), gridViewPane.getWidth(), gridViewPane.getHeight());
 				g.setColor(new Color(this.rectColor.getRed(), this.rectColor.getGreen(), this.rectColor.getBlue()));
 				g.drawRect(gridViewPane.getX(), gridViewPane.getY(), gridViewPane.getWidth() - 1, gridViewPane.getHeight() - 1);
+			}
+		}
+		@Override
+		public void mouseDragged(MouseEvent arg0){}
+		@Override
+		public void mouseMoved(MouseEvent arg0){}
+		@Override
+		public void mouseClicked(MouseEvent arg0){}
+		@Override
+		public final void mouseEntered(MouseEvent e)
+		{
+			this.onMouseFlag = true;
+		}
+		@Override
+		public final void mouseExited(MouseEvent e)
+		{
+			this.onMouseFlag = false;
+		}
+		@Override
+		public void mousePressed(MouseEvent e){}
+		@Override
+		public final void mouseReleased(MouseEvent e)
+		{
+			if(this.onMouseFlag)
+			{
+				if(grid.isSelect(GridMember.this))
+				{
+					grid.deSelect(GridMember.this);
+				}
+				else
+				{
+					grid.selectFocus(GridMember.this);
+				}
 			}
 		}
 	}
@@ -240,9 +269,157 @@ class Partition extends GridMember
 }
 class Tag extends GridMember
 {
+	private JTextArea viewTextArea;
+	private JTextArea editTextArea;
+	private ButtonPanel editCompleatButton;
+	private Color color;
+	
+	private boolean isShow = false;
+	
 	Tag(LogicCore core)
 	{
-		super(core, "Partition");
+		super(core, "Tag");
+		super.UIabsSizeX = 60;
+		super.UIabsSizeY = 60;
+		
+		this.viewTextArea = new JTextArea();
+		this.viewTextArea.setBackground(super.gridViewPane.getBackground());
+		for(MouseListener l : this.viewTextArea.getMouseListeners())
+		{
+			this.viewTextArea.removeMouseListener(l);
+		}
+		for(MouseMotionListener l : this.viewTextArea.getMouseMotionListeners())
+		{
+			this.viewTextArea.removeMouseMotionListener(l);
+		}
+		this.viewTextArea.addMouseListener(super.layeredPane);
+		this.viewTextArea.addMouseMotionListener(super.layeredPane);
+		this.viewTextArea.setFocusable(false);
+		this.viewTextArea.setLineWrap(true);
+		this.viewTextArea.setLocation(5, 5);
+		
+		this.editTextArea = new JTextArea();
+		this.editTextArea.setLineWrap(true);
+		this.editTextArea.setLocation(5, 5);
+		this.editTextArea.setBorder(new EtchedBorder(EtchedBorder.RAISED));
+		
+		this.setColor(new Color(255, 230, 153));
+		
+		this.editCompleatButton = new ButtonPanel(16, 16)
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int button)
+			{
+				toggleModeActive();
+			}
+		};
+		this.editCompleatButton.setVisible(false);
+		
+		super.layeredPane.add(this.editCompleatButton, new Integer(3));
+		super.gridViewPane.add(this.viewTextArea);
+	}
+	@Override
+	public void setData(DataBranch branch)
+	{
+		super.setData(branch);
+		Iterator<DataBranch> itr = branch.getLowerBranchIterator();
+		while(itr.hasNext())
+		{
+			DataBranch lowerBranch = itr.next();
+			switch(lowerBranch.getName())
+			{
+			case "color":
+				this.setColor(new Color(Integer.parseInt(lowerBranch.getData("red")), Integer.parseInt(lowerBranch.getData("green"))
+						, Integer.parseInt(lowerBranch.getData("blue"))));
+				break;
+			case "Description":
+				String text = new String();
+				Iterator<String> keyItr = lowerBranch.getDataKeySetIterator();
+				while(keyItr.hasNext())
+				{
+					text += lowerBranch.getData(keyItr.next()) + "\n";
+				}
+				this.viewTextArea.setText(text);
+				break;
+			}
+		}
+	}
+	@Override
+	public DataBranch getData(DataBranch branch)
+	{
+		
+		DataBranch description = new DataBranch("Description");
+		String[] text = this.viewTextArea.getText().split("\\r?\\n");
+		for(int i = 0; i < text.length; i++)
+		{
+			description.setData(Integer.toString(i), text[i]);
+		}
+		branch.addLowerBranch(description);
+
+		DataBranch colorBranch = new DataBranch("color");
+		colorBranch.setData("red", Integer.toString(this.color.getRed()));
+		colorBranch.setData("green", Integer.toString(this.color.getGreen()));
+		colorBranch.setData("blue", Integer.toString(this.color.getBlue()));
+		branch.addLowerBranch(colorBranch);
+		return super.getData(branch);
+	}
+	void toggleModeActive()
+	{
+		if(!this.isShow)
+		{
+			if(super.isPlacement())
+			{
+				this.grid.deSelectFocus();
+			}
+			this.editCompleatButton.setVisible(true);
+			this.editTextArea.setText(this.viewTextArea.getText());
+			super.gridViewPane.remove(this.viewTextArea);
+			super.gridViewPane.add(this.editTextArea);
+			super.layeredPane.repaint();
+			this.isShow = true;
+		}
+		else
+		{
+			this.editCompleatButton.setVisible(false);
+			this.viewTextArea.setText(this.editTextArea.getText());
+			this.gridViewPane.remove(this.editTextArea);
+			this.gridViewPane.add(this.viewTextArea);
+			this.layeredPane.repaint();
+			this.isShow = false;
+		}
+	}
+	
+	@Override
+	protected GridViewPane createViewPane()
+	{
+		return new ResizeableViewPane(this);
+	}
+	@Override
+	void put(int x, int y, Grid grid)
+	{
+		super.put(x, y, grid);
+		super.getGridViewPane().setLocation((super.getUIabsLocationX() + (grid.getGridSize().getNX() * Size.REGULAR_SIZE)) * super.core.getUI().getUISize().getmultiple() + Size.MARGIN
+				  , (super.getUIabsLocationY() + (grid.getGridSize().getNY() * Size.REGULAR_SIZE)) * super.core.getUI().getUISize().getmultiple() + Size.MARGIN);
+		super.sizeUpdate();
+	}
+	void setColor(Color color)
+	{
+		this.color = color;
+		super.gridViewPane.setBackground(this.color);
+		this.viewTextArea.setBackground(this.color);
+	}
+	Color getColor()
+	{
+		return this.color;
+	}
+	@Override
+	public void sizeUpdate()
+	{
+		super.sizeUpdate();
+		this.viewTextArea.setSize(super.layeredPane.getWidth() - 10, super.layeredPane.getHeight() - 10);
+		this.editTextArea.setSize(super.layeredPane.getWidth() - 10, super.layeredPane.getHeight() - 10);
+		this.editCompleatButton.setLocation(super.layeredPane.getWidth() - 24, super.layeredPane.getHeight() - 24);
 	}
 }
 abstract class LogicBlock extends GridMember
@@ -307,8 +484,11 @@ abstract class LogicBlock extends GridMember
 	@Override
 	void put(int absX, int absY, Grid grid)
 	{
+		absX = absX > 0 ? (absX + this.getUIabsSizeX() / 2) - 1 : absX - this.getUIabsSizeX() / 2;
+		absY = absY > 0 ? (absY + this.getUIabsSizeY() / 2) - 1 : absY - this.getUIabsSizeY() / 2;
 		absX = absX / Size.REGULAR_SIZE;
 		absY = absY / Size.REGULAR_SIZE;
+		
 		this.blocklocationX = absX;
 		this.blocklocationY = absY;
 		super.put((this.getBlockLocationX() * Size.REGULAR_SIZE), (this.getBlockLocationY() * Size.REGULAR_SIZE), grid);
@@ -320,6 +500,11 @@ abstract class LogicBlock extends GridMember
 	protected void remove()
 	{
 		super.remove();
+	}
+	@Override
+	void setSize(int x, int y, int w, int h)
+	{
+		//안전 위해 오버라이딩
 	}
 	public int getBlockLocationX()
 	{
@@ -984,14 +1169,13 @@ class GridViewPane extends JPanel implements SizeUpdate
 	GridViewPane(GridMember member)
 	{
 		this.member = member;
-		this.setBackground(new Color(235, 241, 222));
 		this.setLayout(null);
 	}
 	@Override
 	public void sizeUpdate()
 	{
 		this.setSize(this.member.getUIabsSizeX() * this.member.getCore().getUI().getUISize().getmultiple()
-				, this.member.getUIabsSizeX() * this.member.getCore().getUI().getUISize().getmultiple());
+				, this.member.getUIabsSizeY() * this.member.getCore().getUI().getUISize().getmultiple());
 	}
 }
 abstract class LogicViewPane extends GridViewPane
@@ -1041,6 +1225,112 @@ class StandardLogicViewPane extends LogicViewPane
 		g.drawImage(LogicCore.getResource().getImage(super.member.getCore().getUI().getUISize().getTag() + "_BLOCK_" + logicMember.getPower().getTag()), 0, 0, this);
 		super.paintChildren(g);
 	}
+}
+class ResizeableViewPane extends GridViewPane
+{
+	private static final long serialVersionUID = 1L;
+	private static final int DetectArea = 3;
+	private static final int DetectCorner = 10;
+
+	ResizeableViewPane(GridMember member)
+	{
+		super(member);
+		MouseAdapter adapter = new MouseAdapter()
+		{
+			private Rectangle signR = new Rectangle();
+			private boolean xEditFlag = false;
+			private boolean yEditFlag = false;
+			int multiple;
+			private JPanel rectViewPane = new JPanel()
+			{
+				private static final long serialVersionUID = 1L;
+				{
+					this.setOpaque(false);
+				}
+				@Override
+				public void paint(Graphics g)
+				{
+					
+					g.setColor(new Color(50, 50, 70, 200));
+					g.fillRect(0, 0, this.getWidth(), multiple * DetectArea);
+					g.fillRect(0, 0, multiple * DetectArea, this.getHeight());
+					g.fillRect(this.getWidth() - multiple * DetectArea, 0, multiple * DetectArea, this.getHeight());
+					g.fillRect(0, this.getHeight() - multiple * DetectArea,this.getWidth(), multiple * DetectArea);
+					super.paint(g);
+				}
+			};
+			@Override
+			public void mousePressed(MouseEvent arg0)
+			{
+				this.multiple = member.getCore().getUI().getUISize().getmultiple();
+				int mouseX = arg0.getX() != 0 ? (arg0.getX() / multiple) : 0;
+				int mouseY = arg0.getY() != 0 ? (arg0.getY() / multiple) : 0;
+				int absX = member.getUIabsSizeX();
+				int absY = member.getUIabsSizeY();
+				this.signR = member.getGridViewPane().getBounds();
+				this.rectViewPane.setBounds(this.signR);
+				member.getCore().getUI().getGridArea().getLayeredPane().add(this.rectViewPane, new Integer(4));
+				if(mouseX + DetectArea >= absX || mouseX <= DetectArea)
+				{
+					System.out.println("XEditDet");
+					this.xEditFlag = true;
+				}
+				if(mouseY + DetectArea >= absY || mouseY <= DetectArea)
+				{
+					System.out.println("YEditDet");
+					this.yEditFlag = true;
+				}
+				System.out.println(member.getGridViewPane().getBounds());
+			
+			}
+			@Override
+			public void mouseDragged(MouseEvent e)
+			{
+				Rectangle r = (Rectangle)this.signR.clone();
+				if(this.xEditFlag)
+				{
+					if(e.getX() > this.signR.width / 2)
+					{
+						r.setSize(this.signR.width + e.getX() - this.signR.width, this.signR.height);
+					}
+					else
+					{
+						r.setLocation(this.signR.x + e.getX(), this.signR.y);
+						r.setSize(this.signR.width - e.getX(), this.signR.height);
+					}
+					
+				}
+				if(this.yEditFlag)
+				{
+					if(e.getY() > this.signR.height / 2)
+					{
+						r.setSize(r.width, this.signR.height + e.getY() - this.signR.height);
+					}
+					else
+					{
+						r.setLocation(r.x, this.signR.y + e.getY());
+						r.setSize(r.width, this.signR.height - e.getY());
+					}
+				}
+				this.rectViewPane.setBounds(r);
+			}
+			@Override
+			public void mouseReleased(MouseEvent arg0)
+			{
+				SizeInfo gridSize = member.getGrid().getGridSize();
+				member.setSize(((this.rectViewPane.getX() - Size.MARGIN) / this.multiple) - (gridSize.getNX() * Size.REGULAR_SIZE)
+						, ((this.rectViewPane.getY() - Size.MARGIN) / this.multiple) - (gridSize.getNY() * Size.REGULAR_SIZE)
+						, this.rectViewPane.getWidth() / this.multiple, this.rectViewPane.getHeight() / this.multiple);
+				this.xEditFlag = false;
+				this.yEditFlag = false;
+				member.getCore().getUI().getGridArea().getLayeredPane().remove(this.rectViewPane);
+				member.getGrid().getGridPanel().repaint();
+			}
+		};
+		super.addMouseListener(adapter);
+		super.addMouseMotionListener(adapter);
+	}
+	
 }
 class WireViewPane extends LogicViewPane
 {
