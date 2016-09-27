@@ -123,7 +123,7 @@ public class TaskManager
 	}
 	TaskUnit setTask()
 	{
-		System.out.println("record");
+		System.out.println("");
 		if(this.focusUnit != null && this.focusUnit != this.getLastSnapShot())
 		{//작업이 걸려있을경우 삭제함
 			int removeIndex = this.snapShots.indexOf(this.focusUnit) + 1;
@@ -433,10 +433,15 @@ class PutMemberOnGrid extends Command
 	PutMemberOnGrid(Grid grid, GridMember member, int absX, int absY)
 	{
 		super("PutMemberonGrid", grid.getSession());
-		super.masterData.setData("CommandAbsX", Integer.toString(absX));
-		super.masterData.setData("CommandAbsY", Integer.toString(absY));
 		member.setUUID();
 		member.getData(super.masterData);
+		if(member instanceof LogicBlock)
+		{
+			absX = absX > 0 ? (absX + member.getUIabsSizeX() / 2) - 1 : absX - member.getUIabsSizeX() / 2;
+			absY = absY > 0 ? (absY + member.getUIabsSizeY() / 2) - 1 : absY - member.getUIabsSizeX() / 2;
+		}
+		super.masterData.setData("CommandAbsX", Integer.toString(absX));
+		super.masterData.setData("CommandAbsY", Integer.toString(absY));
 		LogicBlock block = grid.getLogicBlock(absX / Size.REGULAR_SIZE, absY / Size.REGULAR_SIZE);
 		if(block != null)
 		{
@@ -485,11 +490,11 @@ class RemoveMemberOnGrid extends Command
 				, new Integer(super.masterData.getData("UIabslocationX")), new Integer(super.masterData.getData("UIabslocationY")));
 	}
 }
-class SetLogicBlockIO extends Command
+class SetLogicBlockIO extends GridMemberCommand
 {
 	SetLogicBlockIO(LogicBlock block, Direction ext, Session session)
 	{
-		super("SetLogicBlockIO", session);
+		super("SetLogicBlockIO", session, block);
 		super.masterData.setData("Direction", ext.getTag());
 		super.masterData.setData("LogicBlock", block.getUUID().toString());
 		super.undoData.setData("IOStatus", block.getIOStatus(ext).toString());
@@ -503,16 +508,212 @@ class SetLogicBlockIO extends Command
 	@Override
 	public void redo()
 	{
-		this.getBlock().setIO(Direction.valueOf(super.masterData.getData("Direction")), IOStatus.valueOf(super.redoData.getData("IOStatus")));
+		((LogicBlock)super.getMember()).setIO(Direction.valueOf(super.masterData.getData("Direction")), IOStatus.valueOf(super.redoData.getData("IOStatus")));
 	}
 	@Override
 	public void undo()
 	{
-		this.getBlock().setIO(Direction.valueOf(super.masterData.getData("Direction")), IOStatus.valueOf(super.undoData.getData("IOStatus")));
+		((LogicBlock)super.getMember()).setIO(Direction.valueOf(super.masterData.getData("Direction")), IOStatus.valueOf(super.undoData.getData("IOStatus")));
 	}
-	private LogicBlock getBlock()
+}
+class SetMemberColor extends GridMemberCommand
+{
+	SetMemberColor(GridMember member, String tag, Color color, Session session)
 	{
-		return (LogicBlock)super.session.getGrid().getMember(UUID.fromString(super.masterData.getData("LogicBlock")));
+		super("SetMemberColor", session, member);
+		ColorSet colorMember = ((ColorSet)member);
+		super.masterData.setData("tag", tag);
+		super.undoData.setData("ColorR", Integer.toString(colorMember.getColor(tag).getRed()));
+		super.undoData.setData("ColorG", Integer.toString(colorMember.getColor(tag).getGreen()));
+		super.undoData.setData("ColorB", Integer.toString(colorMember.getColor(tag).getBlue()));
+		colorMember.setColor(tag, color);
+		super.redoData.setData("ColorR", Integer.toString(color.getRed()));
+		super.redoData.setData("ColorG", Integer.toString(color.getGreen()));
+		super.redoData.setData("ColorB", Integer.toString(color.getBlue()));
+	}
+	SetMemberColor(DataBranch branch, Session session)
+	{
+		super(branch, session);
+	}
+	@Override
+	public void redo()
+	{
+		this.setColor(super.redoData);
+	}
+	@Override
+	public void undo()
+	{
+		this.setColor(super.undoData);
+	}
+	private void setColor(DataBranch branch)
+	{
+		int r = Integer.parseInt(branch.getData("ColorR"));
+		int g = Integer.parseInt(branch.getData("ColorG"));
+		int b = Integer.parseInt(branch.getData("ColorB"));
+		((ColorSet)super.getMember()).setColor(super.masterData.getData("tag"), new Color(r, g, b));
+	}
+}
+class SetMemberSize extends GridMemberCommand
+{
+	SetMemberSize(GridMember member, int x, int y, int w, int h, Session session)
+	{
+		super("SetMemberSize", session, member);
+		this.putSizeInBranch(super.undoData, (SizeSet)member);
+		((SizeSet)member).setSize(x, y, w, h);
+		this.putSizeInBranch(super.redoData, (SizeSet)member);
+	}
+	SetMemberSize(DataBranch branch, Session session)
+	{
+		super(branch, session);
+	}
+	@Override
+	void redo()
+	{
+		this.setSizeInBranch(this.redoData);
+	}
+	@Override
+	void undo()
+	{
+		this.setSizeInBranch(this.undoData);
+	}
+	private void putSizeInBranch(DataBranch branch, SizeSet member)
+	{
+		branch.setData("X", Integer.toString(member.getUIabsLocationX()));
+		branch.setData("Y", Integer.toString(member.getUIabsLocationY()));
+		branch.setData("W", Integer.toString(member.getUIabsSizeX()));
+		branch.setData("H", Integer.toString(member.getUIabsSizeY()));
+	}
+	private void setSizeInBranch(DataBranch branch)
+	{
+		int[] arr = new int[4];
+		arr[0] = Integer.parseInt(branch.getData("X"));
+		arr[1] = Integer.parseInt(branch.getData("Y"));
+		arr[2] = Integer.parseInt(branch.getData("W"));
+		arr[3] = Integer.parseInt(branch.getData("H"));
+		((SizeSet)super.getMember()).setSize(arr[0], arr[1], arr[2], arr[3]);
+	}
+}
+class SetTagDescription extends GridMemberCommand
+{
+	SetTagDescription(Tag member, String description, Session session)
+	{
+		super("SetTagDescription", session, member);
+		super.undoData.addLowerBranch(this.getDescriptionBranch(member));
+		member.setDescription(description);
+		super.redoData.addLowerBranch(this.getDescriptionBranch(member));
+	} 
+	SetTagDescription(DataBranch branch, Session session)
+	{
+		super(branch, session);
+	}
+	@Override
+	void redo()
+	{
+		this.setMemberDescription(super.redoData);
+	}
+	@Override
+	void undo()
+	{
+		this.setMemberDescription(super.undoData);
+	}
+	private void setMemberDescription(DataBranch branch)
+	{
+		Iterator<DataBranch> itr = branch.getLowerBranchIterator();
+		while(itr.hasNext())
+		{
+			DataBranch lowerBranch = itr.next();
+			switch(lowerBranch.getName())
+			{
+			case "Description":
+				String text = new String();
+				Iterator<String> keyItr = lowerBranch.getDataKeySetIterator();
+				while(keyItr.hasNext())
+				{
+					System.out.println("load " + text);
+					text += lowerBranch.getData(keyItr.next()) + "\n";
+				}
+				this.getTag().setDescription(text);
+				break;
+			}
+		}
+	}
+	private DataBranch getDescriptionBranch(Tag member)
+	{
+		DataBranch description = new DataBranch("Description");
+		System.out.println(member.getDescription() + "read");
+		String[] text = member.getDescription().split("\\r?\\n");
+		for(int i = 0; i < text.length; i++)
+		{
+			System.out.println(text[i]);
+			description.setData(Integer.toString(i), text[i]);
+		}
+		return description;
+	}
+	private Tag getTag()
+	{
+		return (Tag)super.session.getGrid().getMember(UUID.fromString(super.masterData.getData("GridMember")));
+	}
+}
+class WireTypeEdit extends GridMemberCommand
+{
+	WireTypeEdit(Wire member, WireType type, Session session)
+	{
+		super("WireTypeEdit", session, member);
+		this.getData(type, super.undoData);
+		member.setWireType(type);
+		this.getData(type, super.redoData);
+	}
+	WireTypeEdit(DataBranch arg0, Session arg1)
+	{
+		super(arg0, arg1);
+	}
+	@Override
+	void redo()
+	{
+		this.setData(super.redoData);
+	}
+	@Override
+	void undo()
+	{
+		this.setData(super.undoData);
+	}
+	private void setData(DataBranch branch)
+	{
+		Wire wire = ((Wire)super.getMember());
+		for(Direction ext : Direction.values())
+		{
+			wire.setIO(ext, IOStatus.valueOf(branch.getData(ext.toString())));
+			System.out.println(branch.getData(ext.toString()) + " data");
+		}
+		wire.setWireType(WireType.valueOf(branch.getData("Type")));
+	}
+	private void getData(WireType type, DataBranch branch)
+	{
+		for(Direction ext : Direction.values())
+		{
+			branch.setData(ext.toString(), ((Wire)super.getMember()).getIOStatus(ext).toString());
+		}
+		branch.setData("Type", ((Wire)super.getMember()).getType().toString());
+		System.out.println("type " + ((Wire)super.getMember()).getType().toString());
+	}
+}
+abstract class GridMemberCommand extends Command
+{
+	protected final UUID memberID;
+	GridMemberCommand(String name, Session session, GridMember member)
+	{
+		super(name, session);
+		this.memberID = member.getUUID();
+		super.masterData.setData("GridMember", member.getUUID().toString());
+	}
+	GridMemberCommand(DataBranch branch, Session session)
+	{
+		super(branch, session);
+		this.memberID = UUID.fromString(super.masterData.getData("GridMember"));
+	}
+	protected GridMember getMember()
+	{
+		return (GridMember)super.session.getGrid().getMember(UUID.fromString(super.masterData.getData("GridMember")));
 	}
 }
 abstract class Command

@@ -23,7 +23,6 @@ public class TaskOperator
 	private GraphViewPanel graphPanel;
 	
 	private ArrayList<LogicBlock> reserveTask = new ArrayList<LogicBlock>();
-	private HashMap<LogicBlock, HashMap<Direction, Power>> check = new HashMap<LogicBlock, HashMap<Direction, Power>>();
 	
 	private boolean task;
 	
@@ -75,14 +74,6 @@ public class TaskOperator
 				block.endTimer();
 			}
 		}
-		HashMap<LogicBlock, HashMap<Direction, Power>> temp1 = (HashMap<LogicBlock, HashMap<Direction, Power>>) this.check.clone();
-		for(LogicBlock block : temp1.keySet())
-		{
-			if(block.getGrid() == grid)
-			{
-				this.check.remove(block);
-			}
-		}
 		if(this.task)
 		{
 			this.toggleTask();
@@ -99,39 +90,12 @@ public class TaskOperator
 		}
 	}
 	void checkAroundAndReserveTask(LogicBlock block)
-	{//최적화 필요	
+	{//최적화 필요	TODO 버그 있음 재귀방식으로 탐색후 정리하는 방식으로 변경 필요
+		
 		if(block.isPlacement())
 		{
-			for(Direction ext : Direction.values())
-			{
-				if(block instanceof LogicWire)
-				{
-					this.wireTask((LogicWire)block, ext, false);
-				}
-				LogicBlock extBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX(), block.getBlockLocationY() + ext.getWayY());
-				if(extBlock != null)
-				{
-					if(extBlock instanceof LogicWire)
-					{
-						LogicWire wire = (LogicWire)extBlock;
-						if(wire.isWireValid(ext.getAcross()))
-						{
-							this.wireTask(wire, ext.getAcross(), false);
-						}
-					}
-					if(block.getIOStatus(ext) == IOStatus.RECEIV)
-					{
-						if(extBlock.getIOStatus(ext.getAcross()) == IOStatus.TRANCE && block.getIOPower(ext) != extBlock.getIOPower(ext.getAcross()))
-						{
-							block.setIOResivePower(ext, extBlock.getIOPower(ext.getAcross()));
-						}
-						else if(extBlock.getIOStatus(ext.getAcross()) != IOStatus.TRANCE)
-						{
-							block.setIOResivePower(ext, Power.OFF);
-						}
-					}
-				}
-			}
+			System.out.println("checkRES");
+			checkReserveTask(block, new ArrayList<LogicBlock>());
 		}
 		for(Direction ext : Direction.values())
 		{
@@ -139,66 +103,53 @@ public class TaskOperator
 					, block.getBlockLocationY() + ext.getWayY()) : null;
 			if(extBlock != null)
 			{
-				if(extBlock instanceof LogicWire)
-				{
-					LogicWire wire = (LogicWire)extBlock;
-					if(wire.isWireValid(ext.getAcross()))
-					{
-						if(extBlock.getIOPower(ext.getAcross()) !=  block.getIOPower(ext))
-						{
-							this.checkHashPut(extBlock, ext.getAcross(), block.getIOPower(ext));
-						}
-						else
-						{
-							this.checkHashRemove(extBlock, ext.getAcross());
-						}
-					}
-				}
-				if(block.getIOStatus(ext) == IOStatus.TRANCE)
-				{
-					if(extBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV)
-					{
-						if(extBlock.getIOPower(ext.getAcross()) !=  block.getIOPower(ext))
-						{
-							this.checkHashPut(extBlock, ext.getAcross(), block.getIOPower(ext));
-						}
-						else
-						{
-							this.checkHashRemove(extBlock, ext.getAcross());
-						}
-					}
-				}
-				else
-				{
-					this.checkHashPut(extBlock, ext.getAcross(), Power.OFF);
-				}
-				if(!block.isPlacement())
-				{
-					this.checkHashPut(extBlock, ext.getAcross(), Power.OFF);
-				}
+				System.out.println("check " + ext);
+				checkReserveTask(extBlock, new ArrayList<LogicBlock>());
 			}
 		}
 	}
-	private void checkHashPut(LogicBlock block, Direction ext, Power power)
+	@SuppressWarnings("unchecked")
+	private void checkReserveTask(LogicBlock block, ArrayList<LogicBlock> checkList)
 	{
-		if(!check.containsKey(block))
+		boolean copyTaskFlag = false;
+		for(Direction ext : Direction.values())
 		{
-			this.check.put(block, new HashMap<Direction, Power>());
-		}
-		this.check.get(block).put(ext, power);
-	}
-	private void checkHashRemove(LogicBlock block, Direction ext)
-	{
-		if(check.containsKey(block))
-		{
-			if(this.check.get(block).containsKey(ext))
+			LogicBlock outputExtBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX()
+					, block.getBlockLocationY() + ext.getWayY());
+			IOStatus myIO = block.getIOStatus(ext);
+			Power myPower = myIO == IOStatus.TRANCE ? block.getIOPower(ext) : Power.OFF;
+			if(outputExtBlock != null)
 			{
-				this.check.get(block).remove(ext);
+				System.out.println("조건1pass");
+				IOStatus extIO = outputExtBlock.getIOStatus(ext.getAcross());
+				if(extIO == IOStatus.RECEIV && outputExtBlock.getIOPower(ext.getAcross()) != myPower)
+				{
+					System.out.println("핰");
+					outputExtBlock.setIOResivePower(ext.getAcross(), myPower);
+					if(!checkList.contains(outputExtBlock))
+					{
+						checkList.add(outputExtBlock);
+						checkReserveTask(outputExtBlock, copyTaskFlag ? (ArrayList<LogicBlock>) checkList.clone() : checkList);
+						copyTaskFlag = true;
+					}
+					else
+					{
+						System.out.println("회로가 통구이가 되었습니다" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
+					}
+				}
+				if(outputExtBlock instanceof LogicWire && !checkList.contains(outputExtBlock))
+				{
+					wireTask((LogicWire)outputExtBlock, ext, checkList, false);
+				}
 			}
-			if(this.check.get(block).size() < 1)
+			else
 			{
-				this.check.remove(block);
-			}	
+				if(myIO == IOStatus.RECEIV)
+				{
+					System.out.println("걸렸으므로");
+					block.setIOResivePower(ext, Power.OFF);
+				}
+			}
 		}
 	}
 	void removeReserveTask(GridMember member)
@@ -212,15 +163,6 @@ public class TaskOperator
 	{
 		boolean graphFlag = false;
 		long taskStartTime = System.currentTimeMillis();
-		for(LogicBlock member : this.check.keySet())
-		{
-			for(Direction ext : this.check.get(member).keySet())
-			{
-				member.setIOResivePower(ext, this.check.get(member).get(ext));
-			}
-			this.addReserveTask(member);
-		}
-		this.check = new HashMap<LogicBlock, HashMap<Direction, Power>>();
 		@SuppressWarnings("unchecked")
 		ArrayList<LogicBlock> taskTemp = (ArrayList<LogicBlock>)this.reserveTask.clone(); //ConcurrentModificationException 방지
 		if(this.reserveTask.size() != 0)
@@ -242,46 +184,49 @@ public class TaskOperator
 	private void recursiveTask(LogicBlock block, ArrayList<LogicBlock> taskList)
 	{
 		boolean copyTaskFlag = false;
-		for(Direction ext : block.getIOTrance())
+		if(block.getGrid() != null)
 		{
-			LogicBlock outputExtBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX()
-					, block.getBlockLocationY() + ext.getWayY());
-	
-			if(outputExtBlock != null)
+			for(Direction ext : block.getIOTrance())
 			{
-				if(outputExtBlock instanceof LogicWire)
+				LogicBlock outputExtBlock = block.getGrid().getLogicBlock(block.getBlockLocationX() + ext.getWayX()
+						, block.getBlockLocationY() + ext.getWayY());
+				
+				if(outputExtBlock != null)
 				{
-					LogicWire wire = (LogicWire)outputExtBlock;
-					if(wire.isWireValid(ext.getAcross()) && wire.getIOPower(ext.getAcross()) != block.getIOPower(ext))
+					if(outputExtBlock instanceof LogicWire)
 					{
-						this.wireTask(wire, ext.getAcross(), true);
-					}
-				}
-				else if(outputExtBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV
-					&& block.getPower() != outputExtBlock.getIOPower(ext.getAcross()))
-				{
-					Power power = outputExtBlock.getPower();
-					System.out.println("isResive" + power);
-					outputExtBlock.setIOResivePower(ext.getAcross(), block.getPower());
-					if(power != outputExtBlock.getPower())
-					{
-						System.out.println("Task");
-						if(!taskList.contains(outputExtBlock))
+						LogicWire wire = (LogicWire)outputExtBlock;
+						if(wire.isWireValid(ext.getAcross()) && wire.getIOPower(ext.getAcross()) != block.getIOPower(ext))
 						{
-							taskList.add(outputExtBlock);
-							recursiveTask(outputExtBlock, copyTaskFlag ? (ArrayList<LogicBlock>) taskList.clone() : taskList);
-							copyTaskFlag = true;
+							this.wireTask(wire, ext.getAcross(), taskList, true);
 						}
-						else
+					}
+					else if(outputExtBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV
+						&& block.getPower() != outputExtBlock.getIOPower(ext.getAcross()))
+					{
+						Power power = outputExtBlock.getPower();
+						System.out.println("isResive" + power);
+						outputExtBlock.setIOResivePower(ext.getAcross(), block.getPower());
+						if(power != outputExtBlock.getPower())
 						{
-							System.out.println("회로가 통구이가 되었습니다" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
+							System.out.println("Task");
+							if(!taskList.contains(outputExtBlock))
+							{
+								taskList.add(outputExtBlock);
+								recursiveTask(outputExtBlock, copyTaskFlag ? (ArrayList<LogicBlock>) taskList.clone() : taskList);
+								copyTaskFlag = true;
+							}
+							else
+							{
+								System.out.println("회로가 통구이가 되었습니다1" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
+							}
 						}
 					}
 				}
 			}
 		}
 	}
-	private void wireTask(LogicWire wire, Direction ext, boolean memberTask)
+	private void wireTask(LogicWire wire, Direction ext, ArrayList<LogicBlock> taskList, boolean task)
 	{//와이어는 다른 연산방식 필요
 		LinkedHashMap<LogicWire, ArrayList<Direction>> linkedWire = new LinkedHashMap<LogicWire, ArrayList<Direction>>();
 		LinkedHashMap<LogicBlock, ArrayList<Direction>> linkedBlock = new LinkedHashMap<LogicBlock, ArrayList<Direction>>();
@@ -298,26 +243,29 @@ public class TaskOperator
 				System.out.println("wireTask연산");
 			}
 		}
-		if(memberTask)
+		for(LogicBlock editBlock : linkedBlock.keySet())
 		{
-			for(LogicBlock editBlock : linkedBlock.keySet())
+			for(Direction editExt : linkedBlock.get(editBlock))
 			{
-				for(Direction editExt : linkedBlock.get(editBlock))
+				if(!taskList.contains(editBlock))
 				{
 					editBlock.setIOResivePower(editExt, power);
+					taskList.add(editBlock);
+					if(task)
+					{
+						this.recursiveTask(editBlock, taskList);
+					}
+					else
+					{
+						this.checkReserveTask(editBlock, taskList);
+					}
 				}
-				this.recursiveTask(editBlock, new ArrayList<LogicBlock>());
-			}
-		}
-		else
-		{
-			for(LogicBlock editBlock : linkedBlock.keySet())
-			{
-				for(Direction editExt : linkedBlock.get(editBlock))
+				else
 				{
-					this.checkHashPut(editBlock, editExt, power);
+					System.out.println("회로가 통구이가 되었습니다2" + editBlock.getBlockLocationX() + " " + editBlock.getBlockLocationY());
 				}
 			}
+
 		}
 	}
 	private Power recursiveWireTask(LogicWire wire, LinkedHashMap<LogicWire, ArrayList<Direction>> linkedWire

@@ -26,9 +26,18 @@ public class TemplateManager
 		this.templatePanel = new JPanel();
 		this.templatePanel.setLayout(null);
 	}
-	TemplateManager(DataBranch data)
+	TemplateManager(Session session, DataBranch data)
 	{
-		
+		this(session);
+		Iterator<DataBranch> itr = data.getLowerBranchIterator();
+		while(itr.hasNext())
+		{
+			DataBranch branch = itr.next();
+			if(branch.getName().equals("ClipBoard"))
+			{
+				this.addTemplate(branch);
+			}
+		}
 	}
 	private void sortManagerPane()
 	{
@@ -40,17 +49,31 @@ public class TemplateManager
 		this.templatePanel.repaint();
 		this.session.getCore().getUI().getTemplatePanel().updateUI();
 	}
-	void getData(DataBranch data)
+	DataBranch getData()
 	{
-		
+		DataBranch data = new DataBranch("TemplateManager");
+		for(Template t : templates)
+		{
+			data.addLowerBranch(t.getData());
+		}
+		return data;
 	}
-	void addTemplate(File file)
+	void addTemplates(File selectFile)
 	{
-		
+		Template temp = new Template(this.session.getCore(), null);
+		this.templates.add(temp);
+		this.templatePanel.add(temp);
+		this.sortManagerPane();
+	}
+	void addTemplate(DataBranch data)
+	{
+		Template temp = new Template(this.session.getCore(), data);
+		this.templates.add(temp);
+		this.templatePanel.add(temp);
+		this.sortManagerPane();
 	}
 	void addTemplate()
 	{
-		System.out.println("call");
 		DataBranch data = ClipBoardPanel.clipBoard;
 		data.setData("label", ClipBoardPanel.getTag());
 		Template temp = new Template(this.session.getCore(), data);

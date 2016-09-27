@@ -67,6 +67,7 @@ public class SessionManager
 	{
 		if(this.focusSession != null)
 		{
+			this.focusSession.getGrid().deSelectAll();
 			this.focusSession.deFocus();
 		}
 		if(session != null)
@@ -232,10 +233,14 @@ class Session
 			case "TaskManager":
 				this.task = new TaskManager(this, branch);
 				break;
+			case "TemplateManager":
+				this.template = new TemplateManager(this, branch);
+				break;
 			}
 		}
 		this.core.getUI().getGridArea().setGrid(this.grid);
 		this.core.getUI().getTaskManagerPanel().setManager(this.task);
+		this.core.getUI().getTemplatePanel().setManager(this.template);
 	}
 	private void recursiveDataLoad(BufferedReader reader, DataBranch data) throws IOException
 	{
@@ -277,6 +282,7 @@ class Session
 		tree.addLowerBranch(this.getData());
 		tree.addLowerBranch(this.getGrid().getData());
 		tree.addLowerBranch(this.getTaskManager().getData());
+		tree.addLowerBranch(this.template.getData());
 		try
 		{
 			BufferedWriter out = new BufferedWriter(new FileWriter(file, false));

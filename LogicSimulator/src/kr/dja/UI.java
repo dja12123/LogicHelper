@@ -1703,7 +1703,7 @@ class ManySelectEditPanel extends JPanel
 			@Override
 			void pressed(int button)
 			{
-				DataBranch tree = new DataBranch("ManySelectClipBoard");
+				DataBranch tree = new DataBranch("ClipBoard");
 				for(GridMember member : selectMembers)
 				{
 					DataBranch branch = new DataBranch("GridMember");
@@ -1994,7 +1994,15 @@ class TagEditPane extends EditPane
 			@Override
 			void pressed(int button)
 			{
-				tag.setColor(colorSelector.getColor());
+				if(member.isPlacement())
+				{
+					TaskUnit task = member.getGrid().getSession().getTaskManager().setTask();
+					task.addCommand(new SetMemberColor(tag, "BackGround", colorSelector.getColor(), member.getCore().getSession().getFocusSession()));
+				}
+				else
+				{
+					((ColorSet)member).setColor("BackGround", colorSelector.getColor());
+				}
 			}
 		};
 		this.add(this.colorSelector);
@@ -2006,7 +2014,7 @@ class TagEditPane extends EditPane
 	{
 		super.setInfo(member);
 		this.tag = (Tag)member;
-		colorSelector.setColor(this.tag.getColor());
+		this.colorSelector.setColor(this.tag.getColor("BackGround"));
 	}
 }
 class LogicTREditPane extends EditPane
@@ -2189,7 +2197,15 @@ class WireEditPane extends LogicTREditPane
 		@Override
 		void pressed(int mouse)
 		{
-			wire.setWireType(type);
+			if(wire.isPlacement())
+			{
+				TaskUnit task = wire.getGrid().getSession().getTaskManager().setTask();
+				task.addCommand(new WireTypeEdit(wire, this.type, wire.getGrid().getSession()));
+			}
+			else
+			{
+				wire.setWireType(type);
+			}
 			editViewPanel.repaint();
 			for(IOControlButton io : IOEditButton)
 			{
@@ -2848,7 +2864,7 @@ class FileLoadPanel extends FileManagerWindow
 					Session focus = core.getSession().getFocusSession();
 					if(tempLoad.isSelected())
 					{
-						focus.getTemplateManager().addTemplate(selectFile);
+						focus.getTemplateManager().addTemplates(selectFile);
 					}
 					else
 					{
