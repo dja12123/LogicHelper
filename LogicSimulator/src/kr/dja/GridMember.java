@@ -146,7 +146,6 @@ public abstract class GridMember implements SizeUpdate
 	BufferedImage getSnapShot()
 	{
 		this.sizeUpdate();
-		this.gridViewPane.repaint();
 		BufferedImage img = new BufferedImage(this.gridViewPane.getWidth(), this.gridViewPane.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		this.gridViewPane.printAll(img.getGraphics());
 		return img;
@@ -503,6 +502,8 @@ abstract class LogicBlock extends GridMember
 	private int timer = 0;
 	private boolean active = true;
 	private JPanel disableView;
+	private JPanel iconPanel;
+	private JLabel textLabel;
 	
 	protected LogicBlock(LogicCore core, String name)
 	{
@@ -526,6 +527,42 @@ abstract class LogicBlock extends GridMember
 			}
 		};
 		this.disableView.setOpaque(false);
+		
+		this.iconPanel = new JPanel()
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void paint(Graphics g)
+			{
+				BufferedImage paintImage = LogicCore.getResource().getImage(core.getUI().getUISize().getTag() + "_" + LogicBlock.this.getName());
+				if(paintImage != null)
+				{
+					g.drawImage(paintImage, 0, 0, this);
+				}
+			}
+		};
+		this.iconPanel.setOpaque(false);
+		this.iconPanel.setLocation(0, 0);
+		
+		this.textLabel = new JLabel(this.name);
+		this.textLabel.setVerticalAlignment(JTextField.CENTER);
+		this.textLabel.setHorizontalAlignment(JTextField.CENTER);
+		this.textLabel.setLocation(0, 0);
+	}
+	void updateViewMode()
+	{
+		if(this.core.getUI().getView() == ViewMode.SIGN)
+		{
+			this.gridViewPane.remove(this.textLabel);
+			this.gridViewPane.add(this.iconPanel);
+		}
+		else if(this.core.getUI().getView() == ViewMode.TEXT)
+		{
+			this.gridViewPane.remove(this.iconPanel);
+			this.gridViewPane.add(this.textLabel);
+		}
+		super.layeredPane.repaint();
 	}
 	@Override
 	protected GridViewPane createViewPane()
@@ -760,6 +797,10 @@ abstract class LogicBlock extends GridMember
 	public void sizeUpdate()
 	{
 		super.sizeUpdate();
+		this.iconPanel.setSize(super.gridViewPane.getWidth(), super.gridViewPane.getHeight());
+		this.textLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont((float)(12 * super.core.getUI().getUISize().getmultiple())));
+		this.textLabel.setSize(super.gridViewPane.getWidth(), super.gridViewPane.getHeight());
+		this.updateViewMode();
 		this.disableView.setLocation(super.gridViewPane.getX(), super.gridViewPane.getY());
 		this.disableView.setSize(super.gridViewPane.getWidth(), super.gridViewPane.getHeight());
 	}
@@ -781,7 +822,7 @@ interface LogicWire
 interface TimeSetter
 {
 	void setTime(String tag, int time);
-	int getTime();
+	int getTime(String tag);
 }
 class Wire extends LogicBlock implements LogicWire
 {
@@ -794,6 +835,10 @@ class Wire extends LogicBlock implements LogicWire
 		{
 			super.io.get(ext).setImgTag("WIRE");
 		}
+	}
+	@Override
+	void updateViewMode()
+	{
 	}
 	@Override
 	protected GridViewPane createViewPane()
@@ -1109,21 +1154,146 @@ class XNOR extends LogicBlock
 		super.setPowerStatus(powerStatus);
 	}
 }
+class Buffer extends LogicBlock implements TimeSetter
+{
+	private int waitTime = 0;
+	private int maintainTime = 1;
+	private boolean charge = false;
+	private int chargeCount = 0;
+	private int maintainCount = 0;
+	private JLabel timeLabel = new JLabel();
+	protected Buffer(LogicCore core)
+	{
+		super(core, "BUF");
+		super.layeredPane.add(this.timeLabel, new Integer(2));
+		this.timeLabel.setVerticalAlignment(JTextField.CENTER);
+		this.timeLabel.setHorizontalAlignment(JTextField.CENTER);
+	}
+	@Override
+	void calculate()
+	{
+		boolean resiveOn = false;
+		for(Direction ext : Direction.values())
+		{
+			if(super.getIOStatus(ext) == IOStatus.RECEIV && super.getIOPower(ext).getBool())
+			{
+				resiveOn = true;
+			}
+		}
+		if(resiveOn)
+		{
+			if(this.charge || this.chargeCount >= this.waitTime)
+			{
+				this.chargeCount = 0;
+				this.charge = true;
+				this.maintainCount = this.maintainTime;
+				this.timeLabel.setForeground(Color.black);
+				this.timeLabel.setText(Integer.toString(this.maintainCount));
+				super.setPowerStatus(Power.ON);
+			}
+			else
+			{
+				super.core.getTaskOperator().addReserveTask(this);
+				this.chargeCount++;
+				this.timeLabel.setForeground(Color.red);
+				this.timeLabel.setText(Integer.toString(this.chargeCount));
+			}
+		}
+		else
+		{
+			if(this.maintainCount > 0)
+			{
+				super.core.getTaskOperator().addReserveTask(this);
+				this.timeLabel.setForeground(Color.black);
+				this.timeLabel.setText(Integer.toString(this.maintainCount));
+				this.maintainCount--;
+			}
+			else
+			{
+				this.charge = false;
+				this.chargeCount = 0;
+				super.setPowerStatus(Power.OFF);
+				this.timeLabel.setText("");
+			}
+		}
+	}
+	@Override
+	protected void operatorPing()
+	{
+		this.calculate();
+	}
+	@Override
+	public void setData(DataBranch branch)
+	{
+		super.setData(branch);
+		this.waitTime = new Integer(branch.getData("waitTime"));
+		this.maintainTime = new Integer(branch.getData("maintainTime"));
+		this.charge = new Boolean(branch.getData("charge"));
+		this.chargeCount = new Integer(branch.getData("chargeCount"));
+		this.maintainCount = new Integer(branch.getData("maintainCount"));
+	}
+	@Override
+	public DataBranch getData(DataBranch branch)
+	{
+		super.getData(branch);
+		branch.setData("waitTime", Integer.toString(this.waitTime));
+		branch.setData("maintainTime", Integer.toString(this.maintainTime));
+		branch.setData("charge", Boolean.toString(this.charge));
+		branch.setData("chargeCount", Integer.toString(this.chargeCount));
+		branch.setData("maintainCount", Integer.toString(this.maintainCount));
+		return branch;
+	}
+	@Override
+	public void setTime(String tag, int time)
+	{
+		if(tag.equals("waitTime"))
+		{
+			this.waitTime = time;
+		}
+		else if(tag.equals("maintainTime"))
+		{
+			this.maintainTime = time;
+		}
+	}
+	@Override
+	public int getTime(String tag)
+	{
+		if(tag.equals("waitTime"))
+		{
+			return this.waitTime;
+		}
+		else if(tag.equals("maintainTime"))
+		{
+			return this.maintainTime;
+		}
+		return 0;
+	}
+	@Override
+	public void sizeUpdate()
+	{
+		super.sizeUpdate();
+		this.timeLabel.setFont(LogicCore.RES.PIXEL_FONT.deriveFont((float)(12 * super.core.getUI().getUISize().getmultiple())));
+		this.timeLabel.setBounds((7 * super.core.getUI().getUISize().getmultiple()) + super.gridViewPane.getX(), (7 * super.core.getUI().getUISize().getmultiple()) + super.gridViewPane.getY()
+				, 16 * super.core.getUI().getUISize().getmultiple(), 16 * super.core.getUI().getUISize().getmultiple());
+	}
+}
 class Button extends LogicBlock implements TimeSetter
 {
-	private TimerButton btn;
-	private JLabel timeLabel;
+	private TimerButton btn = new TimerButton();
+	private JLabel timeLabel = new JLabel();
 	private int basicTime = 1;
 	
 	Button(LogicCore core)
 	{
 		super(core, "BTN");
-		this.btn = new TimerButton();
-		this.timeLabel = new JLabel();
 		this.timeLabel.setVerticalAlignment(JTextField.CENTER);
 		this.timeLabel.setHorizontalAlignment(JTextField.CENTER);
 		super.layeredPane.add(this.timeLabel, new Integer(2));
 		super.gridViewPane.add(this.btn);
+	}
+	@Override
+	void updateViewMode()
+	{
 	}
 	@Override
 	public void setData(DataBranch branch)
@@ -1153,7 +1323,7 @@ class Button extends LogicBlock implements TimeSetter
 	}
 	void resetTimer()
 	{
-		super.setTimer(basicTime);
+		super.setTimer(this.basicTime);
 		super.core.getTaskOperator().addReserveTask(this);
 		super.setPowerStatus(Power.ON);
 		this.timeLabel.setText(Integer.toString(super.getTimer()));
@@ -1169,33 +1339,20 @@ class Button extends LogicBlock implements TimeSetter
 	{
 		super.endTimer();
 		this.timeLabel.setText("");
-		this.setPowerStatus(Power.OFF);
+		super.setPowerStatus(Power.OFF);
 		this.btn.imageSet();
 	}
 	@Override
 	public void sizeUpdate()
 	{
 		super.sizeUpdate();
-		if(this.timeLabel == null)
-		{
-			this.timeLabel = new JLabel();
-		}
-		else
-		{
-			this.timeLabel.setFont(LogicCore.RES.PIXEL_FONT.deriveFont((float)(12 * super.core.getUI().getUISize().getmultiple())));
-			this.timeLabel.setBounds((7 * super.core.getUI().getUISize().getmultiple()) + super.gridViewPane.getX(), (7 * super.core.getUI().getUISize().getmultiple()) + super.gridViewPane.getY()
-					, 16 * super.core.getUI().getUISize().getmultiple(), 16 * super.core.getUI().getUISize().getmultiple());
-		}
-		if(this.btn == null)
-		{
-			this.btn = new TimerButton();
-		}
-		else
-		{
-			this.btn.setBounds(7 * super.core.getUI().getUISize().getmultiple(), 7 * super.core.getUI().getUISize().getmultiple()
-					, 16 * super.core.getUI().getUISize().getmultiple(), 16 * super.core.getUI().getUISize().getmultiple());
-			this.btn.imageSet();
-		}
+		this.timeLabel.setFont(LogicCore.RES.PIXEL_FONT.deriveFont((float)(12 * super.core.getUI().getUISize().getmultiple())));
+		this.timeLabel.setBounds((7 * super.core.getUI().getUISize().getmultiple()) + super.gridViewPane.getX(), (7 * super.core.getUI().getUISize().getmultiple()) + super.gridViewPane.getY()
+				, 16 * super.core.getUI().getUISize().getmultiple(), 16 * super.core.getUI().getUISize().getmultiple());
+		
+		this.btn.setBounds(7 * super.core.getUI().getUISize().getmultiple(), 7 * super.core.getUI().getUISize().getmultiple()
+				, 16 * super.core.getUI().getUISize().getmultiple(), 16 * super.core.getUI().getUISize().getmultiple());
+		this.btn.imageSet();
 	}
 	@Override
 	public void setTime(String tag, int time)
@@ -1203,7 +1360,7 @@ class Button extends LogicBlock implements TimeSetter
 		 this.basicTime = time;
 	}
 	@Override
-	public int getTime()
+	public int getTime(String tag)
 	{
 		return this.basicTime;
 	}
@@ -1229,6 +1386,79 @@ class Button extends LogicBlock implements TimeSetter
 			super.setBasicPressImage(LogicCore.getResource().getImage(core.getUI().getUISize().getTag() + "_BUTTON_PRESS_" + power.getTag()));
 			super.imageSet();
 		}
+	}
+}
+class LED extends LogicBlock implements ColorSet
+{
+	private Color onColor = new Color(50, 200, 50);
+	private Color offColor = new Color(100, 100, 100);
+	protected LED(LogicCore core)
+	{
+		super(core, "LED");
+	}
+	@Override
+	void put(int absX, int absY, Grid grid)
+	{
+		super.put(absX, absY, grid);
+		for(Direction ext : Direction.values())
+		{
+			super.setIO(ext, IOStatus.RECEIV);
+		}
+	}
+	@Override
+	void calculate()
+	{
+		boolean resiveOn = false;
+		for(Direction ext : Direction.values())
+		{
+			if(super.getIOStatus(ext) == IOStatus.RECEIV && super.getIOPower(ext).getBool())
+			{
+				resiveOn = true;
+			}
+		}
+		if(resiveOn)
+		{
+			super.setPowerStatus(Power.ON);
+		}
+		else
+		{
+			super.setPowerStatus(Power.OFF);
+		}
+	}
+	@Override
+	public void setColor(String tag, Color color)
+	{
+		if(tag.equals("onColor"))
+		{
+			this.onColor = color;
+		}
+		else if(tag.equals("offColor"))
+		{
+			this.offColor = color;
+		}
+		super.layeredPane.repaint();
+	}
+	@Override
+	public Color getColor(String tag)
+	{
+		if(tag.equals("onColor"))
+		{
+			return this.onColor;
+		}
+		else if(tag.equals("offColor"))
+		{
+			return this.offColor;
+		}
+		return null;
+	}
+	@Override
+	protected void doToggleIO(Direction ext)
+	{
+	}
+	@Override
+	protected GridViewPane createViewPane()
+	{
+		return new LEDViewPane(this);
 	}
 }
 class IOPanel
@@ -1310,6 +1540,7 @@ abstract class LogicViewPane extends GridViewPane
 	private static final long serialVersionUID = 1L;
 	
 	protected final LogicBlock logicMember;
+	
 	LogicViewPane(LogicBlock member)
 	{
 		super(member);
@@ -1504,6 +1735,41 @@ class WireViewPane extends LogicViewPane
 		+ this.wire.getIOPower(Direction.NORTH).getTag() + "_VERTICAL"), 0, 0, this);
 			break;
 		}
+		super.paintChildren(g);
+	}
+}
+class LEDViewPane extends LogicViewPane
+{
+	private final LED led;
+	LEDViewPane(LED member)
+	{
+		super(member);
+		this.led = member;
+	}
+	@Override
+	public void paint(Graphics g)
+	{
+		super.paint(g);
+		Color c;
+		if(this.led.getPower().getBool())
+		{
+			c = this.led.getColor("onColor");
+		}
+		else
+		{
+			c = this.led.getColor("offColor");
+		}
+		int m = this.led.getCore().getUI().getUISize().getmultiple();
+		BufferedImage mask = LogicCore.getResource().getImage(this.led.getCore().getUI().getUISize().getTag() + "_LED_MASK");
+		BufferedImage buildImage = new BufferedImage(mask.getWidth(),mask.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		for(int y = 0; y < mask.getHeight(); y++)
+		{
+			for(int x = 0; x < mask.getWidth(); x++)
+			{
+				buildImage.setRGB(x, y, new Color(c.getRed(), c.getGreen(), c.getBlue(), new Color(mask.getRGB(x, y)).getGreen()).getRGB());
+			}
+		}
+		g.drawImage(buildImage, 0, 0, this);
 		super.paintChildren(g);
 	}
 }

@@ -9,6 +9,9 @@ SelecterDeselect
 SelecterSelected
 SelecterNone
 IsNotPlaceBlock
+WorkTime
+WaitTime
+MaintainTime
 
 TaskOperatorPanel
 TaskWork
@@ -30,7 +33,9 @@ NAND
 NOR
 XOR
 XNOR
+BUF
 BTN
+LED
 
 ##오퍼레이터##
 delay

@@ -737,9 +737,9 @@ class SetBlockTimer extends GridMemberCommand
 	{
 		super("SetBlockTimer", session, (GridMember)member);
 		super.masterData.setData("tag", tag);
-		super.undoData.setData("time", Integer.toString(member.getTime()));
+		super.undoData.setData("time", Integer.toString(member.getTime(tag)));
 		member.setTime(tag, time);
-		super.redoData.setData("time", Integer.toString(member.getTime()));
+		super.redoData.setData("time", Integer.toString(member.getTime(tag)));
 	}
 	SetBlockTimer(DataBranch branch, Session session)
 	{

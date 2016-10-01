@@ -384,18 +384,18 @@ class GraphViewPanel extends JPanel
 	private TaskOperator operator;
 	
 	private ArrayList<Integer> graphBar = new ArrayList<Integer>();
-	private int graphLocX = 4, graphLocY = 5, graphSizeX = 141, graphSizeY = 82;
+	private int graphLocX = 4, graphLocY = 5, graphSizeX = 141, graphSizeY = 57;
 	private int highest = 1;
 	private JLabel multipleLabel;
 	GraphViewPanel(TaskOperator operator)
 	{
 		this.operator = operator;
 		this.setLayout(null);
-		this.setSize(148, 90);
+		this.setSize(148, 65);
 		this.multipleLabel = new JLabel(LogicCore.getResource().getLocal("delay") + ": 0.0%", SwingConstants.CENTER);
 		this.multipleLabel.setForeground(new Color(255, 0, 0, 70));
 		this.multipleLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(Font.BOLD, 14.0F));
-		this.multipleLabel.setBounds(0, 30, this.getWidth(), 20);
+		this.multipleLabel.setBounds(0, 20, this.getWidth(), 20);
 		this.add(this.multipleLabel);
 	}
 	@Override

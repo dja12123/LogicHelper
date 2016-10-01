@@ -67,7 +67,6 @@ import javax.swing.text.DefaultCaret;
 public class LogicCore
 {//패키지 단위로 분리 필요
 	public static final String VERSION = "0.0.1";
-	
 	public static final String JARLOC = System.getProperty("user.dir");
 	
 	private static ArrayList<LogicCore> Task;
