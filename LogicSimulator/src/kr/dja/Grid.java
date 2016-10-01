@@ -13,8 +13,6 @@ import javax.swing.undo.UndoableEdit;
 
 public class Grid
 {
-	static int count = 0;
-	
 	private UUID id;
 	
 	private LinkedHashMap<UUID, GridMember> members = new LinkedHashMap<UUID, GridMember>();
@@ -40,17 +38,11 @@ public class Grid
 	
 	Grid(Session session, SizeInfo size, UUID id)
  	{
-		Grid.count++;
-		
 		this.id = id;
 		this.session = session;
 		this.gridSize = size;
 		this.gridPanel = new GridPanel();
-		System.out.println("create " + Grid.count);
-		
-		JLabel label = new JLabel(Integer.toString(Grid.count) + " 번째 생성된 그리드");
-		label.setBounds(0, 0, 200, 30);
-		this.gridPanel.add(label);
+		LogicCore.putConsole("Create grid");
 	}
 	Grid(Session session, DataBranch data)
 	{
@@ -76,15 +68,13 @@ public class Grid
 			}
 		}
 		session.getCore().getTaskOperator().checkAroundAndReserveTask(this);
-		Grid.count++;
-		JLabel label = new JLabel(Integer.toString(Grid.count) + " 번째 생성된 그리드");
-		label.setBounds(0, 0, 200, 30);
-		this.gridPanel.add(label);
+		LogicCore.putConsole("Create grid dataLoad");
 	}
 	void removeGrid()
 	{
 		this.session.getCore().getTaskOperator().clearData(this);
 		this.deSelectAll();
+		LogicCore.putConsole("Remove grid");
 	}
 	Session getSession()
 	{
@@ -223,6 +213,7 @@ public class Grid
 		this.deSelectAll();
 		this.session.getCore().getUI().getUnderBar().setGridSizeInfo(this.gridSize);
 		this.session.getCore().getUI().getGridArea().sizeUpdate();
+		LogicCore.putConsole("Grid resize");
 	}
 	GridPanel getGridPanel()
 	{
@@ -230,7 +221,6 @@ public class Grid
 	}
 	void addMember(GridMember member, int absX, int absY)
 	{//반드시 커맨드로부터 호출할것
-		System.out.println("addMember " + member.getUUID().toString());
 		member.put(absX, absY, this);
 		if(member instanceof LogicBlock)
 		{
@@ -248,8 +238,7 @@ public class Grid
 	}
 	void removeMember(UUID id)
 	{//반드시 커맨드로부터 호출할것
-		System.out.println("removeMember " + id.toString());
-
+		LogicCore.putConsole("RemoveMember " + id.toString());
 		GridMember removeMember = this.members.get(id);
 		this.deSelect(removeMember);
 		removeMember.remove();
@@ -317,11 +306,7 @@ public class Grid
 			member.setSelectView(this.selectColor);
 			this.selectMembers.add(member);
 		}
-		if(this.selectMembers.size() == 1)
-		{
-			this.selectFocus(this.selectMembers.get(0));
-		}
-		else if(this.selectMembers.size() > 0)
+		if(this.selectMembers.size() > 0)
 		{
 			new ManySelectEditPanel(this, this.selectMembers, this.session.getCore().getUI().getBlockControlPanel());
 		}
@@ -384,6 +369,10 @@ public class Grid
 	{
 		return this.selectFocusMember;
 	}
+	ArrayList<GridMember> getSelectMembers()
+	{
+		return this.selectMembers;
+	}
 	void deSelectAll()
 	{
 		this.session.getCore().getUI().getBlockControlPanel().removeControlPane();
@@ -415,6 +404,7 @@ public class Grid
 		{
 			this.selectFocusMember.removeSelectView();
 			this.selectFocusMember = null;
+			this.session.getCore().getUI().getBlockControlPanel().removeControlPane();
 		}
 	}
 	void setViewLoc(Point point)

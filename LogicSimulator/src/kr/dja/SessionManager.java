@@ -43,16 +43,15 @@ public class SessionManager
 	{
 		int index = this.sessions.indexOf(session);
 		this.sessions.remove(session);
+		LogicCore.putConsole("RemoveSession");
 		if(this.focusSession == session)
 		{
 			if(this.sessions.size() > index)
 			{
-				System.out.println("1 " + index);
 				this.setFocusSession(this.sessions.get(index));
 			}
 			else if(index > 0)
 			{
-				System.out.println("2");
 				this.setFocusSession(this.sessions.get(index - 1));
 			}
 			else
@@ -99,7 +98,7 @@ class Session
 	private Grid grid;
 	private TaskManager task;
 	private TemplateManager template;
-	private String name = "noname";
+	private String name = LogicCore.getResource().getLocal("Noname");
 	private String description = "";
 	
 	private ButtonPanel sessionTab;
@@ -204,7 +203,7 @@ class Session
 	}
 	void LoadData(File file)
 	{
-		System.out.println("LOADDATA: " + file.toString());
+		LogicCore.putConsole("LoadData: " + file.toString());
 		DataBranch tree = new DataBranch("tree");
 		this.fileLocation = file;
 		try
@@ -221,7 +220,7 @@ class Session
 		while(itr.hasNext())
 		{
 			DataBranch branch = itr.next();
-			System.out.println(branch.getName());
+			LogicCore.putConsole("Load " + branch.getName());
 			switch(branch.getName())
 			{
 			case "Session":
@@ -242,7 +241,7 @@ class Session
 		this.core.getUI().getTaskManagerPanel().setManager(this.task);
 		this.core.getUI().getTemplatePanel().setManager(this.template);
 	}
-	private void recursiveDataLoad(BufferedReader reader, DataBranch data) throws IOException
+	void recursiveDataLoad(BufferedReader reader, DataBranch data) throws IOException
 	{
 		String line;
 		while((line = reader.readLine()) != null)
@@ -250,14 +249,14 @@ class Session
 			line = line.replace("\t", "");
 			if(line.contains("}"))
 			{
-				System.out.println(data.getName() + " End");
+				LogicCore.putConsole(data.getName() + " End");
 				return;
 			}
 			else if(line.contains("{"))
 			{
 				DataBranch branch = new DataBranch(line.split("=")[0]);
 				data.addLowerBranch(branch);
-				System.out.println("Branch " + branch.getName());
+				LogicCore.putConsole("Branch " + branch.getName());
 				this.recursiveDataLoad(reader, branch);
 			}
 			else
@@ -269,14 +268,14 @@ class Session
 				{
 					value = line.split("=")[1];
 				}
-				System.out.println("data: " + key + " = " + value);
+				LogicCore.putConsole("Data: " + key + " = " + value);
 				data.setData(key, value);
 			}
 		}
 	}
 	void saveData(File file)
 	{
-		System.out.println(file);
+		LogicCore.putConsole("SaveLocation: " + file);
 		this.fileLocation = file;
 		DataBranch tree = new DataBranch("tree");
 		tree.addLowerBranch(this.getData());
@@ -306,8 +305,11 @@ class Session
 		while(dataItr.hasNext())
 		{
 			String key = dataItr.next();
-			String value = data.getData(key).replace("{", "").replace("}", "");
-			out.write(levelTab + key + "=" + value + "\n");
+			if(data.getData(key) != null)
+			{
+				String value = data.getData(key).replace("{", "").replace("}", "");
+				out.write(levelTab + key + "=" + value + "\n");
+			}
 		}
 		Iterator<DataBranch> lowerBranchData = data.getLowerBranchIterator();
 		while(lowerBranchData.hasNext())

@@ -1,2 +1,48 @@
 ﻿LANG_TAG = "Korean"
+##한국어##
 TITLE = "논리회로 시뮬레이터"
+Noname = "이름없음"
+Edit = "편집"
+SessionLost = "선택한 세션이 없습니다"
+SelecterSelect = "개의 블록 추가 선택"
+SelecterDeselect = "개의 블록 선택 해제"
+SelecterSelected = "개의 블록 편집"
+SelecterNone = "좌클릭 드레그하여 블록 선택"
+IsNotPlaceBlock = "설치된 블록이 아님"
+
+TaskOperatorPanel = "작업"
+TaskWork = "작동중"
+TaskPause = "정지"
+BlockControlPanel = "블록 편집"
+InfoPanel = "정보"
+PalettePanel = "팔레트"
+TemplatePanel = "템플릿"
+TaskManagerPanel = "작업"
+
+##그리드 멤버##
+Partition = "파티션"
+Tag = "태그"
+Wire = "와이어"
+AND = "AND 게이트"
+OR = "OR 게이트"
+NOT = "NOT 게이트"
+NAND = "NAND 게이트"
+NOR = "NOR 게이트"
+XOR = "XOR 게이트"
+XNOR = "XNOR 게이트"
+BTN = "버튼"
+
+##오퍼레이터##
+delay = "지연"
+
+##메니저##
+EditGridSize = "그리드 넓이 변경"
+PutMemberonGrid = "설치"
+RemoveMemberOnGrid = "삭제"
+SetLogicBlockIO = "블록IO설정"
+SetMemberColor = "블록 색 변경"
+SetMemberSize = "블록 사이즈 변경"
+SetTagDescription = "태그 설명 변경"
+WireTypeEdit = "와이어 타입 변경"
+SetBlockActive = "블록 활성 상태 변경"
+SetBlockTimer = "블록 타이머 변경"

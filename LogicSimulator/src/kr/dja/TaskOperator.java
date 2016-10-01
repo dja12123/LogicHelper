@@ -13,7 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 public class TaskOperator
-{
+{//연산부분 재설계 필요
 	private Signaller signaller;
 	private LogicCore core;
 	
@@ -90,11 +90,10 @@ public class TaskOperator
 		}
 	}
 	void checkAroundAndReserveTask(LogicBlock block)
-	{//최적화 필요	TODO 버그 있음 재귀방식으로 탐색후 정리하는 방식으로 변경 필요
+	{//최적화 필요
 		
 		if(block.isPlacement())
 		{
-			System.out.println("checkRES");
 			checkReserveTask(block, new ArrayList<LogicBlock>());
 		}
 		for(Direction ext : Direction.values())
@@ -103,7 +102,6 @@ public class TaskOperator
 					, block.getBlockLocationY() + ext.getWayY()) : null;
 			if(extBlock != null)
 			{
-				System.out.println("check " + ext);
 				checkReserveTask(extBlock, new ArrayList<LogicBlock>());
 			}
 		}
@@ -120,11 +118,9 @@ public class TaskOperator
 			Power myPower = myIO == IOStatus.TRANCE ? block.getIOPower(ext) : Power.OFF;
 			if(outputExtBlock != null)
 			{
-				System.out.println("조건1pass");
 				IOStatus extIO = outputExtBlock.getIOStatus(ext.getAcross());
-				if(extIO == IOStatus.RECEIV && outputExtBlock.getIOPower(ext.getAcross()) != myPower)
+				if(extIO == IOStatus.RECEIV && outputExtBlock.getIOPower(ext.getAcross()) != myPower && outputExtBlock.getActive())
 				{
-					System.out.println("핰");
 					outputExtBlock.setIOResivePower(ext.getAcross(), myPower);
 					if(!checkList.contains(outputExtBlock))
 					{
@@ -134,19 +130,27 @@ public class TaskOperator
 					}
 					else
 					{
-						System.out.println("회로가 통구이가 되었습니다" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
+						LogicCore.putConsole("Operator burn: " + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
+						TaskUnit task = outputExtBlock.getGrid().getSession().getTaskManager().setTask();
+						task.addCommand(new SetBlockActive(outputExtBlock, false));
 					}
 				}
-				if(outputExtBlock instanceof LogicWire && !checkList.contains(outputExtBlock))
+				if(outputExtBlock.getActive())
 				{
-					wireTask((LogicWire)outputExtBlock, ext, checkList, false);
+					if(outputExtBlock instanceof LogicWire)
+					{
+						if(!checkList.contains(outputExtBlock))
+						{
+							checkList.add(outputExtBlock);
+							wireTask((LogicWire)outputExtBlock, ext, checkList, false);
+						}
+					}
 				}
 			}
 			else
 			{
 				if(myIO == IOStatus.RECEIV)
 				{
-					System.out.println("걸렸으므로");
 					block.setIOResivePower(ext, Power.OFF);
 				}
 			}
@@ -202,14 +206,12 @@ public class TaskOperator
 						}
 					}
 					else if(outputExtBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV
-						&& block.getPower() != outputExtBlock.getIOPower(ext.getAcross()))
+						&& block.getPower() != outputExtBlock.getIOPower(ext.getAcross()) && outputExtBlock.getActive())
 					{
 						Power power = outputExtBlock.getPower();
-						System.out.println("isResive" + power);
 						outputExtBlock.setIOResivePower(ext.getAcross(), block.getPower());
 						if(power != outputExtBlock.getPower())
 						{
-							System.out.println("Task");
 							if(!taskList.contains(outputExtBlock))
 							{
 								taskList.add(outputExtBlock);
@@ -218,7 +220,10 @@ public class TaskOperator
 							}
 							else
 							{
-								System.out.println("회로가 통구이가 되었습니다1" + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
+								//outputExtBlock.setActive(false);
+								TaskUnit task = outputExtBlock.getGrid().getSession().getTaskManager().setTask();
+								task.addCommand(new SetBlockActive(outputExtBlock, false));
+								LogicCore.putConsole("Operator burn: " + outputExtBlock.getBlockLocationX() + " " + outputExtBlock.getBlockLocationY());
 							}
 						}
 					}
@@ -234,7 +239,6 @@ public class TaskOperator
 		temp.add(ext);
 		linkedWire.put(wire, temp);
 		Power power = this.recursiveWireTask(wire, linkedWire, linkedBlock, ext, Power.OFF);
-		System.out.println("블록상태" + power);
 		for(LogicWire editWire : linkedWire.keySet())
 		{
 			for(Direction editExt : linkedWire.get(editWire))
@@ -245,12 +249,13 @@ public class TaskOperator
 		}
 		for(LogicBlock editBlock : linkedBlock.keySet())
 		{
+			taskList.add(editBlock);
 			for(Direction editExt : linkedBlock.get(editBlock))
 			{
-				if(!taskList.contains(editBlock))
+				if(editBlock.getActive() && editBlock.getIOStatus(editExt) == IOStatus.RECEIV)
 				{
 					editBlock.setIOResivePower(editExt, power);
-					taskList.add(editBlock);
+					
 					if(task)
 					{
 						this.recursiveTask(editBlock, taskList);
@@ -260,10 +265,13 @@ public class TaskOperator
 						this.checkReserveTask(editBlock, taskList);
 					}
 				}
-				else
+				/*else if(taskList.contains(editBlock))
 				{
+					//editBlock.setActive(false);
+					TaskUnit taskUnit = editBlock.getGrid().getSession().getTaskManager().setTask();
+					taskUnit.addCommand(new SetBlockActive(editBlock, false));
 					System.out.println("회로가 통구이가 되었습니다2" + editBlock.getBlockLocationX() + " " + editBlock.getBlockLocationY());
-				}
+				}*/
 			}
 
 		}
@@ -283,7 +291,7 @@ public class TaskOperator
 					{
 						//System.out.println("이프통과" + wire.isWireValid(ext));
 						LogicWire extWire = (LogicWire)extBlock;
-						if(extWire.isWireValid(ext.getAcross()))
+						if(extWire.isWireValid(ext.getAcross()) && extWire.getActive())
 						{
 							if(linkedWire.containsKey(extWire))
 							{
@@ -384,7 +392,7 @@ class GraphViewPanel extends JPanel
 		this.operator = operator;
 		this.setLayout(null);
 		this.setSize(148, 90);
-		this.multipleLabel = new JLabel("지연: 0.0%", SwingConstants.CENTER);
+		this.multipleLabel = new JLabel(LogicCore.getResource().getLocal("delay") + ": 0.0%", SwingConstants.CENTER);
 		this.multipleLabel.setForeground(new Color(255, 0, 0, 70));
 		this.multipleLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(Font.BOLD, 14.0F));
 		this.multipleLabel.setBounds(0, 30, this.getWidth(), 20);
@@ -417,7 +425,8 @@ class GraphViewPanel extends JPanel
 				this.highest = height;
 			}
 		}
-		this.multipleLabel.setText("지연: " + Double.parseDouble(String.format("%.3f", this.highest / (double)this.operator.getTaskTick() * 100)) + "%");
+		this.multipleLabel.setText(LogicCore.getResource().getLocal("delay") + ": "
+		+ Double.parseDouble(String.format("%.3f", this.highest / (double)this.operator.getTaskTick() * 100)) + "%");
 		this.repaint();
 	}
 }

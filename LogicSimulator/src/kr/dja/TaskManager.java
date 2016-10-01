@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -68,6 +69,17 @@ public class TaskManager
 		this.setFocus(this.snapShots.get(new Integer(data.getData("focus"))));
 		this.reSizeTaskPanel();
 	}
+	int getFocusIndex()
+	{
+		return this.snapShots.indexOf(this.focusUnit);
+	}
+	void recover(int index)
+	{
+		if(index >= 0 && index < this.snapShots.size())
+		{
+			this.recover(this.snapShots.get(index));
+		}
+	}
 	DataBranch getData()
 	{
 		DataBranch data = new DataBranch("TaskManager");
@@ -123,7 +135,6 @@ public class TaskManager
 	}
 	TaskUnit setTask()
 	{
-		System.out.println("");
 		if(this.focusUnit != null && this.focusUnit != this.getLastSnapShot())
 		{//작업이 걸려있을경우 삭제함
 			int removeIndex = this.snapShots.indexOf(this.focusUnit) + 1;
@@ -173,14 +184,14 @@ public class TaskManager
 		for(int i = oldFocusIndex + 1; i <= nowFocusIndex; i++)
 		{
 			TaskUnit task = this.snapShots.get(i);
-			System.out.println("REDO " + i);
+			LogicCore.putConsole("Redo " + i);
 			task.redo();
 			taskEnable = true;
 		}
 		for(int i = oldFocusIndex; i > nowFocusIndex; i--)
 		{
 			TaskUnit task = this.snapShots.get(i);
-			System.out.println("UNDO " + this.snapShots.indexOf(task));
+			LogicCore.putConsole("Undo " + i);
 			task.undo();
 			taskEnable = true;
 		}
@@ -253,7 +264,9 @@ class TaskUnit
 		this.timeLabel = new JLabel();
 		this.timeLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
 		this.timeLabel.setFont(LogicCore.RES.BAR_FONT.deriveFont(9f));
-		this.timeLabel.setBounds(TaskManager.COMPW - 42, 20, 40, 10);
+		this.timeLabel.setBounds(TaskManager.COMPW - 42, 20, 42, 10);
+		SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+		this.timeLabel.setText(formatter.format(new Date()));
 		this.snapShotView.add(this.stateLabel);
 		this.snapShotView.add(this.timeLabel);
 		this.commandList = new LinkedList<Command>();
@@ -261,11 +274,11 @@ class TaskUnit
 	TaskUnit(TaskManager manager, DataBranch data)
 	{
 		this(manager);
+		this.timeLabel.setText(data.getData("editTime"));
 		Iterator<DataBranch> itr = data.getLowerBranchIterator();
 		while(itr.hasNext())
 		{
 			DataBranch info = itr.next();
-			System.out.println(info.getName());
 			Command cmd = TaskUnit.Factory(info, manager.getSession());
 			this.commandList.add(cmd);
 			this.addLabel(cmd);
@@ -275,6 +288,7 @@ class TaskUnit
 	DataBranch getData()
 	{
 		DataBranch data = new DataBranch("TaskUnit");
+		data.setData("editTime", this.timeLabel.getText());
 		for(Command cmd : this.commandList)
 		{
 			data.addLowerBranch(cmd.masterData);
@@ -304,7 +318,7 @@ class TaskUnit
 		String labelText = new String();
 		for(String key : this.labels.keySet())
 		{
-			labelText += key + "(" + this.labels.get(key) + ") ";
+			labelText += LogicCore.getResource().getLocal(key) + "(" + this.labels.get(key) + ") ";
 		}
 		this.stateLabel.setText(labelText);
 	}
@@ -485,7 +499,6 @@ class RemoveMemberOnGrid extends Command
 	@Override
 	public void undo()
 	{
-		System.out.println("UNDOUNDO");
 		super.session.getGrid().addMember(GridMember.Factory(session.getCore(), super.masterData)
 				, new Integer(super.masterData.getData("UIabslocationX")), new Integer(super.masterData.getData("UIabslocationY")));
 	}
@@ -539,11 +552,13 @@ class SetMemberColor extends GridMemberCommand
 	public void redo()
 	{
 		this.setColor(super.redoData);
+		super.getMember().getCore().getUI().getBlockControlPanel().updateMemberStatus();
 	}
 	@Override
 	public void undo()
 	{
 		this.setColor(super.undoData);
+		super.getMember().getCore().getUI().getBlockControlPanel().updateMemberStatus();
 	}
 	private void setColor(DataBranch branch)
 	{
@@ -629,7 +644,6 @@ class SetTagDescription extends GridMemberCommand
 				Iterator<String> keyItr = lowerBranch.getDataKeySetIterator();
 				while(keyItr.hasNext())
 				{
-					System.out.println("load " + text);
 					text += lowerBranch.getData(keyItr.next()) + "\n";
 				}
 				this.getTag().setDescription(text);
@@ -640,11 +654,9 @@ class SetTagDescription extends GridMemberCommand
 	private DataBranch getDescriptionBranch(Tag member)
 	{
 		DataBranch description = new DataBranch("Description");
-		System.out.println(member.getDescription() + "read");
 		String[] text = member.getDescription().split("\\r?\\n");
 		for(int i = 0; i < text.length; i++)
 		{
-			System.out.println(text[i]);
 			description.setData(Integer.toString(i), text[i]);
 		}
 		return description;
@@ -683,7 +695,6 @@ class WireTypeEdit extends GridMemberCommand
 		for(Direction ext : Direction.values())
 		{
 			wire.setIO(ext, IOStatus.valueOf(branch.getData(ext.toString())));
-			System.out.println(branch.getData(ext.toString()) + " data");
 		}
 		wire.setWireType(WireType.valueOf(branch.getData("Type")));
 	}
@@ -694,7 +705,57 @@ class WireTypeEdit extends GridMemberCommand
 			branch.setData(ext.toString(), ((Wire)super.getMember()).getIOStatus(ext).toString());
 		}
 		branch.setData("Type", ((Wire)super.getMember()).getType().toString());
-		System.out.println("type " + ((Wire)super.getMember()).getType().toString());
+	}
+}
+class SetBlockActive extends GridMemberCommand
+{
+	SetBlockActive(LogicBlock block, boolean option)
+	{
+		super("SetBlockActive", block.getGrid().getSession(), block);
+		super.undoData.setData("status", Boolean.toString(block.getActive()));
+		block.setActive(option);
+		super.redoData.setData("status", Boolean.toString(block.getActive()));
+	}
+	SetBlockActive(DataBranch arg0, Session arg1)
+	{
+		super(arg0, arg1);
+	}
+	@Override
+	void redo()
+	{
+		((LogicBlock)super.getMember()).setActive(Boolean.parseBoolean(super.redoData.getData("status")));;
+	}
+	@Override
+	void undo()
+	{
+		((LogicBlock)super.getMember()).setActive(Boolean.parseBoolean(super.undoData.getData("status")));;
+	}
+}
+class SetBlockTimer extends GridMemberCommand
+{
+	SetBlockTimer(TimeSetter member, String tag, int time, Session session)
+	{
+		super("SetBlockTimer", session, (GridMember)member);
+		super.masterData.setData("tag", tag);
+		super.undoData.setData("time", Integer.toString(member.getTime()));
+		member.setTime(tag, time);
+		super.redoData.setData("time", Integer.toString(member.getTime()));
+	}
+	SetBlockTimer(DataBranch branch, Session session)
+	{
+		super(branch, session);
+	}
+	@Override
+	void redo()
+	{
+		((TimeSetter)super.getMember()).setTime(super.masterData.getData("tag"), Integer.parseInt(super.redoData.getData("time")));
+		super.getMember().getCore().getUI().getBlockControlPanel().updateMemberStatus();
+	}
+	@Override
+	void undo()
+	{
+		((TimeSetter)super.getMember()).setTime(super.masterData.getData("tag"), Integer.parseInt(super.undoData.getData("time")));
+		super.getMember().getCore().getUI().getBlockControlPanel().updateMemberStatus();
 	}
 }
 abstract class GridMemberCommand extends Command
@@ -725,6 +786,7 @@ abstract class Command
 	Command(String name, Session session)
 	{
 		this.masterData = new DataBranch(name);
+		LogicCore.putConsole("Command: " + name);
 		this.masterData.setData("CommandPath", this.getClass().getName());
 		this.session = session;
 		this.redoData = new DataBranch("RedoData");

@@ -1,7 +1,11 @@
 package kr.dja;
 
 import java.awt.Dimension;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -60,9 +64,36 @@ public class TemplateManager
 	}
 	void addTemplates(File selectFile)
 	{
-		Template temp = new Template(this.session.getCore(), null);
-		this.templates.add(temp);
-		this.templatePanel.add(temp);
+		System.out.println("LoadTemplates: " + selectFile);
+		DataBranch tree = new DataBranch("tree");
+		try
+		{
+			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(selectFile)));
+			this.session.recursiveDataLoad(reader, tree);
+			reader.close();
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+		}
+		Iterator<DataBranch> itr = tree.getLowerBranchIterator();
+		while(itr.hasNext())
+		{
+			DataBranch branch = itr.next();
+			if(branch.getName().equals("TemplateManager"))
+			{
+				Iterator<DataBranch> branchItr = branch.getLowerBranchIterator();
+				while(branchItr.hasNext())
+				{
+					DataBranch tempData = branchItr.next();
+					if(tempData.getName().equals("ClipBoard"))
+					{
+						this.addTemplate(tempData);
+					}
+				}
+				this.addTemplate(branch);
+			}
+		}
 		this.sortManagerPane();
 	}
 	void addTemplate(DataBranch data)
@@ -200,6 +231,7 @@ class ClipBoardPanel extends ButtonPanel
 				p.Active();
 			}
 		}
+		editTag(branch.getData("label"));
 		clipBoard = branch;
 	}
 	private static void editTag(String tag)

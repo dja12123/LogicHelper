@@ -131,8 +131,8 @@ public abstract class GridMember implements SizeUpdate
 		this.UIabslocationX = absX;
 		this.UIabslocationY = absY;
 		this.grid = grid;
-		System.out.println("PUT: " + UIabslocationX + " " + UIabslocationY);
-		System.out.println("UUID: " + this.id.toString());
+		LogicCore.putConsole("Put id: " + this.id.toString());
+		LogicCore.putConsole("Put absLocation: " + UIabslocationX + " " + UIabslocationY);
 		this.placement = true;
 	}
 	void remove()
@@ -176,6 +176,7 @@ public abstract class GridMember implements SizeUpdate
 		{
 			this.addMouseListener(this);
 			this.addMouseMotionListener(this);
+			this.setLayout(null);
 		}
 		void selectShow(Color color)
 		{
@@ -222,13 +223,29 @@ public abstract class GridMember implements SizeUpdate
 		{
 			if(this.onMouseFlag)
 			{
-				if(grid.isSelect(GridMember.this))
+				if(e.getButton() == 1)
 				{
-					grid.deSelect(GridMember.this);
+					if(!grid.isFocusSelect(GridMember.this))
+					{
+						grid.selectFocus(GridMember.this);
+					}
 				}
 				else
 				{
-					grid.selectFocus(GridMember.this);
+					if(grid.isFocusSelect(GridMember.this))
+					{
+						grid.deSelectFocus();
+					}
+					else if(grid.isSelect(GridMember.this))
+					{
+						grid.deSelect(GridMember.this);
+					}
+					else
+					{
+						ArrayList<GridMember> temp = new ArrayList<GridMember>();
+						temp.add(GridMember.this);
+						grid.select(temp);
+					}
 				}
 			}
 		}
@@ -484,6 +501,8 @@ abstract class LogicBlock extends GridMember
 	protected Power power = Power.OFF;
 	protected LinkedHashMap<Direction, IOPanel> io = new LinkedHashMap<Direction, IOPanel>();
 	private int timer = 0;
+	private boolean active = true;
+	private JPanel disableView;
 	
 	protected LogicBlock(LogicCore core, String name)
 	{
@@ -494,6 +513,19 @@ abstract class LogicBlock extends GridMember
 		this.io.put(Direction.WEST, new IOPanel(this, Direction.WEST, "BASIC"));
 		this.io.put(Direction.SOUTH, new IOPanel(this, Direction.SOUTH, "BASIC"));
 		this.io.put(Direction.NORTH, new IOPanel(this, Direction.NORTH, "BASIC"));
+		this.disableView = new JPanel()
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void paint(Graphics g)
+			{
+				super.paint(g);
+				g.drawImage(LogicCore.getResource().getImage(core.getUI().getUISize().getTag() + "_BLOCK_DISABLE"), 0, 0, this);
+				super.paintChildren(g);
+			}
+		};
+		this.disableView.setOpaque(false);
 	}
 	@Override
 	protected GridViewPane createViewPane()
@@ -520,6 +552,7 @@ abstract class LogicBlock extends GridMember
 		}
 		this.calculate();
 		this.core.getTaskOperator().addReserveTask(this);
+		this.setActive(Boolean.valueOf(branch.getData("active")));
 		super.setData(branch);
 	}
 	@Override
@@ -534,6 +567,7 @@ abstract class LogicBlock extends GridMember
 		{
 			branch.setData("io_" + ext, this.io.get(ext).getStatus().toString() + "_" + this.io.get(ext).getOnOffStatus().toString());
 		}
+		branch.setData("active", Boolean.toString(this.active));
 		return branch;
 	}
 	@Override
@@ -547,7 +581,7 @@ abstract class LogicBlock extends GridMember
 		super.put((this.getBlockLocationX() * Size.REGULAR_SIZE), (this.getBlockLocationY() * Size.REGULAR_SIZE), grid);
 		super.getGridViewPane().setLocation((super.getUIabsLocationX() + (grid.getGridSize().getNX() * Size.REGULAR_SIZE)) * super.core.getUI().getUISize().getmultiple() + Size.MARGIN
 										  , (super.getUIabsLocationY() + (grid.getGridSize().getNY() * Size.REGULAR_SIZE)) * super.core.getUI().getUISize().getmultiple() + Size.MARGIN);
-		System.out.println("LogicPut: " + this.getBlockLocationX() + " " + this.getBlockLocationY());
+		LogicCore.putConsole("Put logicLocation: " + this.getBlockLocationX() + " " + this.getBlockLocationY());
 	}
 	@Override
 	protected void remove()
@@ -606,6 +640,7 @@ abstract class LogicBlock extends GridMember
 		{
 			super.core.getTaskOperator().checkAroundAndReserveTask(this);
 		}
+		LogicCore.putConsole("ToggleIO: " + super.getUUID() + " " + ext.getTag() + " " + this.getIOStatus(ext).getTag());
 	}
 	void setIO(Direction ext, IOStatus io)
 	{
@@ -674,6 +709,7 @@ abstract class LogicBlock extends GridMember
 	final void setTimer(int time)
 	{
 		this.timer = time;
+		LogicCore.putConsole("SetTimer: " + super.getUUID() + " " + this.timer);
 	}
 	int getTimer()
 	{
@@ -693,6 +729,40 @@ abstract class LogicBlock extends GridMember
 	{
 		return this.power;
 	}
+	void setActive(boolean option)
+	{
+		if(this.active != option)
+		{
+			this.active = option;
+			LogicCore.putConsole("SetActive: " + super.getUUID() + " " + option);
+			if(option)
+			{
+				super.layeredPane.remove(this.disableView);
+				if(super.isPlacement())
+				{
+					super.core.getTaskOperator().checkAroundAndReserveTask(this);
+				}
+			}
+			else
+			{
+				this.disableView.setLocation(super.gridViewPane.getX(), super.gridViewPane.getY());
+				this.disableView.setSize(super.gridViewPane.getWidth(), super.gridViewPane.getHeight());
+				super.layeredPane.add(this.disableView, new Integer(3));
+			}
+			super.layeredPane.repaint();
+		}
+	}
+	public boolean getActive()
+	{
+		return this.active;
+	}
+	@Override
+	public void sizeUpdate()
+	{
+		super.sizeUpdate();
+		this.disableView.setLocation(super.gridViewPane.getX(), super.gridViewPane.getY());
+		this.disableView.setSize(super.gridViewPane.getWidth(), super.gridViewPane.getHeight());
+	}
 	void calculate(){}
 }
 interface LogicWire
@@ -706,6 +776,12 @@ interface LogicWire
 	int getBlockLocationY();
 	boolean isWireValid(Direction ext);
 	boolean isLinkedWire(Direction from, Direction to);
+	boolean getActive();
+}
+interface TimeSetter
+{
+	void setTime(String tag, int time);
+	int getTime();
 }
 class Wire extends LogicBlock implements LogicWire
 {
@@ -785,7 +861,7 @@ class Wire extends LogicBlock implements LogicWire
 	void setWireType(WireType wireType)
 	{
 		this.wireType = wireType;
-		
+		LogicCore.putConsole("SetWireType: " + super.getUUID() + " " + this.wireType.getImageTag());
 		if(this.wireType != WireType.Standard)
 		{
 			for(IOPanel io : super.io.values())
@@ -1033,11 +1109,11 @@ class XNOR extends LogicBlock
 		super.setPowerStatus(powerStatus);
 	}
 }
-class Button extends LogicBlock
+class Button extends LogicBlock implements TimeSetter
 {
 	private TimerButton btn;
 	private JLabel timeLabel;
-	private int basicTime = 30;
+	private int basicTime = 1;
 	
 	Button(LogicCore core)
 	{
@@ -1046,7 +1122,7 @@ class Button extends LogicBlock
 		this.timeLabel = new JLabel();
 		this.timeLabel.setVerticalAlignment(JTextField.CENTER);
 		this.timeLabel.setHorizontalAlignment(JTextField.CENTER);
-		super.layeredPane.add(this.timeLabel, new Integer(20));
+		super.layeredPane.add(this.timeLabel, new Integer(2));
 		super.gridViewPane.add(this.btn);
 	}
 	@Override
@@ -1121,6 +1197,16 @@ class Button extends LogicBlock
 			this.btn.imageSet();
 		}
 	}
+	@Override
+	public void setTime(String tag, int time)
+	{
+		 this.basicTime = time;
+	}
+	@Override
+	public int getTime()
+	{
+		return this.basicTime;
+	}
 	private class TimerButton extends ButtonPanel
 	{
 		private static final long serialVersionUID = 1L;
@@ -1143,12 +1229,6 @@ class Button extends LogicBlock
 			super.setBasicPressImage(LogicCore.getResource().getImage(core.getUI().getUISize().getTag() + "_BUTTON_PRESS_" + power.getTag()));
 			super.imageSet();
 		}
-	}
-	@Override
-	protected void operatorPing()
-	{
-		// TODO Auto-generated method stub
-		
 	}
 }
 class IOPanel
@@ -1178,7 +1258,6 @@ class IOPanel
 			this.power = Power.OFF;
 			this.member.calculate();
 		}
-		System.out.println(member.getCore().getUI());
 		this.image = LogicCore.RES.getImage(member.getCore().getUI().getUISize().getTag() + "_" + this.imgTag
 				+ "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
 	}
@@ -1319,16 +1398,12 @@ class ResizeableViewPane extends GridViewPane
 				member.getCore().getUI().getGridArea().getLayeredPane().add(this.rectViewPane, new Integer(4));
 				if(mouseX + DetectArea >= absX || mouseX <= DetectArea)
 				{
-					System.out.println("XEditDet");
 					this.xEditFlag = true;
 				}
 				if(mouseY + DetectArea >= absY || mouseY <= DetectArea)
 				{
-					System.out.println("YEditDet");
 					this.yEditFlag = true;
 				}
-				System.out.println(member.getGridViewPane().getBounds());
-			
 			}
 			@Override
 			public void mouseDragged(MouseEvent e)
