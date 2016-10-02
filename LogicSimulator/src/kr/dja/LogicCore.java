@@ -40,8 +40,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSource;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -55,6 +57,7 @@ import java.util.zip.ZipInputStream;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -62,6 +65,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 
 public class LogicCore
@@ -109,10 +113,11 @@ public class LogicCore
 	}
 	static void putConsole(String str)
 	{
-		System.out.println(str);
+		String printStr = " ["+ new SimpleDateFormat("HH:mm:ss").format(new Date()) + "] " + str;
+		System.out.println(printStr);
 		for(Console console : Consols)
 		{
-			console.put(str);
+			console.put(printStr);
 		}
 	}
 	static void registerConsole(Console console)
@@ -308,10 +313,8 @@ class Resource
 		}
 		catch(Exception e)
 		{
-			
+			LogicCore.putConsole(e.toString());
 		}
-		
-		
 		return fileList;
 	}
 	File getFile(String tag)
@@ -354,7 +357,7 @@ class Resource
 		}
 		catch(Exception e)
 		{
-			
+			LogicCore.putConsole(e.toString());
 		}
 		return file;
 	}
@@ -429,6 +432,59 @@ class LoadingWindow extends JFrame implements Console
 interface Console
 {
 	void put(String str);
+}
+class ConsoleWindow implements Console
+{
+	private static final ConsoleWindow Console = new ConsoleWindow();
+	private JDialog consoleDialog;
+	private JTextArea consoleArea;
+	private ConsoleWindow()
+	{
+		this.consoleDialog = new JDialog();
+		this.consoleDialog.setTitle(LogicCore.getResource().getLocal("Log"));
+		this.consoleDialog.setSize(500, 300);
+		this.consoleDialog.setLayout(new BorderLayout());
+		this.consoleDialog.setResizable(false);
+		this.consoleDialog.setAlwaysOnTop(true);
+		
+		this.consoleArea = new JTextArea();
+		this.consoleArea.setEditable(false);
+		this.consoleArea.setLineWrap(true);
+		
+		JScrollPane consolScrollPane = new JScrollPane();
+		consolScrollPane.getViewport().setView(this.consoleArea);
+		consolScrollPane.setBorder(BorderFactory.createEmptyBorder());
+		consolScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		consolScrollPane.getVerticalScrollBar().setUnitIncrement(10);
+		
+		this.consoleDialog.add(consolScrollPane, BorderLayout.CENTER);
+		LogicCore.registerConsole(this);
+	}
+	@Override
+	public void put(String str)
+	{
+		this.consoleArea.append(str + "\n");
+		if(this.consoleArea.getLineCount() > 300)
+		{
+			try
+			{
+				this.consoleArea.replaceRange("", 0, this.consoleArea.getLineEndOffset(0));
+			}
+			catch(BadLocationException e)
+			{
+				LogicCore.putConsole(e.toString());
+			}
+		}
+		this.consoleArea.setCaretPosition(this.consoleArea.getDocument().getLength());
+	}
+	static void toggleShow(int x, int y)
+	{
+		Console.consoleDialog.setVisible(!Console.consoleDialog.isVisible());
+		if(Console.consoleDialog.isVisible())
+		{
+			Console.consoleDialog.setLocation(x, y);
+		}
+	}
 }
 class DataBranch
 {

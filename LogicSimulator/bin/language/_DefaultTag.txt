@@ -21,6 +21,7 @@ InfoPanel
 PalettePanel
 TemplatePanel
 TaskManagerPanel
+Log
 
 ##그리드 멤버##
 Partition

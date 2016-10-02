@@ -12,6 +12,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -1019,7 +1020,17 @@ class ToolBar implements LogicUIComponent
 		this.setViewButton.setOnMouseImage(LogicCore.getResource().getImage("VIEW_SELECT"));
 		this.setViewButton.setBasicPressImage(LogicCore.getResource().getImage("VIEW_PUSH"));
 		
-		this.consolButton = new ButtonPanel(20, 20);
+		this.consolButton = new ButtonPanel(20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void pressed(int button)
+			{
+				Rectangle g = core.getUI().getFrame().getBounds();
+				ConsoleWindow.toggleShow(g.x , g.y);
+			}
+		};
 		
 		this.helpButton = new ButtonPanel(20, 20);
 		this.newInstanceButton = new ButtonPanel(20, 20)
@@ -2358,6 +2369,14 @@ class LogicTREditPane extends EditPane
 		this.editViewPanel.setBackground(new Color(200, 200, 200));
 	}
 	@Override
+	void updateMemberStatus()
+	{
+		for(IOControlButton io : IOEditButton)
+		{
+			io.setImage();
+		}
+	}
+	@Override
 	void setInfo(GridMember member)
 	{
 		super.setInfo(member);
@@ -2690,6 +2709,10 @@ class WireEditPane extends LogicTREditPane
 	void updateMemberStatus()
 	{
 		super.editViewPanel.repaint();
+		for(IOControlButton io : IOEditButton)
+		{
+			io.setImage();
+		}
 	}
 	private class ModSelectButton extends ButtonPanel
 	{
@@ -2713,11 +2736,7 @@ class WireEditPane extends LogicTREditPane
 			{
 				wire.setWireType(type);
 			}
-			editViewPanel.repaint();
-			for(IOControlButton io : IOEditButton)
-			{
-				io.setImage();
-			}
+			updateMemberStatus();
 		}
 	}
 }
@@ -3600,7 +3619,7 @@ class FileManagerWindow
 			}
 			catch(IOException e)
 			{
-				e.printStackTrace();
+				LogicCore.putConsole(e.toString());
 			}
 		}
 		return dataList;

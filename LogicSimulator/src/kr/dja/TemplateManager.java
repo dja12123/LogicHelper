@@ -74,7 +74,7 @@ public class TemplateManager
 		}
 		catch(IOException e)
 		{
-			e.printStackTrace();
+			LogicCore.putConsole(e.toString());
 		}
 		Iterator<DataBranch> itr = tree.getLowerBranchIterator();
 		while(itr.hasNext())

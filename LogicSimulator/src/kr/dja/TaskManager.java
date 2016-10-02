@@ -359,7 +359,7 @@ class TaskUnit
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace();
+			LogicCore.putConsole(e.toString());
 		}
 		return command;
 	}
@@ -522,11 +522,13 @@ class SetLogicBlockIO extends GridMemberCommand
 	public void redo()
 	{
 		((LogicBlock)super.getMember()).setIO(Direction.valueOf(super.masterData.getData("Direction")), IOStatus.valueOf(super.redoData.getData("IOStatus")));
+		super.session.getCore().getUI().getBlockControlPanel().updateMemberStatus();
 	}
 	@Override
 	public void undo()
 	{
 		((LogicBlock)super.getMember()).setIO(Direction.valueOf(super.masterData.getData("Direction")), IOStatus.valueOf(super.undoData.getData("IOStatus")));
+		super.session.getCore().getUI().getBlockControlPanel().updateMemberStatus();
 	}
 }
 class SetMemberColor extends GridMemberCommand
@@ -697,6 +699,7 @@ class WireTypeEdit extends GridMemberCommand
 			wire.setIO(ext, IOStatus.valueOf(branch.getData(ext.toString())));
 		}
 		wire.setWireType(WireType.valueOf(branch.getData("Type")));
+		super.session.getCore().getUI().getBlockControlPanel().updateMemberStatus();
 	}
 	private void getData(WireType type, DataBranch branch)
 	{

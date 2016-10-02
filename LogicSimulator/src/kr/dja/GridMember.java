@@ -259,7 +259,7 @@ public abstract class GridMember implements SizeUpdate
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace();
+			LogicCore.putConsole(e.toString());
 		}
 		return member;
 	}
@@ -891,7 +891,8 @@ class Wire extends LogicBlock implements LogicWire
 	{
 		if(this.wireType != WireType.Standard)
 		{
-			this.setWireType(WireType.Standard);
+			TaskUnit task = this.getGrid().getSession().getTaskManager().setTask();
+			task.addCommand(new WireTypeEdit(this, WireType.Standard, this.getGrid().getSession()));
 			super.getCore().getUI().getBlockControlPanel().updateMemberStatus();
 		}
 		if(super.getIOStatus(ext) == IOStatus.NONE)

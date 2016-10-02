@@ -21,6 +21,7 @@ InfoPanel = "정보"
 PalettePanel = "팔레트"
 TemplatePanel = "템플릿"
 TaskManagerPanel = "작업"
+Log = "로그"
 
 ##그리드 멤버##
 Partition = "파티션"

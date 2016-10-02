@@ -214,7 +214,7 @@ class Session
 		}
 		catch(IOException e)
 		{
-			e.printStackTrace();
+			LogicCore.putConsole(e.toString());
 		}
 		Iterator<DataBranch> itr = tree.getLowerBranchIterator();
 		while(itr.hasNext())
@@ -291,7 +291,7 @@ class Session
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			LogicCore.putConsole(e.toString());
 		}
 	}
 	private void recursiveDataSave(BufferedWriter out, DataBranch data, int level) throws IOException
