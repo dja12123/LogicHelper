@@ -91,7 +91,6 @@ public class TemplateManager
 						this.addTemplate(tempData);
 					}
 				}
-				this.addTemplate(branch);
 			}
 		}
 		this.sortManagerPane();

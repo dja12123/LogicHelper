@@ -167,7 +167,7 @@ class Session
 	}
 	void setData(DataBranch branch)
 	{
-		this.name = branch.getData("name");
+		this.setName(branch.getData("name"));
 		Iterator<DataBranch> itr = branch.getLowerBranchIterator();
 		while(itr.hasNext())
 		{
@@ -201,7 +201,7 @@ class Session
 		this.sessionTab.setOnMouseImage(LogicCore.getResource().getImage("SESSION_TAB_SELECT"));
 		this.sessionTab.setBasicPressImage(LogicCore.getResource().getImage("SESSION_TAB_PUSH"));
 	}
-	void LoadData(File file)
+	void loadData(File file)
 	{
 		LogicCore.putConsole("LoadData: " + file.toString());
 		DataBranch tree = new DataBranch("tree");

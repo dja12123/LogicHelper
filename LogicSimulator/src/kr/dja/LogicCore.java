@@ -20,6 +20,8 @@ import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -31,6 +33,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URL;
 import java.nio.channels.FileChannel;
@@ -57,10 +61,12 @@ import java.util.zip.ZipInputStream;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -69,8 +75,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 
 public class LogicCore
-{//패키지 단위로 분리 필요
-	public static final String VERSION = "0.0.1";
+{
+	public static final String VERSION = "0.1.0";
 	public static final String JARLOC = System.getProperty("user.dir");
 	
 	private static ArrayList<LogicCore> Task;
@@ -82,23 +88,33 @@ public class LogicCore
 	private TaskOperator taskOperator;
 	private UI logicUI;
 	
+	private static boolean Login = false;
+	private static String ID;
+	private static String PassWord;
+	
 	public static void main(String[] args)
 	{
 		Task = new ArrayList<LogicCore>();
 		Consols = new ArrayList<Console>();
 		LoadingWindow window = new LoadingWindow();
-		
 		RES = new Resource();
-		createInstance();
+		LogicCore create = createInstance();
+		File loadFile = new File(RES.getConfig("OpenFile"));
+		if(loadFile.isFile())
+		{
+			create.getSession().getFocusSession().loadData(loadFile);
+		}
 		window.remove();
 	}
 	public static Resource getResource()
 	{
 		return RES;
 	}
-	static void createInstance()
+	static LogicCore createInstance()
 	{	
-		Task.add(new LogicCore());
+		LogicCore core = new LogicCore();
+		Task.add(core);
+		return core;
 	}
 	static void removeInstance(LogicCore task)
 	{
@@ -127,6 +143,66 @@ public class LogicCore
 	static void removeConsole(Console console)
 	{
 		Consols.remove(console);
+	}
+	static boolean getLoginStatus()
+	{
+		return Login;
+	}
+	static boolean Login(String id, String pass)
+	{
+		putConsole("Login: " + id);
+		Socket socket = null;
+		boolean result = false;
+		try
+		{
+			socket = new Socket(InetAddress.getByName(RES.getConfig("Provider")), 9002);
+			
+			OutputStream out = socket.getOutputStream();
+			InputStream in = socket.getInputStream();
+			
+			DataInputStream in2 = new DataInputStream(in);
+			DataOutputStream out2 = new DataOutputStream(out);
+			
+			out2.writeInt(1);//1번 함수를 실행시키도록 값을 전달.
+	
+			out2.writeUTF(id);
+			out2.flush();
+			out2.writeUTF(pass);
+			out2.flush();
+			
+			result = in2.readBoolean();
+			
+			out2.close();
+			in2.close();
+		}
+		catch(Exception e)
+		{
+			putConsole(e.toString());
+		}
+		finally
+		{
+			try
+			{
+				socket.close();
+			}
+			catch(Exception e)
+			{
+				putConsole(e.toString());
+			}
+		}
+		if(result)
+		{
+			putConsole("Login Success: " + id);
+			ID = id;
+			PassWord = pass;
+			RES.setConfig("ID", id);
+			Login = true;
+		}
+		else
+		{
+			putConsole("Bad Login: " + id);
+		}
+		return result;//로그인 성공결과 리턴.
 	}
 	private LogicCore()
 	{
@@ -163,22 +239,23 @@ class Resource
 	private static final String LANG_DFT_TAG_FILE_NAME = "_DefaultTag.txt";
 	private static final String LANG_SEPARATOR = "\"";
 	private static final String FONT_DIR_NAME = "font";
+	private File configDIR;
 	
 	private HashMap<String, BufferedImage> images = new HashMap<String, BufferedImage>();
 	private HashMap<String, String> local = new HashMap<String, String>();
+	private ArrayList<String> localList = new ArrayList<String>();
 	public Font NORMAL_FONT;
 	public Font PIXEL_FONT;
 	public Font BAR_FONT;
 	
 	private Properties config = new Properties();
-	
-	public Resource()
+	Resource()
 	{
 		try
 		{
-			File configDIR = new File(new File(Resource.class.getProtectionDomain().getCodeSource().getLocation().getPath() + "../../" + CONFIG_FILE_NAME).getCanonicalPath());
-			//if(!configDIR.isFile())
-			if(true)//TODO
+			
+			this.configDIR = new File(new File(Resource.class.getProtectionDomain().getCodeSource().getLocation().getPath() + "../../" + CONFIG_FILE_NAME).getCanonicalPath());//if(!configDIR.isFile())
+			if(!this.configDIR.isFile())//TODO
 			{//콘픽이 없을경우 기록
 				FileOutputStream writer = new FileOutputStream(configDIR, false);
 				FileInputStream reader = new FileInputStream(this.getFile("/" + CONFIG_FILE_NAME));
@@ -226,8 +303,8 @@ class Resource
 					line = in.readLine();
 					String key = line.split(" = ")[0];
 					String value = line.split(LANG_SEPARATOR)[1];
-					LogicCore.putConsole(key);
-					LogicCore.putConsole(value);
+					LogicCore.putConsole("Language: " + value);
+					this.localList.add(value);
 					if(value.equals(this.getConfig("Language")))
 					{
 						LogicCore.putConsole("LOAD");
@@ -262,6 +339,19 @@ class Resource
 	    AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
 	    return op.filter(img, null);
 	}
+	void setConfig(String key, String value)
+	{
+		this.config.setProperty(key, value);
+		LogicCore.putConsole("SetConfig: " + key + " " + value);
+		try
+		{
+			this.config.store(new FileOutputStream(this.configDIR), "Last: " + key);
+		}
+		catch (IOException e)
+		{
+			LogicCore.putConsole(e.toString());
+		}
+	}
 	String getConfig(String key)
 	{
 		return (String)this.config.get(key);
@@ -273,6 +363,10 @@ class Resource
 	BufferedImage getImage(String tag)
 	{
 		return this.images.get(tag);
+	}
+	ArrayList<String> getLocalList()
+	{
+		return this.localList;
 	}
 	ArrayList<String> getFileList(String dir)
 	{
@@ -433,19 +527,35 @@ interface Console
 {
 	void put(String str);
 }
-class ConsoleWindow implements Console
+class DialogWindow
 {
-	private static final ConsoleWindow Console = new ConsoleWindow();
-	private JDialog consoleDialog;
+	protected JDialog dialog;
+	protected DialogWindow(int w, int h, String nameTag)
+	{
+		this.dialog = new JDialog();
+		this.dialog.setTitle(LogicCore.getResource().getLocal(nameTag));
+		this.dialog.setSize(w, h);
+		this.dialog.setResizable(false);
+		this.dialog.setLayout(null);
+		this.dialog.setAlwaysOnTop(true);
+	}
+	void toggleShow(int x, int y)
+	{
+		this.dialog.setVisible(!this.dialog.isVisible());
+		if(this.dialog.isVisible())
+		{
+			this.dialog.setLocation(x, y);
+		}
+	}
+}
+class ConsoleWindow extends DialogWindow implements Console
+{
+	public static final ConsoleWindow Console = new ConsoleWindow();
 	private JTextArea consoleArea;
 	private ConsoleWindow()
 	{
-		this.consoleDialog = new JDialog();
-		this.consoleDialog.setTitle(LogicCore.getResource().getLocal("Log"));
-		this.consoleDialog.setSize(500, 300);
-		this.consoleDialog.setLayout(new BorderLayout());
-		this.consoleDialog.setResizable(false);
-		this.consoleDialog.setAlwaysOnTop(true);
+		super(500, 300, "Log");
+		super.dialog.setLayout(new BorderLayout());
 		
 		this.consoleArea = new JTextArea();
 		this.consoleArea.setEditable(false);
@@ -457,7 +567,7 @@ class ConsoleWindow implements Console
 		consolScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		consolScrollPane.getVerticalScrollBar().setUnitIncrement(10);
 		
-		this.consoleDialog.add(consolScrollPane, BorderLayout.CENTER);
+		this.dialog.add(consolScrollPane, BorderLayout.CENTER);
 		LogicCore.registerConsole(this);
 	}
 	@Override
@@ -477,13 +587,165 @@ class ConsoleWindow implements Console
 		}
 		this.consoleArea.setCaretPosition(this.consoleArea.getDocument().getLength());
 	}
-	static void toggleShow(int x, int y)
+}
+class SettingWindow extends DialogWindow
+{
+	public static final SettingWindow Setting = new SettingWindow();
+	public static final int Width = 300;
+	public static final int Height = 155;
+	
+	private JTextField providerEdit;
+	
+	private SettingWindow()
 	{
-		Console.consoleDialog.setVisible(!Console.consoleDialog.isVisible());
-		if(Console.consoleDialog.isVisible())
+		super(Width, Height, "Setting");
+		super.dialog.setLayout(null);
+		JLabel langTag = new JLabel("Language:");
+		langTag.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
+		langTag.setBounds(20, 20, 120, 20);
+		JComboBox<String> langCombo = new JComboBox<String>();
+		langCombo.setBounds(Width - 150, 20, 130, 20);
+		for(String local : LogicCore.getResource().getLocalList())
 		{
-			Console.consoleDialog.setLocation(x, y);
+			langCombo.addItem(local);
 		}
+		langCombo.setSelectedItem(LogicCore.getResource().getConfig("Language"));
+		langCombo.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				LogicCore.getResource().setConfig("Language", (String)langCombo.getSelectedItem());
+			}
+		});
+		JLabel provider = new JLabel(LogicCore.getResource().getLocal("Provider") + ":");
+		provider.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
+		provider.setBounds(20, 60, 120, 20);
+		
+		this.providerEdit = new JTextField();
+		this.providerEdit.setBounds(20, 85, Width - 40, 20);
+		
+		JButton setProvider = new JButton(LogicCore.getResource().getLocal("OK"));
+		setProvider.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
+		setProvider.setBounds(Width - 80, 60, 60, 20);
+		setProvider.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				LogicCore.getResource().setConfig("Provider", providerEdit.getText());
+			}
+		});
+		
+		super.dialog.add(langTag);
+		super.dialog.add(langCombo);
+		super.dialog.add(provider);
+		super.dialog.add(setProvider);
+		super.dialog.add(this.providerEdit);
+	}
+	@Override
+	void toggleShow(int x, int y)
+	{
+		super.toggleShow(x, y);
+		this.providerEdit.setText(LogicCore.getResource().getConfig("Provider"));
+	}
+}
+class HelpWindow extends DialogWindow
+{
+	public static final HelpWindow Help = new HelpWindow();
+	public static final int Width = 400;
+	public static final int Height = 500;
+	private BufferedImage image;
+	private JPanel manualPanel = new JPanel()
+	{
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public void paint(Graphics g)
+		{
+			if(image != null)
+			{
+				g.drawImage(image, 0, 0, this);
+			}
+		}
+	};
+	private JScrollPane viewScroll;
+	private HelpWindow()
+	{
+		super(Width, Height, "Manual");
+		super.dialog.setLayout(new BorderLayout());
+		
+		this.viewScroll = new JScrollPane();
+		this.viewScroll.getViewport().setView(this.manualPanel);
+		this.viewScroll.setBorder(BorderFactory.createEmptyBorder());
+		this.viewScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		this.viewScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		this.viewScroll.getVerticalScrollBar().setUnitIncrement(10);
+		
+		super.dialog.add(viewScroll, BorderLayout.CENTER);
+	}
+	@Override
+	void toggleShow(int x, int y)
+	{
+		super.toggleShow(x, y);
+		this.image = LogicCore.getResource().getImage("Manual_" + LogicCore.getResource().getConfig("Language"));
+		this.manualPanel.setPreferredSize(new Dimension(this.image.getWidth(), this.image.getHeight()));
+	}
+}
+class LoginWindow extends DialogWindow
+{
+	public static final LoginWindow Login = new LoginWindow();
+	public static final int Width = 300;
+	public static final int Height = 170;
+	
+	private JTextField idField;
+	private JPasswordField passField;
+	private JButton loginButton;
+	
+	private LoginWindow()
+	{
+		super(Width, Height, "Login");
+		
+		JLabel idLabel = new JLabel(LogicCore.getResource().getLocal("ID"));
+		idLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
+		idLabel.setBounds(20, 20, 80, 25);
+		
+		this.idField = new JTextField();
+		this.idField.setBounds(100, 20, 180, 25);
+		
+		JLabel passLabel = new JLabel(LogicCore.getResource().getLocal("PW"));
+		passLabel.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
+		passLabel.setBounds(20, 50, 80, 25);
+		
+		this.passField = new JPasswordField();
+		this.passField.setBounds(100, 50, 180, 25);
+		
+		this.loginButton = new JButton(LogicCore.getResource().getLocal("Login"));
+		this.loginButton.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14f));
+		this.loginButton.setBounds(100, 90, 100, 30);
+		this.loginButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if(LogicCore.Login(idField.getText(), new String(passField.getPassword())))
+				{
+					dialog.setVisible(false);
+				}
+			}
+		});
+		
+		super.dialog.add(idLabel);
+		super.dialog.add(this.idField);
+		super.dialog.add(passLabel);
+		super.dialog.add(this.passField);
+		super.dialog.add(this.loginButton);
+	}
+	@Override
+	void toggleShow(int x, int y)
+	{
+		super.toggleShow(x, y);
+		this.idField.setText(LogicCore.getResource().getConfig("ID"));
 	}
 }
 class DataBranch

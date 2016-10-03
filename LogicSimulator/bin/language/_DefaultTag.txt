@@ -22,6 +22,25 @@ PalettePanel
 TemplatePanel
 TaskManagerPanel
 Log
+Setting
+Provider
+OK
+Manual
+Login
+ID
+PW
+Save
+Local
+Cloud
+ReadOnly
+Name
+Remove
+Directory
+Load
+BasicProviding
+Select
+OnlyTemplate
+CreateNewSession
 
 ##그리드 멤버##
 Partition

@@ -127,6 +127,11 @@ public class UI
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
+				Session session = core.getSession().getFocusSession();
+				if(session != null && session.getFileLocation() != null && session.getFileLocation().isFile())
+				{
+					LogicCore.getResource().setConfig("OpenFile", session.getFileLocation().toString());
+				}
 				LogicCore.putConsole("Instance Close");
 				LogicCore.removeInstance(core);
 			}
@@ -297,11 +302,14 @@ public class UI
 		{
 			this.view = ViewMode.SIGN;
 		}
-		for(GridMember member : this.core.getSession().getFocusSession().getGrid().getMembers().values())
+		if(this.core.getSession().getFocusSession() != null)
 		{
-			if(member instanceof LogicBlock)
+			for(GridMember member : this.core.getSession().getFocusSession().getGrid().getMembers().values())
 			{
-				((LogicBlock)member).updateViewMode();
+				if(member instanceof LogicBlock)
+				{
+					((LogicBlock)member).updateViewMode();
+				}
 			}
 		}
 	}
@@ -889,6 +897,7 @@ class ToolBar implements LogicUIComponent
 	private ButtonPanel sizeUpButton;
 	private ButtonPanel sizeDownButton;
 	private ButtonPanel setViewButton;
+	private ButtonPanel logicButton;
 	private ButtonPanel consolButton;
 	private ButtonPanel helpButton;
 	private ButtonPanel newInstanceButton;
@@ -914,12 +923,12 @@ class ToolBar implements LogicUIComponent
 		this.rightSidePanel = new JPanel();
 		this.rightSidePanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		this.rightSidePanel.setOpaque(false);
-		this.rightSidePanel.setPreferredSize(new Dimension(110, 0));
+		this.rightSidePanel.setPreferredSize(new Dimension(140, 0));
 		
 		this.leftSidePanel = new JPanel();
 		this.leftSidePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 		this.leftSidePanel.setOpaque(false);
-		this.leftSidePanel.setPreferredSize(new Dimension(230, 0));
+		this.leftSidePanel.setPreferredSize(new Dimension(190, 0));
 		
 		this.sessionTabPanel = new JLayeredPane();
 		this.sessionTabPanel.setLayout(null);
@@ -1020,6 +1029,22 @@ class ToolBar implements LogicUIComponent
 		this.setViewButton.setOnMouseImage(LogicCore.getResource().getImage("VIEW_SELECT"));
 		this.setViewButton.setBasicPressImage(LogicCore.getResource().getImage("VIEW_PUSH"));
 		
+		this.logicButton = new ButtonPanel(20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void pressed(int button)
+			{
+				Rectangle g = core.getUI().getFrame().getBounds();
+				LoginWindow.Login.toggleShow(g.x + g.width - (g.width / 2) - LoginWindow.Width / 2
+						, g.y + (g.height / 2) - LoginWindow.Height / 2);
+			}
+		};
+		this.logicButton.setBasicImage(LogicCore.getResource().getImage("LOGIN"));
+		this.logicButton.setOnMouseImage(LogicCore.getResource().getImage("LOGIN_SELECT"));
+		this.logicButton.setBasicPressImage(LogicCore.getResource().getImage("LOGIN_PUSH"));
+		
 		this.consolButton = new ButtonPanel(20, 20)
 		{
 			private static final long serialVersionUID = 1L;
@@ -1028,11 +1053,28 @@ class ToolBar implements LogicUIComponent
 			void pressed(int button)
 			{
 				Rectangle g = core.getUI().getFrame().getBounds();
-				ConsoleWindow.toggleShow(g.x , g.y);
+				ConsoleWindow.Console.toggleShow(g.x , g.y);
 			}
 		};
+		this.consolButton.setBasicImage(LogicCore.getResource().getImage("CONSOLE"));
+		this.consolButton.setOnMouseImage(LogicCore.getResource().getImage("CONSOLE_SELECT"));
+		this.consolButton.setBasicPressImage(LogicCore.getResource().getImage("CONSOLE_PUSH"));
 		
-		this.helpButton = new ButtonPanel(20, 20);
+		this.helpButton = new ButtonPanel(20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int button)
+			{
+				Rectangle g = core.getUI().getFrame().getBounds();
+				HelpWindow.Help.toggleShow(g.x + g.width - (g.width / 2) - HelpWindow.Width / 2
+						, g.y + (g.height / 2) - HelpWindow.Height / 2);
+			}
+		};
+		this.helpButton.setBasicImage(LogicCore.getResource().getImage("HELP"));
+		this.helpButton.setOnMouseImage(LogicCore.getResource().getImage("HELP_SELECT"));
+		this.helpButton.setBasicPressImage(LogicCore.getResource().getImage("HELP_PUSH"));
+		
 		this.newInstanceButton = new ButtonPanel(20, 20)
 		{
 			private static final long serialVersionUID = 1L;
@@ -1042,7 +1084,25 @@ class ToolBar implements LogicUIComponent
 				LogicCore.createInstance();
 			}
 		};
-		this.settingButton = new ButtonPanel(20, 20);
+		this.newInstanceButton.setBasicImage(LogicCore.getResource().getImage("NEWINSTANCE"));
+		this.newInstanceButton.setOnMouseImage(LogicCore.getResource().getImage("NEWINSTANCE_SELECT"));
+		this.newInstanceButton.setBasicPressImage(LogicCore.getResource().getImage("NEWINSTANCE_PUSH"));
+		
+		this.settingButton = new ButtonPanel(20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+	
+			@Override
+			void pressed(int button)
+			{
+				Rectangle g = core.getUI().getFrame().getBounds();
+				SettingWindow.Setting.toggleShow(g.x + g.width - (g.width / 2) - SettingWindow.Width / 2
+						, g.y + (g.height / 2)  -SettingWindow.Height / 2);
+			}
+		};
+		this.settingButton.setBasicImage(LogicCore.getResource().getImage("SETTING"));
+		this.settingButton.setOnMouseImage(LogicCore.getResource().getImage("SETTING_SELECT"));
+		this.settingButton.setBasicPressImage(LogicCore.getResource().getImage("SETTING_PUSH"));
 		
 		this.leftSidePanel.add(this.saveButton);
 		this.leftSidePanel.add(this.optionSaveButton);
@@ -1052,8 +1112,9 @@ class ToolBar implements LogicUIComponent
 		this.leftSidePanel.add(this.setViewButton);
 		this.leftSidePanel.add(this.sizeUpButton);
 		
-		this.rightSidePanel.add(this.helpButton);
+		this.rightSidePanel.add(this.logicButton);
 		this.rightSidePanel.add(this.consolButton);
+		this.rightSidePanel.add(this.helpButton);
 		this.rightSidePanel.add(this.settingButton);
 		this.rightSidePanel.add(this.newInstanceButton);
 		
@@ -1508,6 +1569,10 @@ class TemplatePanel implements LogicUIComponent
 				manager.addTemplate();
 			}
 		};
+		this.addTemplateButton.setBasicDisableImage(LogicCore.getResource().getImage("TEMP_ADD_DISENABLE"));
+		this.addTemplateButton.setBasicImage(LogicCore.getResource().getImage("TEMP_ADD"));
+		this.addTemplateButton.setOnMouseImage(LogicCore.getResource().getImage("TEMP_ADD_SELECT"));
+		this.addTemplateButton.setBasicPressImage(LogicCore.getResource().getImage("TEMP_ADD_PUSH"));
 		
 		if(ClipBoardPanel.clipBoard == null)
 		{
@@ -1526,6 +1591,10 @@ class TemplatePanel implements LogicUIComponent
 				}
 			}
 		};
+		this.removeTemplateButton.setBasicImage(LogicCore.getResource().getImage("TEMP_REMOVE"));
+		this.removeTemplateButton.setOnMouseImage(LogicCore.getResource().getImage("TEMP_REMOVE_SELECT"));
+		this.removeTemplateButton.setBasicPressImage(LogicCore.getResource().getImage("TEMP_REMOVE_PUSH"));
+		
 		this.checkAllButton = new ButtonPanel(2, 68, 26, 26)
 		{
 			private static final long serialVersionUID = 1L;
@@ -1545,6 +1614,10 @@ class TemplatePanel implements LogicUIComponent
 				}
 			}
 		};
+		this.checkAllButton.setBasicImage(LogicCore.getResource().getImage("TEMP_CHECKSELECT"));
+		this.checkAllButton.setOnMouseImage(LogicCore.getResource().getImage("TEMP_CHECKSELECT_SELECT"));
+		this.checkAllButton.setPressImage(1, LogicCore.getResource().getImage("TEMP_CHECK_PUSH"));
+		this.checkAllButton.setPressImage(3, LogicCore.getResource().getImage("TEMP_DECHECK_PUSH"));
 		
 		this.buttonAreaPanel.add(this.addTemplateButton);
 		this.buttonAreaPanel.add(this.removeTemplateButton);
@@ -1661,18 +1734,31 @@ class TaskManagerPanel implements LogicUIComponent
 			@Override
 			void pressed(int button)
 			{
-				manager.recover(manager.getFocusIndex() - 1);
+				if(manager != null)
+				{
+					manager.recover(manager.getFocusIndex() - 1);
+				}
 			}
 		};
+		this.taskUndoButton.setBasicImage(LogicCore.getResource().getImage("UNDO"));
+		this.taskUndoButton.setOnMouseImage(LogicCore.getResource().getImage("UNDO_SELECT"));
+		this.taskUndoButton.setBasicPressImage(LogicCore.getResource().getImage("UNDO_PUSH"));
+		
 		this.taskRedoButton = new ButtonPanel(2, 34, 26, 26)
 		{
 			private static final long serialVersionUID = 1L;
 			@Override
 			void pressed(int button)
 			{
-				manager.recover(manager.getFocusIndex() + 1);
+				if(manager != null)
+				{
+					manager.recover(manager.getFocusIndex() + 1);
+				}
 			}
 		};
+		this.taskRedoButton.setBasicImage(LogicCore.getResource().getImage("REDO"));
+		this.taskRedoButton.setOnMouseImage(LogicCore.getResource().getImage("REDO_SELECT"));
+		this.taskRedoButton.setBasicPressImage(LogicCore.getResource().getImage("REDO_PUSH"));
 		
 		this.buttonAreaPanel.add(this.taskUndoButton);
 		this.buttonAreaPanel.add(this.taskRedoButton);
@@ -1763,8 +1849,8 @@ class ManySelectEditPanel extends JPanel
 	private ButtonPanel copyButton;
 	private ButtonPanel cutButton;
 	private ButtonPanel createTempButton;
-	private ButtonPanel exportTempButton;
-	private ButtonPanel restoreButton;
+	private ButtonPanel deActiveButton;
+	private ButtonPanel activeButton;
 	private ButtonPanel removeButton;
 	private ArrayList<GridMember> selectMembers;
 	
@@ -1787,6 +1873,10 @@ class ManySelectEditPanel extends JPanel
 				ClipBoardPanel.setClipBoard(getSelectDataBranch());
 			}
 		};
+		this.copyButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_COPY"));
+		this.copyButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_COPY_SELECT"));
+		this.copyButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_COPY_PUSH"));
+		
 		this.cutButton = new ButtonPanel(166, 25, 40, 40)
 		{
 			private static final long serialVersionUID = 1L;
@@ -1804,6 +1894,10 @@ class ManySelectEditPanel extends JPanel
 				}
 			}
 		};
+		this.cutButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_CUT"));
+		this.cutButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_CUT_SELECT"));
+		this.cutButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_CUT_PUSH"));
+		
 		this.removeButton = new ButtonPanel(266, 25, 40, 40)
 		{
 			private static final long serialVersionUID = 1L;
@@ -1819,6 +1913,10 @@ class ManySelectEditPanel extends JPanel
 				}
 			}
 		};
+		this.removeButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_REMOVE"));
+		this.removeButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_REMOVE_SELECT"));
+		this.removeButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_REMOVE_PUSH"));
+		
 		this.createTempButton = new ButtonPanel(66, 75, 40, 40)
 		{
 			private static final long serialVersionUID = 1L;
@@ -1828,44 +1926,57 @@ class ManySelectEditPanel extends JPanel
 				grid.getSession().getTemplateManager().addTemplate(getSelectDataBranch());
 			}
 		};
-		this.exportTempButton = new ButtonPanel(166, 75, 40, 40)
-		{
-			private static final long serialVersionUID = 1L;
-			@Override
-			void pressed(int button)
-			{
-				for(GridMember member : selectMembers)
-				{
-					if(member instanceof LogicBlock)
-					{
-						((LogicBlock)member).setActive(false);
-					}
-				}
-			}
-		};
-		this.restoreButton = new ButtonPanel(266, 75, 40, 40)
-		{
-			private static final long serialVersionUID = 1L;
-			@Override
-			void pressed(int button)
-			{
-				for(GridMember member : selectMembers)
-				{
-					if(member instanceof LogicBlock)
-					{
-						((LogicBlock)member).setActive(true);
-					}
-				}
-			}
-		};
-		this.add(this.numberLabel);
+		this.createTempButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_ADDTEMP"));
+		this.createTempButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_ADDTEMP_SELECT"));
+		this.createTempButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_ADDTEMP_PUSH"));
 		
+		this.deActiveButton = new ButtonPanel(166, 75, 40, 40)
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int button)
+			{
+				for(GridMember member : selectMembers)
+				{
+					if(member instanceof LogicBlock)
+					{
+						TaskUnit task = member.getGrid().getSession().getTaskManager().setTask();
+						task.addCommand(new SetBlockActive((LogicBlock)member, false));
+					}
+				}
+			}
+		};
+		this.deActiveButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_DISENABLE"));
+		this.deActiveButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_DISENABLE_SELECT"));
+		this.deActiveButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_DISENABLE_PUSH"));
+		
+		this.activeButton = new ButtonPanel(266, 75, 40, 40)
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int button)
+			{
+				for(GridMember member : selectMembers)
+				{
+					if(member instanceof LogicBlock)
+					{
+						TaskUnit task = member.getGrid().getSession().getTaskManager().setTask();
+						task.addCommand(new SetBlockActive((LogicBlock)member, true));
+					}
+				}
+			}
+		};
+		this.activeButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_ENABLE"));
+		this.activeButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_ENABLE_SELECT"));
+		this.activeButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_ENABLE_PUSH"));
+		
+		this.add(this.numberLabel);
 		this.add(this.copyButton);
 		this.add(this.cutButton);
 		this.add(this.removeButton);
 		this.add(this.createTempButton);
-		this.add(this.exportTempButton);
-		this.add(this.restoreButton);
+		this.add(this.deActiveButton);
+		this.add(this.activeButton);
 		
 		
 		blockControl.addControlPanel(this);
@@ -2222,6 +2333,15 @@ class EditPane extends JPanel
 	EditPane()
 	{
 		this.setLayout(null);
+		
+		this.copyButton.setBasicImage(LogicCore.getResource().getImage("GRIDMEMBER_CLONE"));
+		this.copyButton.setOnMouseImage(LogicCore.getResource().getImage("GRIDMEMBER_CLONE_SELECT"));
+		this.copyButton.setBasicPressImage(LogicCore.getResource().getImage("GRIDMEMBER_CLONE_PUSH"));
+		
+		this.removeButton.setBasicImage(LogicCore.getResource().getImage("GRIDMEMBER_REMOVE"));
+		this.removeButton.setOnMouseImage(LogicCore.getResource().getImage("GRIDMEMBER_REMOVE_SELECT"));
+		this.removeButton.setBasicPressImage(LogicCore.getResource().getImage("GRIDMEMBER_REMOVE_PUSH"));
+		
 		this.text = new JLabel();
 		this.text.setHorizontalAlignment(SwingConstants.CENTER);
 		this.text.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(16.0f));
@@ -2272,6 +2392,10 @@ class TagEditPane extends EditPane
 				tag.toggleModeActive();
 			}
 		};
+		this.textEditButton.setBasicImage(LogicCore.getResource().getImage("SETTEXT"));
+		this.textEditButton.setOnMouseImage(LogicCore.getResource().getImage("SETTEXT_SELECT"));
+		this.textEditButton.setBasicPressImage(LogicCore.getResource().getImage("SETTEXT_PUSH"));
+		
 		this.colorSetButton = new ButtonPanel(340, 50, 30, 30)
 		{
 			private static final long serialVersionUID = 1L;
@@ -2290,6 +2414,10 @@ class TagEditPane extends EditPane
 				}
 			}
 		};
+		this.colorSetButton.setBasicImage(LogicCore.getResource().getImage("SETCOLOR"));
+		this.colorSetButton.setOnMouseImage(LogicCore.getResource().getImage("SETCOLOR_SELECT"));
+		this.colorSetButton.setBasicPressImage(LogicCore.getResource().getImage("SETCOLOR_PUSH"));
+		
 		this.add(this.colorSelector);
 		this.add(this.textEditButton);
 		this.add(this.colorSetButton);
@@ -2332,6 +2460,9 @@ class LogicTREditPane extends EditPane
 	
 	LogicTREditPane()
 	{
+		this.restoreButton.setBasicImage(LogicCore.getResource().getImage("GRIDMEMBER_ENDABLE"));
+		this.restoreButton.setOnMouseImage(LogicCore.getResource().getImage("GRIDMEMBER_ENDABLE_SELECT"));
+		this.restoreButton.setBasicPressImage(LogicCore.getResource().getImage("GRIDMEMBER_ENDABLE_PUSH"));
 		this.add(this.restoreButton);
 		this.setIOSwitch();
 		this.add(this.editViewPanel);
@@ -2611,6 +2742,10 @@ class LEDEditPane extends EditPane
 				}
 			}
 		};
+		this.selectButton.setBasicImage(LogicCore.getResource().getImage("SETCOLOR"));
+		this.selectButton.setOnMouseImage(LogicCore.getResource().getImage("SETCOLOR_SELECT"));
+		this.selectButton.setBasicPressImage(LogicCore.getResource().getImage("SETCOLOR_PUSH"));
+		
 		this.add(this.colorSelector);
 		this.add(this.onoffSelectButton);
 		this.add(this.selectButton);
@@ -2723,6 +2858,9 @@ class WireEditPane extends LogicTREditPane
 		{
 			super(x, y, w, h);
 			this.type = type;
+			this.setBasicImage(LogicCore.getResource().getImage("WIREEDIT_BACKGROUND"));
+			this.setOnMouseImage(LogicCore.getResource().getImage("WIREEDIT_BACKGROUND_SELECT"));
+			this.setBasicPressImage(LogicCore.getResource().getImage("WIREEDIT_BACKGROUND_PUSH"));
 		}
 		@Override
 		void pressed(int mouse)
@@ -2737,6 +2875,12 @@ class WireEditPane extends LogicTREditPane
 				wire.setWireType(type);
 			}
 			updateMemberStatus();
+		}
+		@Override
+		public void paint(Graphics g)
+		{
+			super.paint(g);
+			g.drawImage(LogicCore.getResource().getImage("WIREEDIT_" + type.toString()), 0, 0, this);
 		}
 	}
 }
@@ -2822,7 +2966,6 @@ class TrackedPane extends JPanel implements SizeUpdate
 		{
 			int placeAbsX = stdX + member.getUIabsLocationX() - minX - ((this.getWidth() / 2) / multiple);
 			int placeAbsY = stdY + member.getUIabsLocationY() - minY - ((this.getHeight() / 2) / multiple);
-			System.out.println(gridSize.getPX() + " " + gridSize.getNX());
 			
 			if(placeAbsX < gridSize.getPX() * Size.REGULAR_SIZE && placeAbsX > -(gridSize.getNX() + 1) * Size.REGULAR_SIZE
 			&& placeAbsY < gridSize.getPY() * Size.REGULAR_SIZE && placeAbsY > -(gridSize.getNY() + 1) * Size.REGULAR_SIZE)
@@ -2949,10 +3092,6 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 		if(this.nowImage != null)
 		{
 			g.drawImage(this.nowImage, 0, 0, this);
-		}
-		else
-		{
-			g.fillRect(0, 0, this.getWidth(), this.getHeight());
 		}
 		super.paintChildren(g);
 	}
@@ -3081,10 +3220,10 @@ class FileSavePanel extends FileManagerWindow
 		super(core);
 		
 		super.diaLog.setSize(720, 300);
-		super.diaLog.setTitle("저장");
+		super.diaLog.setTitle(LogicCore.getResource().getLocal("Save"));
 		
 		this.grp = new ButtonGroup();
-		this.dftSave = new JRadioButton("로컬");
+		this.dftSave = new JRadioButton(LogicCore.getResource().getLocal("Local"));
 		this.dftSave.addActionListener(new ActionListener()
 		{
 			@Override
@@ -3095,7 +3234,7 @@ class FileSavePanel extends FileManagerWindow
 			}
 		});
 		this.dftSave.setBounds(5, 225, 100, 20);
-		this.cloudSave = new JRadioButton("클라우드");
+		this.cloudSave = new JRadioButton(LogicCore.getResource().getLocal("Cloud"));
 		this.cloudSave.addActionListener(new ActionListener()
 		{
 			@Override
@@ -3108,18 +3247,18 @@ class FileSavePanel extends FileManagerWindow
 		this.cloudSave.setBounds(5, 245, 100, 20);
 		this.grp.add(this.dftSave);
 		this.grp.add(this.cloudSave);
-		this.readOnly = new JCheckBox("읽기 전용");
+		this.readOnly = new JCheckBox(LogicCore.getResource().getLocal("ReadOnly"));
 		this.readOnly.setBounds(110, 225, 100, 20);
 		this.dftSave.setSelected(true);
 		
 		this.directoryLabel = new JLabel();
 		this.directoryLabel.setBounds(10, 175, 480, 20);
-		this.fileNameLabel = new JLabel("이름");
+		this.fileNameLabel = new JLabel(LogicCore.getResource().getLocal("Name"));
 		this.fileNameLabel.setBounds(10, 200, 50, 20);
 		this.fileNameField = new JTextField();
 		this.fileNameField.setBounds(65, 200, 420, 20);
 		
-		this.removeButton = new JButton("삭제");
+		this.removeButton = new JButton(LogicCore.getResource().getLocal("Remove"));
 		this.removeButton.setBounds(310, 230, 80, 30);
 		this.removeButton.addActionListener(new ActionListener()
 		{
@@ -3132,7 +3271,7 @@ class FileSavePanel extends FileManagerWindow
 			}
 		});
 		
-		this.saveButton = new JButton("저장");
+		this.saveButton = new JButton(LogicCore.getResource().getLocal("Save"));
 		this.saveButton.setBounds(400, 230, 80, 30);
 		this.saveButton.addActionListener(new ActionListener()
 		{
@@ -3235,11 +3374,11 @@ class FileSavePanel extends FileManagerWindow
 	{
 		File file = fileChooser.getSelectedFile();
 		File focusDir = fileChooser.getCurrentDirectory();
-		this.directoryLabel.setText("경로: " + fileChooser.getCurrentDirectory().toString());
+		this.directoryLabel.setText(LogicCore.getResource().getLocal("Directory") + ": " + fileChooser.getCurrentDirectory().toString());
 		if(file != null && file.isDirectory())
 		{
 			focusDir = file;
-			this.directoryLabel.setText("경로: " + file.toString());
+			this.directoryLabel.setText(LogicCore.getResource().getLocal("Directory") + ": " + file.toString());
 			
 		}
 		this.selectFile = new File(focusDir.toString() + "\\" + fileNameField.getText() + ".LogicSave");
@@ -3306,7 +3445,7 @@ class FileLoadPanel extends FileManagerWindow
 	{
 		super(core);
 		
-		super.diaLog.setTitle("불러오기");
+		super.diaLog.setTitle(LogicCore.getResource().getLocal("Load"));
 		
 		super.fileChooser.addPropertyChangeListener(new PropertyChangeListener()
 		{
@@ -3330,7 +3469,7 @@ class FileLoadPanel extends FileManagerWindow
 		this.descriptionPane = new JPanel();
 		this.descriptionPane.setLayout(null);
 		this.descriptionPane.setBounds(500, 0, 210, 300);
-		this.descriptionTitle = new JLabel("제목테스트");
+		this.descriptionTitle = new JLabel();
 		this.descriptionTitle.setBounds(0, 5, 210, 20);
 		this.descriptionTitle.setHorizontalAlignment(SwingConstants.CENTER);
 		this.descriptionText = new JTextArea();
@@ -3346,7 +3485,7 @@ class FileLoadPanel extends FileManagerWindow
 		this.buttonPanel.setBounds(0, 220, 500, 80);
 		
 		this.grp = new ButtonGroup();
-		this.dftLoad = new JRadioButton("로컬");
+		this.dftLoad = new JRadioButton(LogicCore.getResource().getLocal("Local"));
 		this.dftLoad.addActionListener(new ActionListener()
 		{
 			@Override
@@ -3356,7 +3495,7 @@ class FileLoadPanel extends FileManagerWindow
 			}
 		});
 		this.dftLoad.setBounds(10, 5, 100, 20);
-		this.innerLoad = new JRadioButton("기본 제공");
+		this.innerLoad = new JRadioButton(LogicCore.getResource().getLocal("BasicProviding"));
 		this.innerLoad.addActionListener(new ActionListener()
 		{
 			@Override
@@ -3366,7 +3505,7 @@ class FileLoadPanel extends FileManagerWindow
 			}
 		});
 		this.innerLoad.setBounds(10, 25, 100, 20);
-		this.cloudLoad = new JRadioButton("클라우드");
+		this.cloudLoad = new JRadioButton(LogicCore.getResource().getLocal("Cloud"));
 		this.cloudLoad.addActionListener(new ActionListener()
 		{
 			@Override
@@ -3380,12 +3519,12 @@ class FileLoadPanel extends FileManagerWindow
 		this.grp.add(this.innerLoad);
 		this.grp.add(this.cloudLoad);
 		this.dftLoad.setSelected(true);
-		this.tempLoad = new JCheckBox("템플릿만 로드");
+		this.tempLoad = new JCheckBox(LogicCore.getResource().getLocal("OnlyTemplate"));
 		this.tempLoad.setBounds(240, 5, 120, 20);
-		this.newSessionOpen = new JCheckBox("새 세션 생성");
+		this.newSessionOpen = new JCheckBox(LogicCore.getResource().getLocal("CreateNewSession"));
 		this.newSessionOpen.setSelected(true);
 		this.newSessionOpen.setBounds(240, 25, 120, 20);
-		this.selectButton = new JButton("선택");
+		this.selectButton = new JButton(LogicCore.getResource().getLocal("Select"));
 		this.selectButton.setBounds(380, 10, 100, 30);
 		this.selectButton.addActionListener(new ActionListener()
 		{
@@ -3394,18 +3533,18 @@ class FileLoadPanel extends FileManagerWindow
 			{
 				if(selectFile != null)
 				{
-					if(newSessionOpen.isSelected())
-					{
-						core.getSession().createSession();
-					}
 					Session focus = core.getSession().getFocusSession();
+					if(newSessionOpen.isSelected() || focus == null)
+					{
+						focus = core.getSession().createSession();
+					}
 					if(tempLoad.isSelected())
 					{
 						focus.getTemplateManager().addTemplates(selectFile);
 					}
 					else
 					{
-						focus.LoadData(selectFile);
+						focus.loadData(selectFile);
 					}
 				}
 			}

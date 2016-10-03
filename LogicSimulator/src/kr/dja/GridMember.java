@@ -337,6 +337,9 @@ class Tag extends GridMember implements ColorSet, SizeSet
 				toggleModeActive();
 			}
 		};
+		this.editCompleatButton.setBasicImage(LogicCore.getResource().getImage("TEMP_TEXT"));
+		this.editCompleatButton.setBasicPressImage(LogicCore.getResource().getImage("TEMP_TEXT_PUSH"));
+		
 		this.editCompleatButton.setVisible(false);
 		
 		super.layeredPane.add(this.editCompleatButton, new Integer(3));
@@ -432,16 +435,16 @@ class Tag extends GridMember implements ColorSet, SizeSet
 	{
 		if(!this.isShow)
 		{
-			if(super.isPlacement())
-			{
-				this.grid.deSelectFocus();
-			}
 			this.editCompleatButton.setVisible(true);
 			this.editTextArea.setText(this.description);
 			super.gridViewPane.remove(this.viewTextArea);
 			super.gridViewPane.add(this.editTextArea);
 			super.layeredPane.repaint();
 			this.isShow = true;
+			if(super.isPlacement())
+			{
+				this.grid.deSelectFocus();
+			}
 		}
 		else
 		{
