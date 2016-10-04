@@ -23,7 +23,7 @@ public class TaskManager
 {
 	private Session session;
 	
-	private int maxSnapShot = 20;
+	private int maxSnapShot = 40;
 	private int checkTime = 1;
 	private long lastCheckTime;
 	
@@ -113,6 +113,7 @@ public class TaskManager
 		nowCreateTaskUnit.getView().setLocation(WGAP, this.snapShots.size() * (nowCreateTaskUnit.getView().getHeight() + HGAP));
 		this.taskPanel.add(nowCreateTaskUnit.getView());
 		this.snapShots.add(nowCreateTaskUnit);
+		this.checkSnapShotCount();
 		this.reSizeTaskPanel();
 		this.setFocus(nowCreateTaskUnit);
 	}
@@ -128,6 +129,7 @@ public class TaskManager
 		int height = HGAP;
 		for(Component comp : this.taskPanel.getComponents())
 		{
+			comp.setLocation(0, height);
 			height += comp.getHeight() + HGAP;
 		}
 		this.taskPanel.setPreferredSize(new Dimension(0, height));
@@ -204,7 +206,7 @@ public class TaskManager
 	private void checkSnapShotCount()
 	{
 		int i = this.snapShots.size() - this.maxSnapShot - 1;
-		while(i > 0)
+		while(i >= 0)
 		{
 			TaskUnit removeSnapShot = this.snapShots.get(i);
 			if(this.focusUnit == removeSnapShot)
@@ -213,6 +215,7 @@ public class TaskManager
 			}
 			this.taskPanel.remove(removeSnapShot.getView());
 			this.snapShots.remove(removeSnapShot);
+			i--;
 		}
 	}
 	private void setFocus(TaskUnit unit)
@@ -456,10 +459,13 @@ class PutMemberOnGrid extends Command
 		}
 		super.masterData.setData("CommandAbsX", Integer.toString(absX));
 		super.masterData.setData("CommandAbsY", Integer.toString(absY));
-		LogicBlock block = grid.getLogicBlock(absX / Size.REGULAR_SIZE, absY / Size.REGULAR_SIZE);
-		if(block != null)
+		if(member instanceof LogicBlock)
 		{
-			grid.getSession().getTaskManager().setTask().addCommand(new RemoveMemberOnGrid(block));
+			LogicBlock block = grid.getLogicBlock(absX / Size.REGULAR_SIZE, absY / Size.REGULAR_SIZE);
+			if(block != null)
+			{
+				grid.getSession().getTaskManager().setTask().addCommand(new RemoveMemberOnGrid(block));
+			}
 		}
 		grid.addMember(member, absX, absY);
 	}

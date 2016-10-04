@@ -1,6 +1,7 @@
 package kr.dja;
 
 import java.awt.Dimension;
+import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -162,6 +163,7 @@ class ClipBoardPanel extends ButtonPanel
 		this.setOnMouseImage(LogicCore.getResource().getImage("TEMP_CLIP_SELECT"));
 		this.setBasicPressImage(LogicCore.getResource().getImage("TEMP_CLIP_PUSH"));
 		this.setBasicDisableImage(LogicCore.getResource().getImage("TEMP_CLIP_DEENABLE"));
+		this.setShortCut(core.getUI().getFrame(), KeyEvent.VK_CONTROL, KeyEvent.VK_V);
 		
 		this.nameField = new JTextField();
 		this.nameField.setBorder(null);
@@ -179,11 +181,14 @@ class ClipBoardPanel extends ButtonPanel
 			{
 				if(editTagFlag)
 				{
+					core.getUI().getFrame().setFocusable(true);
 					ClipBoardPanel.this.remove(nameField);
 					ClipBoardPanel.this.add(nameLabel);
 					editTag(nameField.getText());
 					ClipBoardPanel.this.setEnable(true);
 					editTagFlag = false;
+					
+					
 				}
 				else
 				{

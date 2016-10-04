@@ -653,7 +653,7 @@ class SettingWindow extends DialogWindow
 class HelpWindow extends DialogWindow
 {
 	public static final HelpWindow Help = new HelpWindow();
-	public static final int Width = 400;
+	public static final int Width = 420;
 	public static final int Height = 500;
 	private BufferedImage image;
 	private JPanel manualPanel = new JPanel()

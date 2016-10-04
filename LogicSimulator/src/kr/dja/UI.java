@@ -21,6 +21,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -148,8 +149,8 @@ public class UI
 		this.palettePanel = new PalettePanel(this);
 		//this.infoPanel = new InfoPanel();
 		this.blockControlPanel = new BlockControlPanel();
-		this.templatePanel = new TemplatePanel();
-		this.taskManagerPanel = new TaskManagerPanel();
+		this.templatePanel = new TemplatePanel(this);
+		this.taskManagerPanel = new TaskManagerPanel(this);
 		
 		this.controlView = new JPanel();
 		this.controlView.setPreferredSize(new Dimension(400, 0));
@@ -272,17 +273,20 @@ public class UI
 	}
 	void addTrackedPane(TrackedPane trackedPane)
 	{
+		if(this.trackedPane != null)
+		{
+			this.removeTrackedPane(this.trackedPane);
+		}
 		this.glassPane.setVisible(true);
 		this.trackedPane = trackedPane;
-		
 		this.trackedPane.setLocation((int)this.glassPane.getMousePosition().getX() - (trackedPane.getWidth() / 2), (int)this.glassPane.getMousePosition().getY() - (trackedPane.getHeight() / 2));
-		
 		this.mainLayeredPane.add(trackedPane, new Integer(100));
 	}
 	void removeTrackedPane(TrackedPane trackedPane)
 	{
-		mainLayeredPane.remove(trackedPane);
-		glassPane.setVisible(false);
+		this.trackedPane = null;
+		this.mainLayeredPane.remove(trackedPane);
+		this.glassPane.setVisible(false);
 	}
 	BlockControlPanel getBlockControlPanel()
 	{
@@ -764,6 +768,7 @@ class GridArea implements LogicUIComponent, SizeUpdate
 				this.text = text;
 				this.setOpaque(false);
 				//this.setBackground(new Color(r, g, b, a));
+				this.selectMember = new ArrayList<GridMember>();
 				this.setSize(0, 0);
 				this.action(startX, startY, startViewX, startViewY);
 				layeredPane.add(this, new Integer(2));
@@ -776,8 +781,6 @@ class GridArea implements LogicUIComponent, SizeUpdate
 					    Math.abs(this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)));
 				this.setLocation((this.mouseX - this.startX + ((int)getViewPosition().getX() - startViewX)) > 0 ? this.getX() : (int)this.startX + startViewX - Math.abs(this.mouseX - this.startX + ((int)getViewPosition().getX() - startViewX)), 
 						    (this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)) > 0 ? this.getY() : (int)this.startY + startViewY - Math.abs(this.mouseY - this.startY + ((int)getViewPosition().getY() - startViewY)));
-				//layeredPane.repaint();
-				this.selectMember = new ArrayList<GridMember>();
 				for(UUID memberID : grid.getMembers().keySet())
 				{
 					GridMember member = grid.getMembers().get(memberID);
@@ -906,10 +909,11 @@ class ToolBar implements LogicUIComponent
 	private ArrayList<ButtonPanel> sessionTabList;
 	private ButtonPanel createSessionButton;
 	private ButtonPanel focus;
+	private LogicCore core;
 	
 	ToolBar(LogicCore core)
 	{
-		//this.core = core;
+		this.core = core;
 		
 		this.toolbar = new JToolBar();
 		
@@ -1190,6 +1194,10 @@ class ToolBar implements LogicUIComponent
 	{
 		this.saveButton.setEnable(option);
 		this.optionSaveButton.setEnable(option);
+		if(option)
+		{
+			this.saveButton.setShortCut(this.core.getUI().getFrame(), KeyEvent.VK_CONTROL, KeyEvent.VK_S);
+		}
 	}
 	@Override
 	public Component getComponent()
@@ -1379,32 +1387,6 @@ class BlockControlPanel implements LogicUIComponent
 		return this.blockControlPanel;
 	}
 }
-/*class InfoPanel implements LogicUIComponent
-{
-	private JPanel infoPanel;
-
-	private JTextArea explanationArea;
-	
-	InfoPanel()
-	{//TODO 설명 기능 구현해야함
-		this.infoPanel = new JPanel();
-		
-		this.infoPanel.setLayout(null);
-		this.infoPanel.setBounds(5, 155, 390, 140);
-		this.infoPanel.setBorder(new PanelBorder(LogicCore.getResource().getLocal("InfoPanel")));
-		
-		this.explanationArea = new JTextArea();
-		this.explanationArea.setBounds(8, 20, 373, 111);
-		this.explanationArea.setEditable(false);
-		this.explanationArea.setFont(LogicCore.RES.NORMAL_FONT.deriveFont(14.0f));
-		
-		this.infoPanel.add(explanationArea);
-	}
-	public Component getComponent()
-	{
-		return this.infoPanel;
-	}
-}*/
 class PalettePanel implements LogicUIComponent
 {
 	private UI logicUI;
@@ -1422,9 +1404,9 @@ class PalettePanel implements LogicUIComponent
 		this.palettePanel.setLayout(null);
 		this.palettePanel.setBounds(5, 155, 225, 155);
 		this.palettePanel.setBorder(new PanelBorder(LogicCore.getResource().getLocal("PalettePanel")));
-		LogicTREditPane DFTLogicControl = new LogicTREditPane();
+		LogicTREditPane DFTLogicControl = new LogicTREditPane(logicUI);
 		
-		new PaletteMember(new Wire(this.logicUI.getCore()), new WireEditPane());
+		new PaletteMember(new Wire(this.logicUI.getCore()), new WireEditPane(logicUI));
 		new PaletteMember(new AND(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new OR(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new NOT(this.logicUI.getCore()), DFTLogicControl);
@@ -1432,10 +1414,10 @@ class PalettePanel implements LogicUIComponent
 		new PaletteMember(new NOR(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new XOR(this.logicUI.getCore()), DFTLogicControl);
 		new PaletteMember(new XNOR(this.logicUI.getCore()), DFTLogicControl);
-		new PaletteMember(new Buffer(this.logicUI.getCore()), new BufferEditPanel());
-		new PaletteMember(new Button(this.logicUI.getCore()), new ButtonEditPanel());
-		new PaletteMember(new LED(this.logicUI.getCore()), new LEDEditPane());
-		new PaletteMember(new Tag(this.logicUI.getCore()), new TagEditPane());
+		new PaletteMember(new Buffer(this.logicUI.getCore()), new BufferEditPanel(logicUI));
+		new PaletteMember(new Button(this.logicUI.getCore()), new ButtonEditPanel(logicUI));
+		new PaletteMember(new LED(this.logicUI.getCore()), new LEDEditPane(logicUI));
+		new PaletteMember(new Tag(this.logicUI.getCore()), new TagEditPane(logicUI));
 		
 		int i = 0, j = 0;
 		for(String str : paletteMembers.keySet())
@@ -1538,7 +1520,7 @@ class TemplatePanel implements LogicUIComponent
 
 	private JLabel dftPanelLabel;
 
-	TemplatePanel()
+	TemplatePanel(UI logicUI)
 	{
 		this.templatePanel = new JPanel();
 		
@@ -1573,6 +1555,7 @@ class TemplatePanel implements LogicUIComponent
 		this.addTemplateButton.setBasicImage(LogicCore.getResource().getImage("TEMP_ADD"));
 		this.addTemplateButton.setOnMouseImage(LogicCore.getResource().getImage("TEMP_ADD_SELECT"));
 		this.addTemplateButton.setBasicPressImage(LogicCore.getResource().getImage("TEMP_ADD_PUSH"));
+		this.addTemplateButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_CONTROL, KeyEvent.VK_D);
 		
 		if(ClipBoardPanel.clipBoard == null)
 		{
@@ -1706,7 +1689,7 @@ class TaskManagerPanel implements LogicUIComponent
 	private ButtonPanel taskUndoButton;
 	private ButtonPanel taskRedoButton;
 	
-	TaskManagerPanel()
+	TaskManagerPanel(UI logicUI)
 	{
 		this.taskManagerPanel = new JPanel();
 		
@@ -1743,6 +1726,7 @@ class TaskManagerPanel implements LogicUIComponent
 		this.taskUndoButton.setBasicImage(LogicCore.getResource().getImage("UNDO"));
 		this.taskUndoButton.setOnMouseImage(LogicCore.getResource().getImage("UNDO_SELECT"));
 		this.taskUndoButton.setBasicPressImage(LogicCore.getResource().getImage("UNDO_PUSH"));
+		this.taskUndoButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_CONTROL, KeyEvent.VK_Z);
 		
 		this.taskRedoButton = new ButtonPanel(2, 34, 26, 26)
 		{
@@ -1759,6 +1743,7 @@ class TaskManagerPanel implements LogicUIComponent
 		this.taskRedoButton.setBasicImage(LogicCore.getResource().getImage("REDO"));
 		this.taskRedoButton.setOnMouseImage(LogicCore.getResource().getImage("REDO_SELECT"));
 		this.taskRedoButton.setBasicPressImage(LogicCore.getResource().getImage("REDO_PUSH"));
+		this.taskRedoButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_CONTROL, KeyEvent.VK_Y);
 		
 		this.buttonAreaPanel.add(this.taskUndoButton);
 		this.buttonAreaPanel.add(this.taskRedoButton);
@@ -1811,27 +1796,6 @@ class TaskManagerPanel implements LogicUIComponent
 		return this.taskManagerPanel;
 	}
 }
-class UIButton extends JButton
-{
-	private static final long serialVersionUID = 1L;
-	UIButton(int locationX, int locationY,int sizeX, int sizeY, Image basicImage, Image SelectedIcon)
-	{
-		super();
-		this.setBounds(locationX, locationY, sizeX, sizeY);
-		//TODO
-		//this.setIcon(new ImageIcon(basicImage));
-		//this.setSelectedIcon(new ImageIcon(SelectedIcon));
-	}
-	UIButton(int sizeX, int sizeY, Image basicImage, Image SelectedIcon)
-	{
-		super();
-		this.setPreferredSize(new Dimension(sizeX, sizeY));
-		this.setSize(sizeX, sizeY);
-		//TODO
-		//this.setIcon(new ImageIcon(basicImage));
-		//this.setSelectedIcon(new ImageIcon(SelectedIcon));
-	}
-}
 class PanelBorder extends TitledBorder
 {
 	private static final long serialVersionUID = 1L;
@@ -1876,6 +1840,7 @@ class ManySelectEditPanel extends JPanel
 		this.copyButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_COPY"));
 		this.copyButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_COPY_SELECT"));
 		this.copyButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_COPY_PUSH"));
+		this.copyButton.setShortCut(grid.getSession().getCore().getUI().getFrame(), KeyEvent.VK_CONTROL, KeyEvent.VK_C);
 		
 		this.cutButton = new ButtonPanel(166, 25, 40, 40)
 		{
@@ -1897,6 +1862,7 @@ class ManySelectEditPanel extends JPanel
 		this.cutButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_CUT"));
 		this.cutButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_CUT_SELECT"));
 		this.cutButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_CUT_PUSH"));
+		this.cutButton.setShortCut(grid.getSession().getCore().getUI().getFrame(), KeyEvent.VK_CONTROL, KeyEvent.VK_X);
 		
 		this.removeButton = new ButtonPanel(266, 25, 40, 40)
 		{
@@ -1916,6 +1882,7 @@ class ManySelectEditPanel extends JPanel
 		this.removeButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_REMOVE"));
 		this.removeButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_REMOVE_SELECT"));
 		this.removeButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_REMOVE_PUSH"));
+		this.removeButton.setShortCut(grid.getSession().getCore().getUI().getFrame(), KeyEvent.VK_DELETE);
 		
 		this.createTempButton = new ButtonPanel(66, 75, 40, 40)
 		{
@@ -1929,6 +1896,7 @@ class ManySelectEditPanel extends JPanel
 		this.createTempButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_ADDTEMP"));
 		this.createTempButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_ADDTEMP_SELECT"));
 		this.createTempButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_ADDTEMP_PUSH"));
+		this.createTempButton.setShortCut(grid.getSession().getCore().getUI().getFrame(), KeyEvent.VK_CONTROL, KeyEvent.VK_T);
 		
 		this.deActiveButton = new ButtonPanel(166, 75, 40, 40)
 		{
@@ -1949,6 +1917,7 @@ class ManySelectEditPanel extends JPanel
 		this.deActiveButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_DISENABLE"));
 		this.deActiveButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_DISENABLE_SELECT"));
 		this.deActiveButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_DISENABLE_PUSH"));
+		this.deActiveButton.setShortCut(grid.getSession().getCore().getUI().getFrame(), KeyEvent.VK_SLASH);
 		
 		this.activeButton = new ButtonPanel(266, 75, 40, 40)
 		{
@@ -1969,6 +1938,7 @@ class ManySelectEditPanel extends JPanel
 		this.activeButton.setBasicImage(LogicCore.getResource().getImage("MANYSELECT_ENABLE"));
 		this.activeButton.setOnMouseImage(LogicCore.getResource().getImage("MANYSELECT_ENABLE_SELECT"));
 		this.activeButton.setBasicPressImage(LogicCore.getResource().getImage("MANYSELECT_ENABLE_PUSH"));
+		this.activeButton.setShortCut(grid.getSession().getCore().getUI().getFrame(), KeyEvent.VK_PERIOD);
 		
 		this.add(this.numberLabel);
 		this.add(this.copyButton);
@@ -2304,43 +2274,49 @@ class EditPane extends JPanel
 {
 	private static final long serialVersionUID = 1L;
 	
-	private ButtonPanel copyButton = new ButtonPanel(325, 100, 20, 20)
-	{
-		private static final long serialVersionUID = 1L;
-		@Override
-		void pressed(int mouse)
-		{
-			DataBranch temp = new DataBranch("ClipBoard");
-			temp.addLowerBranch(member.getData(new DataBranch("GridMember")));
-			ClipBoardPanel.setClipBoard(temp);
-		}
-	};
-	private ButtonPanel removeButton = new ButtonPanel(350, 100, 20, 20)
-	{
-		private static final long serialVersionUID = 1L;
-		@Override
-		void pressed(int mouse)
-		{
-			TaskUnit task = member.getGrid().getSession().getTaskManager().setTask();
-			task.addCommand(new RemoveMemberOnGrid(member));
-		}
-	};
+	private ButtonPanel copyButton;
+	private ButtonPanel removeButton;
 	
 	protected GridMember member;
 
 	protected JLabel text;
+	protected UI logicUI;
 	
-	EditPane()
+	EditPane(UI logicUI)
 	{
+		this.logicUI = logicUI;
 		this.setLayout(null);
 		
+		this.copyButton = new ButtonPanel(325, 100, 20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int mouse)
+			{
+				DataBranch temp = new DataBranch("ClipBoard");
+				temp.addLowerBranch(member.getData(new DataBranch("GridMember")));
+				ClipBoardPanel.setClipBoard(temp);
+			}
+		};
 		this.copyButton.setBasicImage(LogicCore.getResource().getImage("GRIDMEMBER_CLONE"));
 		this.copyButton.setOnMouseImage(LogicCore.getResource().getImage("GRIDMEMBER_CLONE_SELECT"));
 		this.copyButton.setBasicPressImage(LogicCore.getResource().getImage("GRIDMEMBER_CLONE_PUSH"));
+		this.copyButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_CONTROL, KeyEvent.VK_C);
 		
+		this.removeButton = new ButtonPanel(350, 100, 20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+			@Override
+			void pressed(int mouse)
+			{
+				TaskUnit task = member.getGrid().getSession().getTaskManager().setTask();
+				task.addCommand(new RemoveMemberOnGrid(member));
+			}
+		};
 		this.removeButton.setBasicImage(LogicCore.getResource().getImage("GRIDMEMBER_REMOVE"));
 		this.removeButton.setOnMouseImage(LogicCore.getResource().getImage("GRIDMEMBER_REMOVE_SELECT"));
 		this.removeButton.setBasicPressImage(LogicCore.getResource().getImage("GRIDMEMBER_REMOVE_PUSH"));
+		this.removeButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_DELETE);
 		
 		this.text = new JLabel();
 		this.text.setHorizontalAlignment(SwingConstants.CENTER);
@@ -2355,12 +2331,10 @@ class EditPane extends JPanel
 	{
 		if(member.isPlacement())
 		{
-			this.copyButton.setEnable(true);
 			this.removeButton.setEnable(true);
 		}
 		else
 		{
-			this.copyButton.setEnable(false);
 			this.removeButton.setEnable(false);
 		}
 		this.member = member;
@@ -2376,9 +2350,9 @@ class TagEditPane extends EditPane
 	private ButtonPanel textEditButton;
 	private ButtonPanel colorSetButton;
 	
-	TagEditPane()
+	TagEditPane(UI logicUI)
 	{
-		super();
+		super(logicUI);
 		super.text.setLocation(70, 0);
 		this.colorSelector = new ColorSelector();
 		this.colorSelector.setLocation(10, 30);
@@ -2395,6 +2369,7 @@ class TagEditPane extends EditPane
 		this.textEditButton.setBasicImage(LogicCore.getResource().getImage("SETTEXT"));
 		this.textEditButton.setOnMouseImage(LogicCore.getResource().getImage("SETTEXT_SELECT"));
 		this.textEditButton.setBasicPressImage(LogicCore.getResource().getImage("SETTEXT_PUSH"));
+		this.textEditButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_ENTER);
 		
 		this.colorSetButton = new ButtonPanel(340, 50, 30, 30)
 		{
@@ -2433,6 +2408,7 @@ class TagEditPane extends EditPane
 	{
 		super.setInfo(member);
 		this.tag = (Tag)member;
+		this.textEditButton.setEnable(member.isPlacement());
 		this.colorSelector.setColor(this.tag.getColor("BackGround"));
 	}
 }
@@ -2440,17 +2416,7 @@ class LogicTREditPane extends EditPane
 {
 	private static final long serialVersionUID = 1L;
 	
-	private ButtonPanel restoreButton = new ButtonPanel(300, 100, 20, 20)
-	{
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		void pressed(int button)
-		{
-			TaskUnit task = member.getGrid().getSession().getTaskManager().setTask();
-			task.addCommand(new SetBlockActive((LogicBlock)member, !logicMember.getActive()));
-		}
-	};
+	private ButtonPanel setEnableStatus;
 	
 	private JLabel locationText = new JLabel();
 	protected LogicBlock logicMember;
@@ -2458,12 +2424,25 @@ class LogicTREditPane extends EditPane
 
 	protected JPanel editViewPanel;
 	
-	LogicTREditPane()
+	LogicTREditPane(UI logicUI)
 	{
-		this.restoreButton.setBasicImage(LogicCore.getResource().getImage("GRIDMEMBER_ENDABLE"));
-		this.restoreButton.setOnMouseImage(LogicCore.getResource().getImage("GRIDMEMBER_ENDABLE_SELECT"));
-		this.restoreButton.setBasicPressImage(LogicCore.getResource().getImage("GRIDMEMBER_ENDABLE_PUSH"));
-		this.add(this.restoreButton);
+		super(logicUI);
+		this.setEnableStatus = new ButtonPanel(300, 100, 20, 20)
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			void pressed(int button)
+			{
+				TaskUnit task = member.getGrid().getSession().getTaskManager().setTask();
+				task.addCommand(new SetBlockActive((LogicBlock)member, !logicMember.getActive()));
+			}
+		};
+		this.setEnableStatus.setBasicImage(LogicCore.getResource().getImage("GRIDMEMBER_ENDABLE"));
+		this.setEnableStatus.setOnMouseImage(LogicCore.getResource().getImage("GRIDMEMBER_ENDABLE_SELECT"));
+		this.setEnableStatus.setBasicPressImage(LogicCore.getResource().getImage("GRIDMEMBER_ENDABLE_PUSH"));
+		this.setEnableStatus.setShortCut(logicUI.getFrame(), KeyEvent.VK_SLASH);
+		this.add(this.setEnableStatus);
 		this.setIOSwitch();
 		this.add(this.editViewPanel);
 		for(IOControlButton btn : this.IOEditButton)
@@ -2491,10 +2470,21 @@ class LogicTREditPane extends EditPane
 			}
 		};
 		this.editViewPanel.setLayout(null);
-		this.IOEditButton.add(new IOControlButton(100, 28, 16, 64, Direction.EAST));
-		this.IOEditButton.add(new IOControlButton(4, 28, 16, 64, Direction.WEST));
-		this.IOEditButton.add(new IOControlButton(28, 100, 64, 16, Direction.SOUTH));
-		this.IOEditButton.add(new IOControlButton(28, 4, 64, 16, Direction.NORTH));
+		
+		IOControlButton east = new IOControlButton(100, 28, 16, 64, Direction.EAST);
+		IOControlButton west = new IOControlButton(4, 28, 16, 64, Direction.WEST);
+		IOControlButton south = new IOControlButton(28, 100, 64, 16, Direction.SOUTH);
+		IOControlButton north = new IOControlButton(28, 4, 64, 16, Direction.NORTH);
+		
+		south.setShortCut(logicUI.getFrame(), KeyEvent.VK_DOWN);
+		west.setShortCut(logicUI.getFrame(), KeyEvent.VK_LEFT);
+		east.setShortCut(logicUI.getFrame(), KeyEvent.VK_RIGHT);
+		north.setShortCut(logicUI.getFrame(), KeyEvent.VK_UP);
+		
+		this.IOEditButton.add(east);
+		this.IOEditButton.add(west);
+		this.IOEditButton.add(south);
+		this.IOEditButton.add(north);
 		
 		this.editViewPanel.setBounds(5, 0, 120, 120);
 		this.editViewPanel.setBackground(new Color(200, 200, 200));
@@ -2512,15 +2502,15 @@ class LogicTREditPane extends EditPane
 	{
 		super.setInfo(member);
 		this.logicMember = (LogicBlock)member;
+		this.setEnableStatus.setEnable(member.isPlacement());
 		if(member.isPlacement())
 		{
 			this.locationText.setText("(X:" + logicMember.getBlockLocationX() + " Y: " + logicMember.getBlockLocationY() + ")");
-			this.restoreButton.setEnable(true);
 		}
 		else
 		{
 			this.locationText.setText(LogicCore.getResource().getLocal("IsNotPlaceBlock"));
-			this.restoreButton.setEnable(false);
+			
 		}
 		for(IOControlButton btn : this.IOEditButton)
 		{
@@ -2573,8 +2563,9 @@ class BufferEditPanel extends LogicTREditPane
 	private JLabel waitTimeLabel;
 	private TimeSelector maintainTimeSelector;
 	private JLabel maintainTimeLabel;
-	BufferEditPanel()
+	BufferEditPanel(UI logicUI)
 	{
+		super(logicUI);
 		this.waitTimeSelector = new TimeSelector(0, 0, 99, "tic")//tick
 		{
 			private static final long serialVersionUID = 1L;
@@ -2656,8 +2647,9 @@ class ButtonEditPanel extends LogicTREditPane
 	private TimeSelector timeSelector;
 	private JLabel timeLabel;
 	
-	ButtonEditPanel()
+	ButtonEditPanel(UI logicUI)
 	{
+		super(logicUI);
 		timeSelector = new TimeSelector(1, 1, 99, "tic")
 		{
 			private static final long serialVersionUID = 1L;
@@ -2710,9 +2702,9 @@ class LEDEditPane extends EditPane
 	private boolean focus; //true == on, false == off
 	private ButtonPanel onoffSelectButton;
 	private ButtonPanel selectButton;
-	LEDEditPane()
+	LEDEditPane(UI logicUI)
 	{
-		super();
+		super(logicUI);
 		super.text.setLocation(70, 0);
 		this.colorSelector = new ColorSelector();
 		this.colorSelector.setLocation(10, 30);
@@ -2758,11 +2750,13 @@ class LEDEditPane extends EditPane
 			if(this.focus)
 			{
 				this.onoffSelectButton.setBasicImage(LogicCore.getResource().getImage("LED_COLOR_ON"));
+				this.onoffSelectButton.setOnMouseImage(LogicCore.getResource().getImage("LED_COLOR_ON_SELECT"));
 				this.onoffSelectButton.setBasicPressImage(LogicCore.getResource().getImage("LED_COLOR_ON_PUSH"));
 			}
 			else
 			{
 				this.onoffSelectButton.setBasicImage(LogicCore.getResource().getImage("LED_COLOR_OFF"));
+				this.onoffSelectButton.setOnMouseImage(LogicCore.getResource().getImage("LED_COLOR_OFF_SELECT"));
 				this.onoffSelectButton.setBasicPressImage(LogicCore.getResource().getImage("LED_COLOR_OFF_PUSH"));
 			}
 			this.updateMemberStatus();
@@ -2799,13 +2793,17 @@ class WireEditPane extends LogicTREditPane
 	
 	private static final long serialVersionUID = 1L;
 	
-	WireEditPane()
+	WireEditPane(UI logicUI)
 	{
-		super();
+		super(logicUI);
 		this.standardModButton = new ModSelectButton(170, 40, 30, 30, WireType.Standard);
+		this.standardModButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_Q);
 		this.crossAModButton = new ModSelectButton(215, 40, 30, 30, WireType.Cross_A);
+		this.crossAModButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_W);
 		this.crossBModButton = new ModSelectButton(260, 40, 30, 30, WireType.Cross_B);
+		this.crossBModButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_E);
 		this.crossCModButton = new ModSelectButton(305, 40, 30, 30, WireType.Cross_C);
+		this.crossCModButton.setShortCut(logicUI.getFrame(), KeyEvent.VK_R);
 		this.add(this.standardModButton);
 		this.add(this.crossAModButton);
 		this.add(this.crossBModButton);
@@ -2826,10 +2824,18 @@ class WireEditPane extends LogicTREditPane
 			}
 		};
 		super.editViewPanel.setLayout(null);
-		super.IOEditButton.add(new WireIOControlButton(72, 52, 44, 16, Direction.EAST));
-		super.IOEditButton.add(new WireIOControlButton(4, 52, 44, 16, Direction.WEST));
-		super.IOEditButton.add(new WireIOControlButton(52, 72, 16, 44, Direction.SOUTH));
-		super.IOEditButton.add(new WireIOControlButton(52, 4, 16, 44, Direction.NORTH));
+		WireIOControlButton east = new WireIOControlButton(72, 52, 44, 16, Direction.EAST);
+		WireIOControlButton west = new WireIOControlButton(4, 52, 44, 16, Direction.WEST);
+		WireIOControlButton south = new WireIOControlButton(52, 72, 16, 44, Direction.SOUTH);
+		WireIOControlButton north = new WireIOControlButton(52, 4, 16, 44, Direction.NORTH);
+		south.setShortCut(logicUI.getFrame(), KeyEvent.VK_DOWN);
+		west.setShortCut(logicUI.getFrame(), KeyEvent.VK_LEFT);
+		east.setShortCut(logicUI.getFrame(), KeyEvent.VK_RIGHT);
+		north.setShortCut(logicUI.getFrame(), KeyEvent.VK_UP);
+		super.IOEditButton.add(east);
+		super.IOEditButton.add(west);
+		super.IOEditButton.add(south);
+		super.IOEditButton.add(north);
 		
 		super.editViewPanel.setBounds(5, 0, 120, 120);
 		super.editViewPanel.setBackground(new Color(200, 200, 200));
@@ -2984,7 +2990,7 @@ class TrackedPane extends JPanel implements SizeUpdate
 		this.removeAll();
 	}
 }
-class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
+class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener, KeyListener
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -3195,6 +3201,76 @@ class ButtonPanel extends JPanel implements MouseMotionListener, MouseListener
 	private enum ButtonStatus
 	{
 		NONE, PRESS, ONMOUSE;
+	}
+	private ArrayList<Integer> shortKey;
+	private boolean[] keyActive;
+	final void setShortCut(JFrame frame, int... keys)
+	{
+		this.shortKey = new ArrayList<Integer>();
+		frame.addKeyListener(this);
+		for(int key : keys)
+		{
+			this.shortKey.add(key);
+		}
+		this.keyActive = new boolean[keys.length];
+	}
+	@Override
+	public void keyPressed(KeyEvent arg0)
+	{
+		if(this.isDisplayable() && this.enable && this.shortKey != null)
+		{
+			if(this.shortKey.contains(arg0.getKeyCode()))
+			{
+				boolean keyActive = true;
+				for(int i = this.shortKey.indexOf(arg0.getKeyCode()) - 1; i >= 0; i--)
+				{
+					if(!this.keyActive[i])
+					{
+						keyActive = false;
+					}
+				}
+				if(keyActive)
+				{
+					this.keyActive[this.shortKey.indexOf(arg0.getKeyCode())] = true;
+				}
+				else
+				{
+					for(int i = 0; i < this.keyActive.length; i++)
+					{
+						this.keyActive[i] = false;
+					}
+				}
+			}
+		}
+	}
+	@Override
+	public void keyReleased(KeyEvent arg0)
+	{
+		if(this.isDisplayable() && this.enable && this.shortKey != null)
+		{
+			if(this.shortKey.contains(arg0.getKeyCode()))
+			{
+				boolean press = true;
+				for(int i = 0; i < this.keyActive.length; i++)
+				{
+					if(!this.keyActive[i])
+					{
+						press = false;
+					}
+				}
+				if(press)
+				{
+					this.pressed(1);
+				}
+				this.keyActive[this.shortKey.indexOf(arg0.getKeyCode())] = false;
+			}
+		}
+	}
+	@Override
+	public void keyTyped(KeyEvent arg0)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 }
 class FileSavePanel extends FileManagerWindow

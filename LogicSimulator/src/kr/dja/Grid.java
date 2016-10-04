@@ -25,8 +25,8 @@ public class Grid
 
 	private GridPanel gridPanel;
 	private SizeInfo gridSize;
-	private int MAX_SIZE = 100;
-	private int MAX_ABSOLUTE = 150;
+	private int MAX_SIZE = 1000;
+	private int MAX_ABSOLUTE = 1500;
 	
 	private GridMember selectFocusMember;
 

@@ -115,7 +115,7 @@ public class TaskOperator
 					if(!block.isPlacement() || !(block.getIOStatus(ext) == IOStatus.TRANCE && block.getIOPower(ext).getBool()))
 					{//블록이 설치되있지 않거나 신호 발송중이 아닐경우 
 						extBlock.setIOResivePower(ext.getAcross(), Power.OFF);
-						System.out.println("끔1");
+						//System.out.println("끔1");
 					}
 					else
 					{
@@ -129,7 +129,7 @@ public class TaskOperator
 				if(extBlock == null || !(extBlock.getIOStatus(ext.getAcross()) == IOStatus.TRANCE && extBlock.getIOPower(ext.getAcross()).getBool()))
 				{//해당 방향 블록이 설치되있지 않거나 신호 발송중이 아닐경우 
 					block.setIOResivePower(ext, Power.OFF);
-					System.out.println("끔2 " + block.getBlockLocationX() + " " + block.getBlockLocationY());
+					//System.out.println("끔2 " + block.getBlockLocationX() + " " + block.getBlockLocationY());
 				}
 				else
 				{
@@ -218,11 +218,11 @@ public class TaskOperator
 		temp.add(ext);
 		linkedWire.put(wire, temp);
 		LinkedHashMap<LogicBlock, ArrayList<Direction>> linkedBlock = new LinkedHashMap<LogicBlock, ArrayList<Direction>>();
-		System.out.println("작업시작");
+		//System.out.println("작업시작");
 		Power blockresivePower = this.recursiveWireTask(wire, ext,  linkedWire, linkedBlock, Power.OFF);
 		for(LogicWire taskWire : linkedWire.keySet())
 		{
-			System.out.println("연산최종");
+			//System.out.println("연산최종");
 			for(Direction taskExt : linkedWire.get(taskWire))
 			{
 				taskWire.setIOResivePower(taskExt, blockresivePower);
@@ -230,7 +230,7 @@ public class TaskOperator
 		}
 		for(LogicBlock taskBlock : linkedBlock.keySet())
 		{
-			System.out.println("연산최종");
+			//System.out.println("연산최종");
 			if(taskBlock.getActive())
 			{
 				for(Direction taskExt : linkedBlock.get(taskBlock))
@@ -258,7 +258,7 @@ public class TaskOperator
 	{
 		if(wire.getActive())
 		{//와이어가 활성화 상태일 경우
-			System.out.println("발견!! " + wire.getBlockLocationX() + " " + wire.getBlockLocationY());
+			//System.out.println("발견!! " + wire.getBlockLocationX() + " " + wire.getBlockLocationY());
 			for(Direction ext : Direction.values())
 			{
 				if(wire.isLinkedWire(from, ext) && wire.isWireValid(ext))
@@ -295,7 +295,7 @@ public class TaskOperator
 								{
 									power = Power.ON;
 								}
-								System.out.println("전송감지 " + extBlock.getBlockLocationX() + " " + extBlock.getBlockLocationY() + " " + ext.getAcross());
+								//System.out.println("전송감지 " + extBlock.getBlockLocationX() + " " + extBlock.getBlockLocationY() + " " + ext.getAcross());
 							}
 							else if(extBlock.getIOStatus(ext.getAcross()) == IOStatus.RECEIV)
 							{

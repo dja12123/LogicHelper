@@ -433,31 +433,32 @@ class Tag extends GridMember implements ColorSet, SizeSet
 	}
 	void toggleModeActive()
 	{
-		if(!this.isShow)
+		if(super.isPlacement())
 		{
-			this.editCompleatButton.setVisible(true);
-			this.editTextArea.setText(this.description);
-			super.gridViewPane.remove(this.viewTextArea);
-			super.gridViewPane.add(this.editTextArea);
-			super.layeredPane.repaint();
-			this.isShow = true;
-			if(super.isPlacement())
+			if(!this.isShow)
 			{
+				this.editCompleatButton.setVisible(true);
+				this.editTextArea.setText(this.description);
+				super.gridViewPane.remove(this.viewTextArea);
+				super.gridViewPane.add(this.editTextArea);
+				super.layeredPane.repaint();
+				this.isShow = true;
+				
 				this.grid.deSelectFocus();
 			}
-		}
-		else
-		{
-			this.editCompleatButton.setVisible(false);
-			if(super.isPlacement())
+			else
 			{
+				this.editCompleatButton.setVisible(false);
+			
 				TaskUnit task = this.getGrid().getSession().getTaskManager().setTask();
 				task.addCommand(new SetTagDescription(this, this.editTextArea.getText(), super.getCore().getSession().getFocusSession()));
+				this.getGrid().getSession().getCore().getUI().getFrame().setFocusable(true);
+				
+				this.gridViewPane.remove(this.editTextArea);
+				this.gridViewPane.add(this.viewTextArea);
+				this.layeredPane.repaint();
+				this.isShow = false;
 			}
-			this.gridViewPane.remove(this.editTextArea);
-			this.gridViewPane.add(this.viewTextArea);
-			this.layeredPane.repaint();
-			this.isShow = false;
 		}
 	}
 	@Override
@@ -702,7 +703,7 @@ abstract class LogicBlock extends GridMember
 			this.io.get(ext).setStatus(IOStatus.NONE);
 		}
 	}
-	void setIOResivePower(Direction ext, Power power)
+	public void setIOResivePower(Direction ext, Power power)
 	{
 		if(this.io.get(ext).getStatus() == IOStatus.RECEIV)
 		{
@@ -806,6 +807,10 @@ abstract class LogicBlock extends GridMember
 		this.updateViewMode();
 		this.disableView.setLocation(super.gridViewPane.getX(), super.gridViewPane.getY());
 		this.disableView.setSize(super.gridViewPane.getWidth(), super.gridViewPane.getHeight());
+		for(IOPanel io : this.io.values())
+		{
+			io.sizeUpdate();
+		}
 	}
 	void calculate(){}
 }
@@ -1220,10 +1225,12 @@ class Buffer extends LogicBlock implements TimeSetter
 				this.timeLabel.setText("");
 			}
 		}
+		this.chargeCount--;
 	}
 	@Override
 	protected void operatorPing()
 	{
+		this.chargeCount++;
 		this.calculate();
 	}
 	@Override
@@ -1392,7 +1399,7 @@ class Button extends LogicBlock implements TimeSetter
 		}
 	}
 }
-class LED extends LogicBlock implements ColorSet
+class LED extends LogicBlock implements ColorSet, LogicWire
 {
 	private Color onColor = new Color(50, 200, 50);
 	private Color offColor = new Color(100, 100, 100);
@@ -1464,8 +1471,28 @@ class LED extends LogicBlock implements ColorSet
 	{
 		return new LEDViewPane(this);
 	}
+	@Override
+	public ArrayList<LogicWire> getRemoteWire() 
+	{
+		return null;
+	}
+	@Override
+	public void setRemotePowerStatus(Power power)
+	{
+		
+	}
+	@Override
+	public boolean isWireValid(Direction ext)
+	{
+		return true;
+	}
+	@Override
+	public boolean isLinkedWire(Direction from, Direction to)
+	{
+		return true;
+	}
 }
-class IOPanel
+class IOPanel implements SizeUpdate
 {
 	private IOStatus status = IOStatus.NONE;
 	private Power power = Power.OFF;
@@ -1520,6 +1547,12 @@ class IOPanel
 	BufferedImage getImage()
 	{
 		return this.image;
+	}
+	@Override
+	public void sizeUpdate()
+	{
+		this.image = LogicCore.RES.getImage(member.getCore().getUI().getUISize().getTag() + "_" + this.imgTag
+				+ "_" + this.status.getTag() + "_" + this.power.getTag() + "_" + this.ext.getTag());
 	}
 }
 class GridViewPane extends JPanel implements SizeUpdate
@@ -1744,6 +1777,8 @@ class WireViewPane extends LogicViewPane
 }
 class LEDViewPane extends LogicViewPane
 {
+	private static final long serialVersionUID = 1L;
+	
 	private final LED led;
 	LEDViewPane(LED member)
 	{
@@ -1763,7 +1798,6 @@ class LEDViewPane extends LogicViewPane
 		{
 			c = this.led.getColor("offColor");
 		}
-		int m = this.led.getCore().getUI().getUISize().getmultiple();
 		BufferedImage mask = LogicCore.getResource().getImage(this.led.getCore().getUI().getUISize().getTag() + "_LED_MASK");
 		BufferedImage buildImage = new BufferedImage(mask.getWidth(),mask.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		for(int y = 0; y < mask.getHeight(); y++)
